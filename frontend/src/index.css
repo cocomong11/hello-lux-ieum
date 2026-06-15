@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Neutral */
+  --color-neutral-100: #f8f9fa;
+  --color-neutral-90: #dddde6;
+  --color-neutral-80: #bebec8;
+  --color-neutral-60: #8e8e98;
+  --color-neutral-gray: #797980;
+  --color-neutral-10: #0d0d0d;
+
+  /* Primary */
+  --color-primary: #4188ed;
+  --color-primary-dark: #0f66e2;
+
+  /* Secondary / Tertiary */
+  --color-secondary: #dfdf87;
+  --color-tertiary: #f5383b;
+}
