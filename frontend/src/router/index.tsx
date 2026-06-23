@@ -8,6 +8,11 @@ import S06_VoiceSetting from '../pages/S06_VoiceSetting'
 import S07_MemoryDB     from '../pages/S07_MemoryDB'
 import S08_CodeLink     from '../pages/S08_CodeLink'
 import S09_PatientHome  from '../pages/S09_PatientHome'
+import S18_CargiverHome from '../pages/S18_CargiverHome'
+import S19_CargiverReport from '../pages/S19_CargiverReport'
+import S20_CargiverMemo from '../pages/S20_CargiverMemo'
+import S21_CargiverUpdate from '../pages/S21_CargiverUpdate'
+import S22_CargiverAlerm from '../pages/S22_CargiverAlerm'
 import S27_MyPage       from '../pages/S27_MyPage'
 
 const router = createBrowserRouter([
@@ -27,9 +32,16 @@ const router = createBrowserRouter([
 
   // ── 역할별 홈 ──────────────────────────────────────
   { path: '/patient-home',  element: <S09_PatientHome /> },
+  { path: '/cargiver-home', element: <S18_CargiverHome />},
 
   // ── 계정 ───────────────────────────────────────────
   { path: '/mypage',        element: <S27_MyPage /> },
+
+  // ── 보호자 흐름───────────────────────────────────────────
+  { path: '/cargiver-report', element: <S19_CargiverReport />},
+  { path: '/cargiver-memo', element: <S20_CargiverMemo />},
+  { path: '/cargiver-update', element: <S21_CargiverUpdate />},
+  { path: '/cargiver-alerm', element: <S22_CargiverAlerm />},
 ])
 
 export default router
