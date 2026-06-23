@@ -75,7 +75,11 @@ export default function S18_CargiverHome() {
                         홈
                     </button>
 
-                    <button onClick={() => navigate('/cargiver-mypage')}>
+                    <button 
+                        onClick={() => navigate('/cargiver-mypage')}
+                        style={{
+                        color:'var(--color-neutral-gray)'
+                        }}>
                         마이페이지
                     </button>
                 </div>
