@@ -199,7 +199,7 @@ export default function S09_PatientHome() {
 
           {/* 활동 시작하기 버튼 */}
           <button
-            onClick={() => navigate('/patient-activity')}
+            onClick={() => navigate('/patient-check')}
             style={{
               ...F,
               position: 'absolute',
