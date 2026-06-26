@@ -122,7 +122,7 @@ export default function QuizVoiceController({
         </div>
 
         <span style={{ fontWeight: 700, fontSize: '20px', color: isRecording ? '#E22020' : '#0F66E2', marginBottom: '0px' }}>
-          {isRecording ? '🔴 음성을 녹음하고 있어요. . lifetimes' : '🔵 마이크 대기 상태'}
+          {isRecording ? '🔴 음성을 녹음하고 있어요...' : '🔵 마이크 대기 상태'}
         </span>
 
         <span style={{ fontSize: '16px', color: '#797980' }}>
