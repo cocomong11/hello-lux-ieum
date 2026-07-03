@@ -3,7 +3,7 @@ import Header from '../components/patientHeader';
 
 function CelebrationIcon() {
   return (
-    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">//폭죽 그림
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g clip-path="url(#clip0_83_395)">
 <path d="M12.3257 74.2881L58.9517 57.5301L20.4957 19.2061L3.81567 65.7881C1.92167 71.0801 7.03767 76.1881 12.3257 74.2881Z" fill="#EF4452"/>
 <path d="M20.7116 9.32405C22.7749 9.32405 24.4476 7.65139 24.4476 5.58805C24.4476 3.52471 22.7749 1.85205 20.7116 1.85205C18.6483 1.85205 16.9756 3.52471 16.9756 5.58805C16.9756 7.65139 18.6483 9.32405 20.7116 9.32405Z" fill="#EDCCF8"/>
@@ -25,13 +25,12 @@ function CelebrationIcon() {
 </clipPath>
 </defs>
 </svg>
-
   );
 }
 
 export default function S17_ActivityReport() {
-  
   const navigate = useNavigate();
+  
   const summaryBoxStyle = {
     width: '193px',
     height: '124px',
@@ -47,7 +46,6 @@ export default function S17_ActivityReport() {
     textAlign: 'left' as const
   };
 
-  // 오늘 건강 상태 요약 하단 태그 스타일 베이스
   const tagStyle = {
     height: '46px',
     borderRadius: '10px',
@@ -182,7 +180,6 @@ export default function S17_ActivityReport() {
 
         {/* 유형별 분석 대형 그라데이션 박스 2개 */}
         <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: '80px' }}>
-          {/* 첫 번째 박스 (잘 떠올렸어요) */}
           <div style={{
             width: '389px',
             height: '149px',
@@ -202,7 +199,6 @@ export default function S17_ActivityReport() {
             <span style={{ fontSize: '16px', fontWeight: 700, color: '#0F66E2' }}>#가족 관련 #날짜/시간</span>
           </div>
 
-          {/* 두 번째 박스 (조금 어려웠어요) */}
           <div style={{
             width: '389px',
             height: '149px',
@@ -219,7 +215,7 @@ export default function S17_ActivityReport() {
             gap: '12px'
           }}>
             <span style={{ fontSize: '18px', fontWeight: 700, color: '#0D0D0D' }}>조금 어려웠어요 💡</span>
-            <span style={{ fontSize: '16px', fontWeight: 700, color:  '#E53134' }}>#장소 기억</span>
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#E53134' }}>#장소 기억</span>
           </div>
         </div>
 
@@ -237,23 +233,28 @@ export default function S17_ActivityReport() {
           <div style={{ ...tagStyle, width: '150px' }}>기분 : 안정적</div>
         </div>
 
-        {/* 메인 하단 홈으로 돌아가기 대형 버튼 */}
-        <button onClick={() => navigate('/patient-home')}
-        style={{
-          width: '805px',
-          height: '81px',
-          borderRadius: '50px',
-          background: '#0D0D0D',
-          boxShadow: '0px 0px 4px 0px #4188ED',
-          border: 'none',
-          color: '#FFFFFF',
-          fontSize: '20px',
-          fontWeight: 700,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
+        {/* 메인 하단 홈으로 돌아가기 */}
+        <button 
+          onClick={() => {
+            sessionStorage.setItem('todayActivityCompleted', 'true');
+            navigate('/patient-home');
+          }}
+          style={{
+            width: '805px',
+            height: '81px',
+            borderRadius: '50px',
+            background: '#0D0D0D',
+            boxShadow: '0px 0px 4px 0px #4188ED',
+            border: 'none',
+            color: '#FFFFFF',
+            fontSize: '20px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
           홈으로 돌아가기
         </button>
 
