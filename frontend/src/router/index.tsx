@@ -8,12 +8,20 @@ import S06_VoiceSetting from '../pages/S06_VoiceSetting'
 import S07_MemoryDB     from '../pages/S07_MemoryDB'
 import S08_CodeLink     from '../pages/S08_CodeLink'
 import S09_PatientHome  from '../pages/S09_PatientHome'
+import S10_DailyHealthCheck from '../pages/S10_DailyHealthCheck'
+import S11_TextVoiceQuiz from '../pages/S11_TextVoiceQuiz'
+import S12_PhotoRecallQuiz from '../pages/S12_PhotoRecallQuiz'
+import S13_RecallVoiceChat from '../pages/S13_RecallVoiceChat'
+import S14_DrawingCognitiveActivity from '../pages/S14_DrawAlong'
+
+import S17_ActivityReport from '../pages/S17_ActivityResult'
 import S18_CargiverHome from '../pages/S18_CargiverHome'
 import S19_CargiverReport from '../pages/S19_CargiverReport'
 import S20_CargiverMemo from '../pages/S20_CargiverMemo'
 import S21_CargiverUpdate from '../pages/S21_CargiverUpdate'
 import S22_CargiverAlerm from '../pages/S22_CargiverAlerm'
 import S27_MyPage       from '../pages/S27_MyPage'
+
 
 const router = createBrowserRouter([
   // ── 공통 / 온보딩 ──────────────────────────────────
@@ -32,6 +40,21 @@ const router = createBrowserRouter([
 
   // ── 역할별 홈 ──────────────────────────────────────
   { path: '/patient-home',  element: <S09_PatientHome /> },
+  // ── 계정 ───────────────────────────────────────────
+  { path: '/mypage',        element: <S27_MyPage /> },
+
+  // ── 환자 흐름───────────────────────────────────────────
+  { path: '/patient-check',element: <S10_DailyHealthCheck /> },
+  { path: '/patient-voicequiz',element: <S11_TextVoiceQuiz /> },
+  { path: '/patient-photo',element: <S12_PhotoRecallQuiz /> },
+  { path: '/patient-voicechat',element: <S13_RecallVoiceChat /> },
+  { path: '/patient-draw',element: <S14_DrawingCognitiveActivity /> },
+  
+  { path: '/patient-result',element: <S17_ActivityReport/> },
+
+
+  // ── 보호자 흐름───────────────────────────────────────────
+  
   { path: '/cargiver-home', element: <S18_CargiverHome />},
 
   // ── 계정 ───────────────────────────────────────────
