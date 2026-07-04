@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import pprofile from '../assets/pprofile.png';
@@ -5,10 +6,21 @@ import pprofile from '../assets/pprofile.png';
 type Props = {
   patient: {
     name: string;
-    age: number;
+    birth_date: string; // "YYYY-MM-DD"
     level: string;
   } | null;
 };
+//나이 계산 함수
+function calcAge(birthDate: string): number {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const hasBirthdayPassed =
+    today.getMonth() > birth.getMonth() ||
+    (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+  if (!hasBirthdayPassed) age -= 1;
+  return age;
+}
 
 const MENUS = [
   { title: '변화 추이',   path: '/cargiver-report' },
@@ -22,17 +34,18 @@ const MENU_TOPS = [361, 450, 539, 628];
 export default function CaregiverSidebar({ patient }: Props) {
   const navigate  = useNavigate();
   const location  = useLocation();
+  const [hoveredPath, setHoveredPath] = useState<string | null>(null);
 
   if (!patient) return null;
 
   return (
     <div
       style={{
-        position: 'fixed',
+        position: 'absolute',
         left: 0,
         top: 0,
         width: 348,
-        height: '100vh',
+        height: '100%',
         borderTopRightRadius: 20,
         background:
           'linear-gradient(0deg, rgba(65, 136, 237, 0.05), rgba(65, 136, 237, 0.05)),' +
@@ -129,7 +142,7 @@ export default function CaregiverSidebar({ patient }: Props) {
             margin: 0,
           }}
         >
-          {patient.age}세
+          {calcAge(patient.birth_date)}세
         </p>
         <p
           style={{
@@ -150,9 +163,13 @@ export default function CaregiverSidebar({ patient }: Props) {
       {/* 메뉴 항목 */}
       {MENUS.map((menu, i) => {
         const isActive = location.pathname === menu.path;
+        const isHovered = hoveredPath === menu.path;
         return (
           <div
             key={menu.path}
+            onMouseEnter={() => setHoveredPath(menu.path)}
+            onMouseLeave={() => setHoveredPath(null)}
+            onClick={() => navigate(menu.path)}
             style={{
               position: 'absolute',
               top: MENU_TOPS[i],
@@ -164,29 +181,32 @@ export default function CaregiverSidebar({ patient }: Props) {
               border: '2px solid rgba(65, 136, 237, 0.5)',
               background: isActive
                 ? 'var(--color-primary-20, #0F66E2)'
+                : isHovered
+                ? 'rgba(65, 136, 237, 0.1)'
                 : 'var(--color-neutral-100)',
-              boxShadow: isActive ? '0 0 8px 0 var(--color-primary)' : 'none',
+              boxShadow: isActive
+                ? '0 0 8px 0 var(--color-primary)'
+                : isHovered
+                ? '0 0 6px 0 rgba(65, 136, 237, 0.3)'
+                : 'none',
+              transition: 'background 0.15s, box-shadow 0.15s',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              paddingLeft: 29,
             }}
           >
-            <button
-              onClick={() => navigate(menu.path)}
+            <span
               style={{
-                position: 'absolute',
-                left: 29,
-                top: 13,
-                height: 34,
                 fontSize: 22,
                 fontWeight: 400,
                 lineHeight: '155%',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
                 color: isActive ? 'var(--color-neutral-100)' : 'inherit',
+                pointerEvents: 'none',
               }}
             >
               {menu.title}
-            </button>
+            </span>
           </div>
         );
       })}

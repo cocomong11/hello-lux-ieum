@@ -35,7 +35,7 @@ const router = createBrowserRouter([
   { path: '/cargiver-home', element: <S18_CargiverHome />},
 
   // ── 계정 ───────────────────────────────────────────
-  { path: '/mypage',        element: <S27_MyPage /> },
+  { path: '/cargiver-mypage',        element: <S27_MyPage /> },
 
   // ── 보호자 흐름───────────────────────────────────────────
   { path: '/cargiver-report', element: <S19_CargiverReport />},
