@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PageLayout from '../components/common/PageLayout';
 import { saveRole } from '../utils/role';
 import type { UserRole } from '../utils/role';
 
@@ -12,7 +13,6 @@ const imgImage8 =
 const imgImage6 =
   'https://www.figma.com/api/mcp/asset/b7058ebc-af82-4101-a2d8-80a4545ecbe9'; // 의료진 아이콘
 
-const DESIGN_W = 1920;
 const DESIGN_H = 1080;
 
 const F: CSSProperties = {
@@ -71,27 +71,8 @@ const ROLES: {
 
 export default function S04_RoleSelect() {
   const navigate = useNavigate();
-  const [scale, setScale] = useState(1);
-
   // 오른쪽 Figma처럼 환자가 기본 선택된 상태
   const [selected, setSelected] = useState<Role>('patient');
-
-  useEffect(() => {
-    const update = () => {
-      const nextScale = Math.min(
-        window.innerWidth / DESIGN_W,
-        window.innerHeight / DESIGN_H,
-        1,
-      );
-
-      setScale(nextScale);
-    };
-
-    update();
-    window.addEventListener('resize', update);
-
-    return () => window.removeEventListener('resize', update);
-  }, []);
 
   const handleNext = () => {
     saveRole(selected);
@@ -103,28 +84,7 @@ export default function S04_RoleSelect() {
   };
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
-        background: '#f8f9fa',
-      }}
-    >
-      <div
-        style={{
-          width: DESIGN_W,
-          height: DESIGN_H,
-          position: 'absolute',
-          top: 0,
-          left: '50%',
-          transformOrigin: 'top center',
-          transform: `translateX(-50%) scale(${scale})`,
-          background: '#f8f9fa',
-          ...F,
-        }}
-      >
+    <PageLayout canvasHeight={DESIGN_H}>
         {/* ── 타이틀 ── */}
         <p
           style={{
@@ -318,7 +278,6 @@ export default function S04_RoleSelect() {
             다음
           </span>
         </button>
-      </div>
-    </div>
+    </PageLayout>
   );
 }

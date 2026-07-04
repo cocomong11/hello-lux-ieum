@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PageLayout from '../components/common/PageLayout';
 
-const DESIGN_W = 1920;
 const DESIGN_H = 1171;
 
 const F: CSSProperties = {
@@ -20,48 +19,9 @@ function todayStr() {
 
 export default function S09_PatientHome() {
   const navigate = useNavigate();
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    const update = () => {
-      const nextScale = Math.min(
-        window.innerWidth / DESIGN_W,
-        window.innerHeight / DESIGN_H,
-        1,
-      );
-
-      setScale(nextScale);
-    };
-
-    update();
-    window.addEventListener('resize', update);
-
-    return () => window.removeEventListener('resize', update);
-  }, []);
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
-        background: '#f8f9fa',
-      }}
-    >
-      <div
-        style={{
-          width: DESIGN_W,
-          height: DESIGN_H,
-          position: 'absolute',
-          top: 0,
-          left: '50%',
-          transformOrigin: 'top center',
-          transform: `translateX(-50%) scale(${scale})`,
-          background: '#f8f9fa',
-          ...F,
-        }}
-      >
+    <PageLayout canvasHeight={DESIGN_H}>
         {/* ─── 인사말 ─── */}
         <p
           style={{
@@ -374,7 +334,6 @@ export default function S09_PatientHome() {
             내 여정 보러가기
           </span>
         </button>
-      </div>
-    </div>
+    </PageLayout>
   );
 }

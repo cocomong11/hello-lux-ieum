@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PageLayout from '../components/common/PageLayout';
 
 // ── Figma 에셋 ───────────────────────────────────────────
 const imgImage3 =
@@ -35,39 +35,9 @@ const F: CSSProperties = {
 
 export default function S01_Main() {
   const navigate = useNavigate();
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    const update = () => setScale(window.innerWidth / DESIGN_W);
-    update();
-
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        width: '100vw',
-        height: DESIGN_H * scale,
-        overflowX: 'hidden',
-        background: '#f8f9fa',
-      }}
-    >
-      <div
-        style={{
-          width: DESIGN_W,
-          height: DESIGN_H,
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          transformOrigin: 'top left',
-          transform: `scale(${scale})`,
-          background: '#f8f9fa',
-          ...F,
-        }}
-      >
+    <PageLayout canvasHeight={DESIGN_H} scrollable>
         {/* ════ Hero 전체 배경 영역 ════ */}
         <div
           style={{
@@ -961,7 +931,6 @@ export default function S01_Main() {
             background: '#e5dfc8',
           }}
         />
-      </div>
-    </div>
+    </PageLayout>
   );
 }

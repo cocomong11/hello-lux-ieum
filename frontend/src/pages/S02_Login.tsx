@@ -1,21 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRole, roleHome } from '../utils/role';
+import PageLayout from '../components/common/PageLayout';
 
 export default function S02_Login() {
   const navigate = useNavigate();
-  const [scale, setScale] = useState(1);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [autoLogin, setAutoLogin] = useState(false);
-
-  useEffect(() => {
-    const update = () => setScale(window.innerWidth / 1920);
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
 
   const inputBase: React.CSSProperties = {
     position: 'absolute',
@@ -46,27 +39,7 @@ export default function S02_Login() {
   };
 
   return (
-    <div
-      style={{
-        width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
-        background: '#f8f9fa',
-      }}
-    >
-      <div
-        style={{
-          width: 1920,
-          height: 1080,
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          transformOrigin: 'top left',
-          transform: `scale(${scale})`,
-          background: '#f8f9fa',
-          fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
-        }}
-      >
+    <PageLayout canvasHeight={1080}>
         {/* Title */}
         <p
           style={{
@@ -341,7 +314,6 @@ export default function S02_Login() {
             회원가입 하기
           </span>
         </p>
-      </div>
-    </div>
+    </PageLayout>
   );
 }
