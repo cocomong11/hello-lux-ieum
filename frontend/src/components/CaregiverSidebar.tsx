@@ -29,7 +29,7 @@ const MENUS = [
   { title: '연계 알림',   path: '/cargiver-alerm'  },
 ];
 
-const SUB_MENUS = ['가족', '지인', '장소', '음식', '노래', '인생 사건'];
+const SUB_MENUS = ['가족', '지인', '장소', '음식', '인생 사건'];
 
 const MENU_TOPS = [361, 450, 539, 628];
 
@@ -258,7 +258,7 @@ export default function CaregiverSidebar({ patient }: Props) {
                       onClick={e => { e.stopPropagation(); navigate(`/cargiver-update?category=${sub}`); }}
                       style={{
                         fontFamily: 'Pretendard Variable',
-                        fontSize: 19,
+                        fontSize: 22,
                         fontWeight: currentCategory === sub ? 700 : 400,
                         color: currentCategory === sub ? 'var(--color-neutral-100)' : 'var(--color-neutral-100)',
                         cursor: 'pointer',
