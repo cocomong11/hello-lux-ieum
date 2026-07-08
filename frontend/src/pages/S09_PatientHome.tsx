@@ -25,54 +25,61 @@ export default function S09_PatientHome() {
         {/* ─── 인사말 ─── */}
         <p
           style={{
-            ...F,
             position: 'absolute',
-            left: 636,
-            top: 135,
-            margin: 0,
-            fontSize: 36,
-            fontWeight: 700,
-            lineHeight: 1.35,
-            color: '#0d0d0d',
-            whiteSpace: 'nowrap',
+            left: 636,         
+            top: 135,          
+            width: 648,        
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',    
+            textAlign: 'center',     
           }}
         >
-          안녕하세요, 홍길동님
-        </p>
+          {/* 첫 번째 줄: 인사말 */}
+          <p
+            style={{
+              ...F,
+              margin: 0,
+              fontSize: 36,
+              fontWeight: 700,
+              lineHeight: 1.35,
+              color: '#0d0d0d',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            안녕하세요, 홍길동님!🖐️
+          </p>
 
-        <p
-          style={{
-            ...F,
-            position: 'absolute',
-            left: 636,
-            top: 193,
-            margin: 0,
-            fontSize: 22,
-            fontWeight: 400,
-            lineHeight: 1.55,
-            color: '#4188ed',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          오늘도 천천히 듣고 말하면서 기억을 떠올려볼까요?
-        </p>
+          {/* 두 번째 줄: 안내 문구 */}
+          <p
+            style={{
+              ...F,
+              margin: '22px 0 0',
+              fontSize: 22,
+              fontWeight: 400,
+              lineHeight: 1.55,
+              color: '#4188ed',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            오늘도 천천히 듣고 말하면서 기억을 떠올려볼까요?
+          </p>
 
-        <p
-          style={{
-            ...F,
-            position: 'absolute',
-            left: 636,
-            top: 236,
-            margin: 0,
-            fontSize: 22,
-            fontWeight: 400,
-            lineHeight: 1.55,
-            color: '#797980',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {todayStr()}
-        </p>
+          {/* 三 번째 줄: 오늘 날짜 */}
+          <p
+            style={{
+              ...F,
+              margin: '21px 0 0',
+              fontSize: 22,
+              fontWeight: 400,
+              lineHeight: 1.55,
+              color: '#797980',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {todayStr()}
+          </p>
+        </div>
 
         {/* ─── 오늘의 두뇌 활동 ─── */}
         <p
@@ -100,12 +107,12 @@ export default function S09_PatientHome() {
             top: 419,
             width: 648,
             height: 241,
-            background: 'rgba(65,136,237,0.05)',
-            border: '1px solid #4188ed',
+            border: '1px solid #4188ed', 
             borderRadius: 10,
-            boxShadow: '0 0 4px rgba(65,136,237,0.45)',
+            boxShadow:  '0px 0px 4px 0px #4188ED',
             padding: '28px 29px',
             boxSizing: 'border-box',
+            background: 'linear-gradient(0deg, rgba(65, 136, 237, 0.05), rgba(65, 136, 237, 0.05)), linear-gradient(180deg, rgba(32, 115, 232, 0.2) 0%, rgba(223, 223, 135, 0.2) 100%)',
           }}
         >
           <p
@@ -134,7 +141,7 @@ export default function S09_PatientHome() {
             건강 체크 → 음성 퀴즈 → 회상 활동 → 그림/노래 활동
           </p>
 
-          {/* 우측 작은 원형 버튼 */}
+          {/* 우측 작은 원형 뱃지 동적 변경 ─── */}
           <button
             onClick={() => navigate('/mypage')}
             style={{
@@ -142,24 +149,26 @@ export default function S09_PatientHome() {
               position: 'absolute',
               top: 31,
               right: 29,
-              width: 70,
-              height: 70,
+              width: 72, 
+              height: 72,
               borderRadius: '50%',
-              background: '#f8f9fa',
-              border: '1px solid #4188ed',
-              color: '#797980',
-              fontSize: 16,
-              fontWeight: 700,
+              background: isCompleted ? '#DFDF87' : '#D9D9D9',
+              border: '1.2px solid #0F66E2',
+              borderStyle: isCompleted ? 'solid' : 'dashed', 
               cursor: 'pointer',
-              boxShadow: '0 0 4px rgba(65,136,237,0.35)',
+              fontSize: 19,
+              fontWeight: 700,
+              color: isCompleted ? '#0F66E2' : '#0D0D0D',
+              boxShadow: '0px 0px 2.4px 0px #0F66E2', 
             }}
           >
-            마이룸
+            {isCompleted ? '완료!' : '미완료'}
           </button>
 
           {/* 활동 시작하기 버튼 */}
           <button
-            onClick={() => navigate('/patient-activity')}
+            disabled={isCompleted} 
+            onClick={() => !isCompleted && navigate('/patient-check')}
             style={{
               ...F,
               position: 'absolute',
@@ -167,14 +176,14 @@ export default function S09_PatientHome() {
               bottom: 28,
               width: 590,
               height: 81,
-              background: '#0f66e2',
-              border: 'none',
               borderRadius: 50,
-              cursor: 'pointer',
+              cursor: isCompleted ? 'default' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 0 4px rgba(65,136,237,0.45)',
+              border: isCompleted ? '1px solid #0D0D0D' : 'none',
+              boxShadow: isCompleted ? '0px 0px 4px 0px #0D0D0D' : '0px 0px 4px 0px #4188ED',
+              background: isCompleted ? '#0D0D0D' : '#0f66e2',
             }}
           >
             <span
@@ -186,7 +195,7 @@ export default function S09_PatientHome() {
                 color: '#f8f9fa',
               }}
             >
-              활동 시작하기
+              {isCompleted ? '오늘 활동 완료' : '활동 시작하기'}
             </span>
           </button>
         </div>
@@ -209,22 +218,22 @@ export default function S09_PatientHome() {
           오늘 이만큼 했어요
         </p>
 
-        {/* ─── 통계 카드 3개 ─── */}
+        {/* ─── 통계 카드 3개 (라벨 위 / 내용 아래 변경 적용) ─── */}
         {[
           {
+            label: isCompleted ? '오늘의 건강 상태' : '건강 상태',
             left: 636,
-            value: '-',
-            label: '오늘 크기',
+            value: '-', 
           },
           {
+            label: '진행한 활동',
             left: 856,
-            value: '0 / 5',
-            label: '완료',
+            value: isCompleted ? '5 / 5' : '0 / 5', 
           },
           {
+            label: '성공률',
             left: 1076,
-            value: '-',
-            label: '설명',
+            value: isCompleted ? '100%' : '-', 
           },
         ].map((stat) => (
           <div
@@ -235,30 +244,22 @@ export default function S09_PatientHome() {
               top: 782,
               width: 208,
               height: 124,
-              background: '#f8f9fa',
+              background: '#D9D9D933',
               border: '1px solid #797980',
+              boxShadow: '0px 0px 4px 0px #797980',
               borderRadius: 10,
               boxSizing: 'border-box',
               padding: '20px 22px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between', 
             }}
           >
+            {/* 라벨이 위로 이동 */}
             <p
               style={{
                 ...F,
                 margin: 0,
-                fontSize: 22,
-                fontWeight: 700,
-                lineHeight: 1.35,
-                color: '#0d0d0d',
-              }}
-            >
-              {stat.value}
-            </p>
-
-            <p
-              style={{
-                ...F,
-                margin: '14px 0 0',
                 fontSize: 16,
                 fontWeight: 400,
                 lineHeight: 1.55,
@@ -267,12 +268,26 @@ export default function S09_PatientHome() {
             >
               {stat.label}
             </p>
+
+            {/* 내용(값)이 아래로 이동 */}
+            <p
+              style={{
+                ...F,
+                margin: 0,
+                fontSize: 22,
+                fontWeight: 700,
+                lineHeight: 1.35,
+                color: isCompleted ? '#0d0d0d' : '#797980'
+              }}
+            >
+              {stat.value}
+            </p>
           </div>
         ))}
 
         {/* ─── 하단 버튼: 이전 결과 보기 ─── */}
         <button
-          onClick={() => navigate('/patient-results')}
+          onClick={() => navigate('/patient-result')}
           style={{
             ...F,
             position: 'absolute',
@@ -282,6 +297,7 @@ export default function S09_PatientHome() {
             height: 70,
             background: '#f8f9fa',
             border: '1px solid #797980',
+            boxShadow: '0px 0px 4px 0px #4188ED',
             borderRadius: 50,
             cursor: 'pointer',
             display: 'flex',
@@ -298,11 +314,11 @@ export default function S09_PatientHome() {
               color: '#0d0d0d',
             }}
           >
-            이전 결과 보기
+             이전 결과 보기
           </span>
         </button>
 
-        {/* ─── 하단 버튼: 내 여정 보러가기 ─── */}
+        {/* ─── 하단 버튼: 내 연동 코드 보기 ─── */}
         <button
           onClick={() => navigate('/patient-journey')}
           style={{
@@ -312,7 +328,7 @@ export default function S09_PatientHome() {
             top: 966,
             width: 315,
             height: 70,
-            background: '#0f66e2',
+            background: '#0D0D0D',
             border: 'none',
             borderRadius: 50,
             cursor: 'pointer',
@@ -331,7 +347,7 @@ export default function S09_PatientHome() {
               color: '#f8f9fa',
             }}
           >
-            내 여정 보러가기
+            내 연동 코드 보기
           </span>
         </button>
     </PageLayout>

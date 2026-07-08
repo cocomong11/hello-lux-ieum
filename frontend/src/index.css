@@ -17,3 +17,6 @@
   --color-secondary: #dfdf87;
   --color-tertiary: #f5383b;
 }
+body {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+}
