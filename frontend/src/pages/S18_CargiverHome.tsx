@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CaregiverSidebar from '../components/CaregiverSidebar';
+import redEmark from '../assets/redEmark.svg';
 
 const DESIGN_W = 1920;
 const DESIGN_H = 1246;
@@ -136,8 +137,8 @@ export default function S18_CargiverHome() {
             {/* 경고 아이콘 */}
             <div
               style={{
-                width: 44,
-                height: 44,
+                width: 62,
+                height: 62,
                 borderRadius: 60,
                 border: '2px solid #E53134',
                 background: 'var(--Neutral-100, #F8F9FA)',
@@ -147,15 +148,15 @@ export default function S18_CargiverHome() {
                 flexShrink: 0,
               }}
             >
-              <span style={{ ...F, fontSize: 22, fontWeight: 700, color: '#E53134' }}>!</span>
+               <img src={redEmark} alt="경고" style={{ width: 44, height: 44, flexShrink: 0, aspectRatio: 1/1 }} />
             </div>
 
             {/* 텍스트 */}
             <div style={{ flex: 1 }}>
-              <p style={{ ...F, margin: 0, fontSize: 30, fontWeight: 700, color: 'var(--Tertiary-80, #E53134)', lineHeight: '140%' }}>
+              <p style={{ ...F, margin: 0, fontSize: 30, fontWeight: 700, lineHeight: '140%',color: '#E53134', lineHeight: '140%' }}>
                 확인 필요 알림
               </p>
-              <p style={{ ...F, margin: '6px 0 0', fontSize: 18, fontWeight: 400, color: '#797980' }}>
+              <p style={{ ...F, margin: '6px 0 0', fontSize: 22, fontWeight: 400, lineHeight: '155%',color: 'var(--color-neutral-10)' }}>
                 반복 발화와 불안 반응이 기록되었습니다. 보호자 확인이 필요합니다.
               </p>
             </div>
