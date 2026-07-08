@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PageLayout from '../components/common/PageLayout';
+import Header from '../components/patientHeader';
 
+const DESIGN_W = 1920;
 const DESIGN_H = 1171;
 
 const F: CSSProperties = {
@@ -19,11 +21,62 @@ function todayStr() {
 
 export default function S09_PatientHome() {
   const navigate = useNavigate();
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [scale, setScale] = useState(1);
+
+  // 완료 여부 확인
+  useEffect(() => {
+    const completedStatus = sessionStorage.getItem('todayActivityCompleted');
+    if (completedStatus === 'true') {
+      setIsCompleted(true);
+      sessionStorage.removeItem('todayActivityCompleted');
+    } 
+  }, []);
+
+  useEffect(() => {
+    const update = () => {
+      const nextScale = Math.min(
+        window.innerWidth / DESIGN_W,
+        window.innerHeight / DESIGN_H,
+        1,
+      );
+
+      setScale(nextScale);
+    };
+
+    update();
+    window.addEventListener('resize', update);
+
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   return (
-    <PageLayout canvasHeight={DESIGN_H}>
-        {/* ─── 인사말 ─── */}
-        <p
+    <div
+      style={{
+        position: 'relative',
+        width: '100vw',
+        height: '100vh',
+        overflow: 'hidden',
+        background: '#f8f9fa',
+      }}
+    >
+      <div
+        style={{
+          width: DESIGN_W,
+          height: DESIGN_H,
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transformOrigin: 'top center',
+          transform: `translateX(-50%) scale(${scale})`,
+          background: '#f8f9fa',
+          ...F,
+        }}
+      >
+        <Header />
+        
+        {/* ─── 인사말 및 날짜 영역 (가운데 정렬) ─── */}
+        <div
           style={{
             position: 'absolute',
             left: 636,         
@@ -350,6 +403,7 @@ export default function S09_PatientHome() {
             내 연동 코드 보기
           </span>
         </button>
-    </PageLayout>
+      </div>
+    </div>
   );
 }

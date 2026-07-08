@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import logoSrc from '../../assets/images/S-01/Group 15.png';
+import logoSrc from '../../assets/images/S-01/Group15.png';
 
 const HEADER_HEIGHT = 68;
 

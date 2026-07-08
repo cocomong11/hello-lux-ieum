@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/doctorHeader';
+import Header from '../components/DoctorHeader';
+
+const DESIGN_W = 1920;
+const DESIGN_H = 1080;
 
 export default function S23_DoctorHome() {
   const navigate = useNavigate();
