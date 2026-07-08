@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import CaregiverSidebar from '../components/CaregiverSidebar';
 
 const DESIGN_W = 1920;
@@ -17,6 +17,8 @@ const F: React.CSSProperties = {
 
 export default function S21_CargiverUpdate() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const category = searchParams.get('category') || '가족';
   const [scale, setScale] = useState(1);
   const patient = DUMMY_PATIENT;
 
@@ -82,7 +84,12 @@ export default function S21_CargiverUpdate() {
           </div>
 
           {/* 메인 */}
-          <div>기억 DB 수정 내용</div>
+          <div style={{ position: 'absolute', left: 636, top: 144 }}>
+            <p style={{ fontSize: 30, fontWeight: 700, color: '#0D0D0D', margin: 0, lineHeight:'140%' }}>
+              {category} 정보 수정
+            </p>
+            
+          </div>
         </div>
       </div>
     </div>
