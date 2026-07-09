@@ -175,7 +175,7 @@ export default function S19_CargiverReport() {
               style={{ ...F, color: 'var(--color-neutral-gray)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700 }}>
               홈
             </button>
-            <button onClick={() => navigate('/cargiver-mypage')}
+            <button onClick={() => navigate('/mypage')}
               style={{ ...F, color: 'var(--color-neutral-gray)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700 }}>
               마이페이지
             </button>
