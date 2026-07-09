@@ -7,7 +7,7 @@ type Props = {
   patient: {
     name: string;
     birth_date: string; // "YYYY-MM-DD"
-    level: string;
+    dignosis: string;
   } | null;
 };
 //나이 계산 함수
@@ -162,7 +162,7 @@ export default function CaregiverSidebar({ patient }: Props) {
             margin: 0,
           }}
         >
-          {patient.level}
+          {patient.dignosis}
         </p>
       </div>
 

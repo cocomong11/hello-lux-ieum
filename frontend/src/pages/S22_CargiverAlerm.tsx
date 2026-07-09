@@ -14,7 +14,7 @@ const F: React.CSSProperties = {
 const DUMMY_PATIENT = {
   name: '홍길동',
   birth_date: '1950-01-01',
-  level: '경도인지장애',
+  dignosis: '경도인지장애',
 };
 
 const RELATED_DATA = [
