@@ -15,6 +15,11 @@ import S13_RecallVoiceChat from '../pages/S13_RecallVoiceChat'
 import S14_DrawingCognitiveActivity from '../pages/S14_DrawAlong'
 
 import S17_ActivityReport from '../pages/S17_ActivityResult'
+import S18_CargiverHome from '../pages/S18_CargiverHome'
+import S19_CargiverReport from '../pages/S19_CargiverReport'
+import S20_CargiverMemo from '../pages/S20_CargiverMemo'
+import S21_CargiverUpdate from '../pages/S21_CargiverUpdate'
+import S22_CargiverAlerm from '../pages/S22_CargiverAlerm'
 import S27_MyPage       from '../pages/S27_MyPage'
 
 
@@ -50,6 +55,16 @@ const router = createBrowserRouter([
 
   // ── 보호자 흐름───────────────────────────────────────────
   
+  { path: '/cargiver-home', element: <S18_CargiverHome />},
+
+  // ── 계정 ───────────────────────────────────────────
+  { path: '/cargiver-mypage',        element: <S27_MyPage /> },
+
+  // ── 보호자 흐름───────────────────────────────────────────
+  { path: '/cargiver-report', element: <S19_CargiverReport />},
+  { path: '/cargiver-memo', element: <S20_CargiverMemo />},
+  { path: '/cargiver-update', element: <S21_CargiverUpdate />},
+  { path: '/cargiver-alerm', element: <S22_CargiverAlerm />},
 ])
 
 export default router
