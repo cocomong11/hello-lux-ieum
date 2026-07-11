@@ -95,6 +95,8 @@ export default function S13_RecallVoiceChat() {
             hintCount={hintCount}
             placeholder="“마이크를 눌러 장소와 관련된 추억을 말씀해 주세요”"
             onSuccessSubmit={(finalDuration) => console.log('13페이지 소요시간:', finalDuration)}
+            resultTitle="대화 완료!"
+            resultDescription="멋진 이야기예요!"
           />
 
           {/* 하단 내비게이션 바 */}

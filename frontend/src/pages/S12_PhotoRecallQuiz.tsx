@@ -96,6 +96,8 @@ export default function S12_PhotoRecallQuiz() {
           hintCount={hintCount}
           placeholder="“우리 아들 민수”"
           onSuccessSubmit={(finalDuration) => console.log('12페이지 소요시간:', finalDuration)}
+          resultTitle="회상 성공!"
+          resultDescription="좋아요! 아드님 이름을 잘 기억해 내셨어요."
         />
 
         {/* 글로벌 내비게이션 하단 제어 버블 바 */}

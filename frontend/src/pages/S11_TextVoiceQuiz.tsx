@@ -68,6 +68,8 @@ export default function S11_TextVoiceQuiz() {
           onHintClick={handleHintClick}
           hintCount={hintCount}
           placeholder="“오월 이십육일이요.”"
+          resultTitle="정답입니다!"
+          resultDescription="잘하셨어요! 질문에 정확히 답변해 주셨어요."
           onSuccessSubmit={(finalDuration) => console.log('소요시간:', finalDuration)}
         />
 
