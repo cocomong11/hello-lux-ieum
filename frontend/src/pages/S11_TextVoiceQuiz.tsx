@@ -76,7 +76,7 @@ export default function S11_TextVoiceQuiz() {
         {/* 하단 액션 버튼 그룹 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '40px' }}>
           <button
-            onClick={() => {}}
+            onClick={() =>  navigate('/patient-home')}
             style={{
               width: '121px', height: '59px', borderRadius: '50px', backgroundColor: '#0D0D0D',
               border: 'none', boxShadow: '0px 0px 4px 0px #4188ED',

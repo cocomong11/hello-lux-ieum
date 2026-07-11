@@ -102,7 +102,9 @@ export default function S12_PhotoRecallQuiz() {
 
         {/* 글로벌 내비게이션 하단 제어 버블 바 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '40px' }}>
-          <button style={{
+          <button 
+            onClick={() =>  navigate('/patient-home')}
+            style={{
             width: '121px', height: '59px', borderRadius: '50px', backgroundColor: '#0D0D0D',
             border: 'none', boxShadow: '0px 0px 4px 0px #4188ED',
             fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '18px', color: '#FFFFFF', cursor: 'pointer'
