@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/DoctorSidebar';
+import polygon from '../assets/Polygon 2.svg';
 
 const DESIGN_W = 1920;
 const DESIGN_H = 3385;
@@ -101,11 +102,11 @@ const PATIENTS_DB: Record<number, {
       { label: '주의·계산', value: 45 },
       { label: '시공간 구성', value: 32 },
     ],
-    dailyScores: { 1: 52, 5: 48, 10: 55, 15: 50, 20: 52, 24: 52 },
+    dailyScores: { 1: 30, 5: 28, 10: 35, 15: 30, 20: 32, 24: 30 },
     stats: [
       { label: '활동 완료 여부', value: '미완료' },
       { label: '진행한 활동', value: '2 / 5' },
-      { label: '성공률', value: '52%' },
+      { label: '성공률', value: '30%' },
       { label: '힌트 사용', value: '5회' },
     ],
     memo: '운동 병행 권고. 다음 검사 예정.',
@@ -114,19 +115,6 @@ const PATIENTS_DB: Record<number, {
 
 const MONTHS = ['12월', '1월', '2월', '3월', '4월', '5월'];
 const RATE_COLORS = ['#4188ED', '#797980', '#27AE60', '#F5A623', '#8E8E98'];
-
-function getDayColor(score: number | undefined): string {
-  if (!score) return 'transparent';
-  if (score > 70) return '#0F66E2';
-  if (score > 40) return '#DFDF87';
-  return '#E53134';
-}
-
-function getDayTextColor(score: number | undefined): string {
-  if (!score) return '#0D0D0D';
-  if (score > 70) return '#F8F9FA';
-  return '#0D0D0D';
-}
 
 export default function S24_DoctorDashboard() {
   const navigate = useNavigate();
@@ -138,6 +126,8 @@ export default function S24_DoctorDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('6개월');
   const [dailyPeriod, setDailyPeriod] = useState('3개월');
   const [selectedDay, setSelectedDay] = useState(26);
+  const [calYear, setCalYear] = useState(2026);
+  const [calMonth, setCalMonth] = useState(5);
 
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
@@ -158,8 +148,8 @@ export default function S24_DoctorDashboard() {
     dignosis: patientData.dignosis,
     support_level: patientData.support_level,
     recentKMMSE: patientData.recentKMMSE || undefined,
-    kmmseScore: '22/30',
-    kmmseRange: '경도인지장애 범위',
+    kmmseScore: pCode === 1001 ? '22/30' : pCode === 1002 ? '17/30' : '23/30',
+    kmmseRange: pCode === 1002 ? '초기 치매 범위' : '경도인지장애 범위',
     stats: {
       activity: `완료 (${patientData.stats.find(s => s.label === '진행한 활동')?.value || '0/0'})`,
       rate: patientData.stats.find(s => s.label === '성공률')?.value || '0%',
@@ -173,9 +163,9 @@ export default function S24_DoctorDashboard() {
     setTimeout(() => setSavedMsg(false), 2000);
   };
 
-  // 달력 데이터
-  const daysInMonth = 31;
-  const startDayOfWeek = 3; // 2026년 5월 1일 = 금요일 → 0-indexed: 금=5? Let's use 4 (목)
+  // 달력 데이터 (동적)
+  const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+  const startDayOfWeek = (new Date(calYear, calMonth - 1, 1).getDay() + 6) % 7; // 월=0
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: DESIGN_H * scale, overflowX: 'hidden', background: 'var(--color-neutral-100)' }}>
@@ -296,122 +286,253 @@ export default function S24_DoctorDashboard() {
 
             {/* ── 일일 리포트 ── */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '102px 0 0' }}>
-              <p style={{ ...F, display: 'inline-flex', fontSize: 30, fontWeight: 700, color: '#0D0D0D', margin: 0 }}>일일 리포트</p>
+              <p style={{ ...F, display: 'inline-flex', fontSize: 30, fontWeight: 700, color: 'var(--color-neutral-10)', lineHeight: '140%' }}>일일 리포트</p>
               <p style={{
                 ...F, display: 'inline-flex', height: 42, padding: '10px 20px', justifyContent: 'center', alignItems: 'center',
-                borderRadius: 50,
-                background: 'var(--color-neutral-gray)',
+                borderRadius: 50,background: 'var(--color-neutral-gray)',
                 fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-100)', margin: 0,
               }}>점수 + 상태</p>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 16 }}>
                 {['7일', '30일', '3개월', '직접입력'].map(p => (
                   <button key={p} onClick={() => setDailyPeriod(p)} style={{
-                    ...F, padding: '6px 19px', borderRadius: 10,
+                    fontFamily: "Pretendard Variable", padding: '6px 19px', borderRadius: 10,
                     border: p === dailyPeriod ? '1px solid #DFDF87' : '1px solid var(--color-neutral-60)',
                     background: p === dailyPeriod ? 'var(--color-primary-dark)' : '#F8F9FA',
                     boxShadow: p === dailyPeriod ? '0 0 4px 0 #4188ED' : '0 0 4px 0 #797980',
                     color: p === dailyPeriod ? '#F8F9FA' : '#797980',
-                    fontSize: 16, fontWeight: 700, cursor: 'pointer',
+                    fontSize: 22, fontWeight: 400, cursor: 'pointer',
                   }}>{p}</button>
                 ))}
               </div>
             </div>
 
             {/* 시작일 / 종료일 */}
-            <div style={{ display: 'flex', gap: 16, margin: '20px 0 20px' }}>
+            <div style={{ display: 'flex', gap: 50,margin: '28px 0 20px' }}>
               <div style={{
-                flex: 1, padding: '14px 24px', borderRadius: 10,
-                border: '1px solid #8E8E98', background: '#F8F9FA',
+                flex: 1, padding: '19px 122px',borderRadius: 10,
+                border: '1px solid var(--color-neutral-60)', background: 'var(--color-neutral-100)',
                 boxShadow: '0 0 4px 0 #797980',
-                display: 'flex', alignItems: 'center', gap: 12,
+                display: 'flex',justifyContent: 'center', alignItems: 'center',
               }}>
-                <span style={{ ...F, fontSize: 18, fontWeight: 400, color: '#797980' }}>시작일</span>
-                <span style={{ ...F, fontSize: 18, fontWeight: 700, color: '#0D0D0D' }}>2026. 05. 01</span>
+                <span style={{ ...F, margin: '0 10px 0 0', fontSize: 22, fontWeight: 400, color: 'var(--color-neutral-gray)' }}>시작일</span>
+                <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>2026. 05. 01</span>
               </div>
               <div style={{
-                flex: 1, padding: '14px 24px', borderRadius: 10,
-                border: '1px solid #8E8E98', background: '#F8F9FA',
+                flex: 1, padding: '19px 123px', borderRadius: 10,
+                border: '1px solid var(--color-neutral-60)', background: 'var(--color-neutral-100)',
                 boxShadow: '0 0 4px 0 #797980',
-                display: 'flex', alignItems: 'center', gap: 12,
+                display: 'flex', justifyContent: 'center', alignItems: 'center',
               }}>
-                <span style={{ ...F, fontSize: 18, fontWeight: 400, color: '#797980' }}>종료일</span>
-                <span style={{ ...F, fontSize: 18, fontWeight: 700, color: '#0D0D0D' }}>2026. 05. 31</span>
+                <span style={{ ...F, fontSize: 22,  margin: '0 10px 0 0', fontWeight: 400, color: 'var(--color-neutral-gray)' }}>종료일</span>
+                <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>2026. 05. 31</span>
               </div>
             </div>
 
             {/* 기간 통계 카드 */}
-            <div style={{ display: 'flex', gap: 16, marginBottom: 30 }}>
+            {(() => {
+              const today = new Date();
+              const todayDate = (calYear === today.getFullYear() && calMonth === today.getMonth() + 1)
+                ? today.getDate() : daysInMonth;
+              const scores = Object.entries(patientData.dailyScores)
+                .filter(([d]) => Number(d) <= todayDate)
+                .map(([, v]) => v);
+              const recordDays = scores.length;
+              const cautionDays = scores.filter(s => s <= 40).length;
+              const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+
+              return (
+            <div style={{ display: 'flex', gap: 24, marginBottom: 60 }}>
               {[
-                { label: '기간 평균 점수', value: '62%', color: '#0D0D0D' },
-                { label: '기록 일수', value: '21 / 31일', color: '#0D0D0D' },
-                { label: '주의 일수', value: '3일', color: '#E53134' },
+                { label: '기간 평균 점수', value: `${avgScore}%`, color: 'var(--color-neutral-10)' },
+                { label: '기록 일수', value: `${recordDays} / ${todayDate}일`, color: 'var(--color-neutral-10)' },
+                { label: '주의 일수', value: `${cautionDays}일`, color: '#E53134' },
               ].map(stat => (
                 <div key={stat.label} style={{
-                  width: 296, height: 100, borderRadius: 10,
-                  border: '1px solid #8E8E98', background: 'rgba(65,136,237,0.05)',
-                  boxShadow: '0 0 4px 0 rgba(65,136,237,0.35)',
-                  padding: '16px 24px', boxSizing: 'border-box',
+                  width: 296, height: 124, borderRadius: 10,
+                  border: '1px solid var(--color-neutral-60)', background: 'rgba(65,136,237,0.05)',
+                  boxShadow: '0 0 4px 0 #4188ED',
+                  padding: '19px 0 20px 29px ', justifyContent:'center',alignItems:'flex-start',flexDirection:'column'
                 }}>
-                  <p style={{ ...F, margin: 0, fontSize: 16, fontWeight: 400, color: '#797980' }}>{stat.label}</p>
-                  <p style={{ ...F, margin: '6px 0 0', fontSize: 30, fontWeight: 700, color: stat.color }}>{stat.value}</p>
+                  <p style={{ ...F, margin: 0, fontSize: 22, fontWeight: 400, color: 'var(--color-neutral-10)' }}>{stat.label}</p>
+                  <p style={{ ...F, margin: 0, fontSize: 36, fontWeight: 700, color: stat.color }}>{stat.value}</p>
                 </div>
               ))}
             </div>
+              );
+            })()}
 
             {/* 달력 */}
-            <p style={{ ...F, fontSize: 18, fontWeight: 700, color: '#0D0D0D', margin: '0 0 12px' }}>◀ 2026년 5월 ▶</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, width: 936, marginBottom: 30 }}>
-              {['월', '화', '수', '목', '금', '토', '일'].map(d => (
-                <div key={d} style={{ ...F, textAlign: 'center', fontSize: 14, fontWeight: 700, color: '#797980', padding: '8px 0' }}>{d}</div>
-              ))}
-              {Array.from({ length: startDayOfWeek }).map((_, i) => (
-                <div key={`empty-${i}`} />
-              ))}
-              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
-                const score = patientData.dailyScores[day];
-                const bg = getDayColor(score);
-                const textColor = getDayTextColor(score);
-                return (
-                  <div
-                    key={day}
-                    onClick={() => setSelectedDay(day)}
-                    style={{
-                      textAlign: 'center', padding: '12px 0',
-                      borderRadius: 6,
-                      background: bg,
-                      color: textColor,
-                      fontSize: 16, fontWeight: selectedDay === day ? 700 : 400,
-                      cursor: 'pointer',
-                      border: selectedDay === day ? '2px solid #0D0D0D' : '1px solid transparent',
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    {day}
-                    {score && <div style={{ fontSize: 12, fontWeight: 700 }}>{score}%</div>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 16px 20px 16px' }}>
+              {/* ◀ 이전 */}
+              <div
+                onClick={() => {
+                  if (calMonth === 1) { setCalMonth(12); setCalYear(y => y - 1); }
+                  else { setCalMonth(m => m - 1); }
+                  setSelectedDay(1);
+                }}
+                style={{
+                  display: 'inline-flex', padding: '6px 19px', alignItems: 'center',
+                  borderRadius: 10, border: '1px solid #0D0D0D', background: 'var(--color-neutral-100)', cursor: 'pointer',
+                }}
+              >
+                <img src={polygon} alt="◀" style={{ width: 15, height: 15, transform: 'rotate(90deg)', aspectRatio: 1/1 }} />
+              </div>
+
+              {/* 년월 텍스트 */}
+              <span style={{ ...F, fontSize: 22, fontWeight: 700, color: '#0D0D0D' }}>{calYear}년 {calMonth}월</span>
+
+              {/* ▶ 다음 */}
+              <div
+                onClick={() => {
+                  if (calMonth === 12) { setCalMonth(1); setCalYear(y => y + 1); }
+                  else { setCalMonth(m => m + 1); }
+                  setSelectedDay(1);
+                }}
+                style={{
+                  display: 'inline-flex', padding: '6px 19px', alignItems: 'center',
+                  borderRadius: 10, border: '1px solid #0D0D0D', background: 'var(--color-neutral-100)', cursor: 'pointer',
+                }}
+              >
+                <img src={polygon} alt="▶" style={{ width: 15, height: 15, transform: 'rotate(-90deg)',aspectRatio: 1/1 }} />
+              </div>
+              {/*날짜 클릭 시 일별 상세 보기*/}
+              <div style={{color:'var(--color-neutral-gray)', textAlign: 'right', fontSize: 22, fontWeight: 400, lineHeight: '155%'}}>날짜 클릭 시 일별 상세 보기</div>
+            </div>
+            {/*달력 */}
+            <div style={{
+              width: 936,
+              borderRadius: 10,
+              border: '1px solid #8E8E98',
+              background: 'linear-gradient(180deg, rgba(223,223,135,0.20) 0%, rgba(248,249,250,0.20) 100%), rgba(65,136,237,0.05)',
+              boxShadow: '0 0 4px 0 #4188ED',
+              padding: '20px 24px',
+              boxSizing: 'border-box',
+              marginBottom: 30,
+            }}>
+              {/* 요일 헤더 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 112px)', columnGap: 17, justifyContent: 'center', marginBottom: 20 }}>
+                {['월', '화', '수', '목', '금', '토', '일'].map((d, i) => (
+                  <div key={d} style={{
+                    ...F, textAlign: 'center', fontSize: 22, fontWeight: 700, lineHeight: '155%',
+                    color: i === 5 ? '#0F66E2' : i === 6 ? '#E53134' : '#0D0D0D',
+                    letterSpacing: 5,
+                  }}>{d}</div>
+                ))}
+              </div>
+
+              {/* 날짜 그리드 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 112px)', rowGap: 20, columnGap: 17, justifyContent: 'center' }}>
+                {Array.from({ length: startDayOfWeek }).map((_, i) => (
+                  <div key={`empty-${i}`} style={{ width: 112, height: 98 }} />
+                ))}
+                {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+                  // 마지막 기록일 이후는 날짜만 표시 (박스 없음)
+                  const maxRecordDay = Math.max(...Object.keys(patientData.dailyScores).map(Number), 0);
+                  const today = new Date();
+                  const isCurrentMonth = calYear === today.getFullYear() && calMonth === today.getMonth() + 1;
+                  const lastDay = isCurrentMonth ? today.getDate() : maxRecordDay;
+                  const isFuture = day > lastDay && lastDay > 0;
+
+                  if (isFuture) {
+                    return (
+                      <div key={day} style={{
+                        width: 112, height: 98, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start',
+                        paddingTop: 8, paddingLeft: 10,
+                      }}>
+                        <span style={{ fontFamily: '"Pretendard Variable"', fontSize: 16, fontWeight: 700, lineHeight: '165%', color: '#797980' }}>{day}</span>
+                      </div>
+                    );
+                  }
+
+                  const score = patientData.dailyScores[day];
+                  // 스타일 분기
+                  let bg: string, border: string, boxShadow: string, percentColor: string, dateColor: string;
+                  if (!score) {
+                    // 기록 없음
+                    bg = 'rgba(217,217,217,0.80)';
+                    border = '1px solid #8E8E98';
+                    boxShadow = 'none';
+                    percentColor = '#797980';
+                    dateColor = '#797980';
+                  } else if (score > 70) {
+                    // 높음
+                    bg = '#0F66E2';
+                    border = '1px solid #DFDF87';
+                    boxShadow = '0 0 4px 0 #4188ED';
+                    percentColor = '#F8F9FA';
+                    dateColor = '#F8F9FA';
+                  } else if (score > 40) {
+                    // 중간
+                    bg = '#DFDF87';
+                    border = '1px solid #0F66E2';
+                    boxShadow = '0 0 4px 0 #4188ED';
+                    percentColor = '#0D0D0D';
+                    dateColor = '#0D0D0D';
+                  } else {
+                    // 주의
+                    bg = 'rgba(229,49,52,0.05)';
+                    border = '1px solid #E53134';
+                    boxShadow = '0 0 4px 0 #4188ED';
+                    percentColor = '#E53134';
+                    dateColor = '#E53134';
+                  }
+
+                  return (
+                    <div
+                      key={day}
+                      onClick={() => setSelectedDay(day)}
+                      style={{
+                        width: 112, height: 98,
+                        borderRadius: 10,
+                        background: bg,
+                        border: selectedDay === day ? '3px solid #0D0D0D' : border,
+                        boxShadow,
+                        display: 'flex', flexDirection: 'column',
+                        alignItems: 'flex-start', justifyContent: 'flex-start',
+                        cursor: 'pointer',
+                        boxSizing: 'border-box',
+                        padding: '6px 0 0 8px',
+                        position: 'relative',
+                      }}
+                    >
+                      <span style={{ fontFamily: '"Pretendard Variable"', fontSize: 16, fontWeight: 700, lineHeight: '165%', color: dateColor }}>{day}</span>
+                      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 30, fontWeight: 700, lineHeight: '140%', color: percentColor, textAlign: 'center', width: '100%', position: 'absolute', top: '50%', left: 0, transform: 'translateY(-30%)' }}>
+                        {score ? `${score}%` : '-'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 범례 */}
+              <div style={{ display: 'flex', gap: 12, marginTop: 26, marginBottom: 19 }}>
+                {[
+                  { bg: '#0F66E2', border: '1px solid #DFDF87', boxShadow: '0 0 4px 0 #4188ED', label: '높음 (70% 이상)' },
+                  { bg: '#DFDF87', border: '1px solid #0F66E2', boxShadow: '0 0 4px 0 #4188ED', label: '중간 (40~69%)' },
+                  { bg: 'rgba(229,49,52,0.05)', border: '1px solid #E53134', boxShadow: '0 0 4px 0 #4188ED', label: '주의 (40% 미만)' },
+                  { bg: 'rgba(217,217,217,0.80)', border: '1px solid #8E8E98', boxShadow: 'none', label: '기록 없음' },
+                ].map(item => (
+                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 25, height: 25, borderRadius: 5, background: item.bg, border: item.border, boxShadow: item.boxShadow }} />
+                    <span style={{ ...F, fontSize: 16, fontWeight: 700, lineHeight: '165%', color: 'var(--color-neutral-gray)' }}>{item.label}</span>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '60px 0 34px' }}>
+              <p style={{ ...F, fontSize: 22, fontWeight: 700, color: '#0D0D0D', margin: 0 }}>선택 일자</p>
+              <div style={{
+                display: 'inline-flex', height: 42, padding: '10px 20px',
+                justifyContent: 'center', alignItems: 'center', gap: 10,
+                borderRadius: 50, border: '1px solid #0D0D0D', background: '#F8F9FA',
+              }}>
+                <span style={{ ...F, fontSize: 22, fontWeight: 700, color: '#0D0D0D' }}>
+                  {calYear}. {String(calMonth).padStart(2, '0')}. {String(selectedDay).padStart(2, '0')} {selectedDay === new Date().getDate() && calMonth === new Date().getMonth() + 1 && calYear === new Date().getFullYear() ? '(오늘)' : ''}
+                </span>
+              </div>
             </div>
 
-            {/* 범례 */}
-            <div style={{ display: 'flex', gap: 16, marginBottom: 30 }}>
-              {[
-                { color: '#0F66E2', label: '좋음 (70% 이상)' },
-                { color: '#DFDF87', label: '보통 (40~69%)' },
-                { color: '#E53134', label: '주의 (40% 미만)' },
-                { color: 'transparent', label: '기록 없음' },
-              ].map(item => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 16, height: 16, borderRadius: 3, background: item.color, border: '1px solid #8E8E98' }} />
-                  <span style={{ ...F, fontSize: 14, color: '#797980' }}>{item.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* 선택 일자 상세 */}
-            <p style={{ ...F, fontSize: 22, fontWeight: 700, color: '#0D0D0D', margin: '60px 0 34px' }}>
-              선택 일자 : 2026. 05. {selectedDay} {selectedDay === new Date().getDate() ? '(오늘)' : ''}
-            </p>
+            {/*선택일자 */}
             {patientData.dailyScores[selectedDay] ? (
               <div style={{
                 width: 936, height:203,paddingTop: '28px',paddingLeft: 29,borderRadius: 10,
@@ -425,14 +546,19 @@ export default function S24_DoctorDashboard() {
                   활동 5/5 수행 · 힌트 2회 사용
                 </p>
                 <div style={{ display: 'inline-flex', gap: 10, marginTop: 12 }}>
-                  {['건강 : 좋음', '수면 : 보통', '기분 : 안정', '반복 발화'].map(tag => (
+                  {['건강 : 좋음', '수면 : 보통', '기분 : 안정', '반복 발화'].map(tag => {
+                    const isGood = tag.includes('좋음') || tag.includes('안정');
+                    return (
                     <div key={tag} style={{
                       padding: '6px 19px', borderRadius: 10,
-                      background: '#DFDF87', border: '1px solid #0F66E2',
+                      border: isGood ? '1px solid #DFDF87' : '1px solid #0F66E2',
+                      background: isGood ? '#F8F9FA' : '#DFDF87',
+                      boxShadow: '0 0 4px 0 #4188ED',
                     }}>
-                      <span style={{ ...F, fontSize: 22, fontWeight: 700, color: '#0D0D0D' }}>{tag}</span>
+                      <span style={{ ...F, fontSize: 22, fontWeight: 700, lineHeight: '155%', color: isGood ? '#0F66E2' : '#0D0D0D', textAlign: 'center' }}>{tag}</span>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : (

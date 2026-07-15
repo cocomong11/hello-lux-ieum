@@ -106,7 +106,11 @@ export default function DoctorSidebar({ patient }: Props) {
         </p>
 
         <button
-          onClick={() => navigate('/doctor-level')}
+          onClick={() => {
+            const params = new URLSearchParams(location.search);
+            const pCode = params.get('p_code') || '1001';
+            navigate(`/doctor-level?p_code=${pCode}`);
+          }}
           style={{
             position: 'absolute', left: 55, top: 154,
             display: 'flex', alignItems: 'center', gap: 4,
