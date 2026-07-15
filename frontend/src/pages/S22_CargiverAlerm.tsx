@@ -14,7 +14,7 @@ const F: React.CSSProperties = {
 const DUMMY_PATIENT = {
   name: '홍길동',
   birth_date: '1950-01-01',
-  level: '경도인지장애',
+  dignosis: '경도인지장애',
 };
 
 const RELATED_DATA = [
@@ -75,10 +75,10 @@ export default function S22_CargiverAlerm() {
 
         <div style={{ marginLeft: 348 }}>
           {/* 헤더 */}
-          <div style={{ height: 67, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 24, paddingRight: 40 }}>
+          <div style={{ height: 67, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 24, paddingRight: 348 }}>
             <button onClick={() => navigate('/cargiver-home')}
               style={{ ...F, fontSize: 16, fontWeight: 700, color: 'var(--color-neutral-gray)', background: 'none', border: 'none', cursor: 'pointer' }}>홈</button>
-            <button onClick={() => navigate('/cargiver-mypage')}
+            <button onClick={() => navigate('/mypage')}
               style={{ ...F, fontSize: 16, fontWeight: 700, color: 'var(--color-neutral-gray)', background: 'none', border: 'none', cursor: 'pointer' }}>마이페이지</button>
           </div>
 
