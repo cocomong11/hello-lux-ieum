@@ -95,11 +95,15 @@ export default function S13_RecallVoiceChat() {
             hintCount={hintCount}
             placeholder="“마이크를 눌러 장소와 관련된 추억을 말씀해 주세요”"
             onSuccessSubmit={(finalDuration) => console.log('13페이지 소요시간:', finalDuration)}
+            resultTitle="대화 완료!"
+            resultDescription="멋진 이야기예요!"
           />
 
           {/* 하단 내비게이션 바 */}
           <div style={{ display: 'flex', justifyContent: 'space-between', width: '648px', marginTop: '40px' }}>
-            <button style={{
+            <button 
+              onClick={() =>  navigate('/patient-home')}
+              style={{
               width: '121px', height: '59px', borderRadius: '50px', backgroundColor: '#0D0D0D',
               border: 'none', boxShadow: '0px 0px 4px 0px #4188ED',
               fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '18px', color: '#FFFFFF', cursor: 'pointer'

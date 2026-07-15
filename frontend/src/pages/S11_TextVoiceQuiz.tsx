@@ -68,13 +68,15 @@ export default function S11_TextVoiceQuiz() {
           onHintClick={handleHintClick}
           hintCount={hintCount}
           placeholder="“오월 이십육일이요.”"
+          resultTitle="정답입니다!"
+          resultDescription="잘하셨어요! 질문에 정확히 답변해 주셨어요."
           onSuccessSubmit={(finalDuration) => console.log('소요시간:', finalDuration)}
         />
 
         {/* 하단 액션 버튼 그룹 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '40px' }}>
           <button
-            onClick={() => {}}
+            onClick={() =>  navigate('/patient-home')}
             style={{
               width: '121px', height: '59px', borderRadius: '50px', backgroundColor: '#0D0D0D',
               border: 'none', boxShadow: '0px 0px 4px 0px #4188ED',

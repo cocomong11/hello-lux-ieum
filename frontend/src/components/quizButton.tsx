@@ -5,14 +5,17 @@ interface QuizVoiceControllerProps {
   hintCount: number;       // 현재 힌트 사용 횟수
   placeholder: string;   
   onSuccessSubmit?: (duration: string) => void; 
+  resultTitle: string;       
+  resultDescription: string;
 }
 
 export default function QuizVoiceController({ 
   onHintClick, 
   hintCount, 
   placeholder, 
-  onSuccessSubmit 
-}: QuizVoiceControllerProps) {
+  onSuccessSubmit,
+  resultTitle,       
+  resultDescription}: QuizVoiceControllerProps) {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [myAnswer, setMyAnswer] = useState<string>(placeholder);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
@@ -102,31 +105,31 @@ export default function QuizVoiceController({
         boxSizing: 'border-box', paddingTop: '24px', position: 'relative'
       }}>
         <span style={{ fontSize: '18px', color: '#797980', textAlign: 'center', marginBottom: '37px' }}>
-          {isRecording ? '답변을 마친 후 마이크를 다시 눌러주세요.' : '아래 마이크를 누르고 말씀해 주세요.'}
+          아래 마이크를 누르고 말씀해 주세요.
         </span>
 
         <div
           onClick={handleMicrophoneClick}
           style={{
             width: '120px', height: '120px', borderRadius: '50%',
-            background: isRecording ? 'linear-gradient(0deg, #E22020, #FF4D4D)' : 'linear-gradient(0deg, #0D0D0D, #0D0D0D)',
-            border: isRecording ? '2px solid #E22020' : '2px solid #0F66E2',
-            boxShadow: isRecording ? '0px 0px 12px 25px rgba(226, 32, 32, 0.3)' : '0px 0px 4px 20px #0F66E240, 0px 0px 4px 10px #0F66E280',
+            background: 'linear-gradient(0deg, #0D0D0D, #0D0D0D)',
+            border: '2px solid #0F66E2',
+            boxShadow: '0px 0px 4px 20px #0F66E240, 0px 0px 4px 10px #0F66E280',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             marginBottom: '24px', cursor: 'pointer', transition: 'all 0.3s ease'
           }}
         >
           <span style={{ fontFamily: 'Inter', fontWeight: 700, fontSize: '30px', color: '#FFFFFF', letterSpacing: '1px' }}>
-            {isRecording ? 'STOP' : 'MIC'}
+            MIC
           </span>
         </div>
 
-        <span style={{ fontWeight: 700, fontSize: '20px', color: isRecording ? '#E22020' : '#0F66E2', marginBottom: '0px' }}>
-          {isRecording ? '🔴 음성을 녹음하고 있어요...' : '🔵 마이크 대기 상태'}
+        <span style={{ fontWeight: 700, fontSize: '20px', color: '#0F66E2', marginBottom: '0px' }}>
+          {isRecording ? '🔵 음성을 듣고 있어요...' : '🔵 마이크 대기 상태'}
         </span>
 
         <span style={{ fontSize: '16px', color: '#797980' }}>
-          {isRecording ? '[실제 음성 녹음 중]' : '[버튼을 누르면 녹음 시작]'}
+          {isRecording ? '[음성 인식 중]' : '[버튼을 누르면 녹음 시작]'}
         </span>
       </div>
 
@@ -181,29 +184,28 @@ export default function QuizVoiceController({
         </button>
       </div>
 
-      {/* 📊 정답 결과 리포트 박스 (제출하기 버튼 눌렀을 때 나오는 박스*/}
+      {/* 리포트 박스 제출하기 버튼 눌렀을 때 나오는 박스*/}
       {isSubmitted && (
-        <div style={{
-          width: '648px', height: '170px', borderRadius: '10px', border: '1px solid #4188ED',
+        <div style={{   
+          height: '170px', width: '648px',  borderRadius: '10px', border: '1px solid #4188ED',
           boxShadow: '0px 0px 4px 0px #4188ED',
           background: 'linear-gradient(0deg, rgba(65, 136, 237, 0.05), rgba(65, 136, 237, 0.05)), linear-gradient(180deg, rgba(32, 115, 232, 0.2) 0%, rgba(223, 223, 135, 0.2) 100%)',
           boxSizing: 'border-box', padding: '24px 29px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginBottom: '50px'
         }}>
           <h3 style={{ fontFamily: 'Inter', fontWeight: 700, fontSize: '30px', lineHeight: '140%', color: '#0D0D0D', margin: '0 0 6px 0' }}>
-            정답입니다!
+            {resultTitle}
           </h3>
-          <p style={{ fontWeight: 700, fontSize: '22px', lineHeight: '155%', color: '#0F66E2', margin: '0 0 12px 0' }}>
-            잘하셨어요! 질문에 정확히 답변해 주셨어요.
+          <p style={{ fontWeight: 780, fontSize: '20px', lineHeight: '145%', color: '#0F66E2', margin: '0 0 12px 0' }}>
+            {resultDescription}
           </p>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', fontSize: '16px', fontWeight: 700, color: '#797980' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', fontSize: '14px', fontWeight: 700, color: '#797980' }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ width: '110px' }}>답변 소요 시간 :</span>
-              <span>{duration}초</span>
+              <span>답변 소요 시간 :  {duration}초</span>
+              
             </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ width: '85px' }}>힌트 사용 :</span>
-              <span style={{ fontSize: '18px' }}>{hintCount}회</span>
+            <div style={{ display: 'flex', alignItems: 'center', fontSize: '14px', gap: '15px'}}>
+              <span >힌트 사용 : {hintCount}회</span>
             </div>
           </div>
         </div>

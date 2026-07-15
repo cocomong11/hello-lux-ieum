@@ -96,11 +96,15 @@ export default function S12_PhotoRecallQuiz() {
           hintCount={hintCount}
           placeholder="“우리 아들 민수”"
           onSuccessSubmit={(finalDuration) => console.log('12페이지 소요시간:', finalDuration)}
+          resultTitle="회상 성공!"
+          resultDescription="좋아요! 아드님 이름을 잘 기억해 내셨어요."
         />
 
         {/* 글로벌 내비게이션 하단 제어 버블 바 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '40px' }}>
-          <button style={{
+          <button 
+            onClick={() =>  navigate('/patient-home')}
+            style={{
             width: '121px', height: '59px', borderRadius: '50px', backgroundColor: '#0D0D0D',
             border: 'none', boxShadow: '0px 0px 4px 0px #4188ED',
             fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '18px', color: '#FFFFFF', cursor: 'pointer'

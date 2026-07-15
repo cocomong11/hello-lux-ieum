@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/patientHeader';
-
+import loadingIcon from '../assets/loading.png';
+type ButtonStatus = 'READY' | 'LOADING' | 'MISSING' | 'FAIL';
 export default function S10_DailyHealthCheck() {
   const navigate = useNavigate();
- 
-  const [condition, setCondition] = useState<string>('좋음');
-  const [sleep, setSleep] = useState<string>('잘 잤음');
-  const [meal, setMeal] = useState<string>('식사함');
-  const [pain, setPain] = useState<string>('없음');
-  const [mood, setMood] = useState<string>('안정적');
-  const [cognitiveChanges, setCognitiveChanges] = useState<string[]>(['반복 발화']);
+  const [btnStatus, setBtnStatus] = useState<ButtonStatus>('READY');
+  const [condition, setCondition] = useState<string|null>(null);
+  const [sleep, setSleep] = useState<string|null>(null);
+  const [meal, setMeal] = useState<string|null>(null);
+  const [pain, setPain] = useState<string|null>(null);
+  const [mood, setMood] = useState<string|null>(null);
+  const [cognitiveChanges, setCognitiveChanges] = useState<string[]>([]);
   const [isMemoFocused, setIsMemoFocused] = useState<boolean>(false);
   const [memoText, setMemoText] = useState<string>('');
 
@@ -20,6 +21,18 @@ export default function S10_DailyHealthCheck() {
     } else {
       setCognitiveChanges([...cognitiveChanges, value]);
     }
+  };
+  const handleSaveAndNext = () => {
+    if (!condition || !sleep || !meal || !pain || !mood) {
+      setBtnStatus('MISSING'); //입력 누락
+      return;
+    }
+    setBtnStatus('LOADING');
+    setTimeout(() => {
+      //  현재는 정상 이동 처리! 
+      navigate('/patient-voicequiz');
+      // setBtnStatus('FAIL'); // 저장 실패
+    }, 1500);
   };
 
   const sectionTitleStyle = {
@@ -82,7 +95,7 @@ export default function S10_DailyHealthCheck() {
       
       <Header/>
 
-      {/* 메인 648px 중앙 정렬 영역 */}
+      
       <div style={{ width: '648px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
         
         {/* 오늘의 컨디션 */}
@@ -179,12 +192,41 @@ export default function S10_DailyHealthCheck() {
           >
             ← 홈으로 돌아가기
           </button>
+          {btnStatus === 'READY'&&(
           <button 
-            onClick={() => navigate('/patient-voicequiz')} 
+            onClick={handleSaveAndNext} 
             style={{ width: '180px', height: '52px', borderRadius: '50px', backgroundColor: '#4188ED', border: 'none', boxShadow: '0px 0px 4px 0px #4188ED', color: '#FFFFFF', fontSize: '15px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             저장 후 활동 시작 →
           </button>
+          )}
+          {btnStatus === 'LOADING'&&(
+          <button 
+            disabled
+            style={{ width: '142px', height: '52px', borderRadius: '50px', backgroundColor: '#4188ED', border: 'none', boxShadow: '0px 0px 4px 0px #4188ED', color: '#FFFFFF', fontSize: '18px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}
+          >
+            저장 중 <img src={loadingIcon}  
+                    alt="로딩 아이콘" 
+                    style={{ width: '23px', height: '23px' }}/>
+
+          </button>
+          )}
+          {btnStatus === 'MISSING'&&(
+          <button 
+            onClick={handleSaveAndNext} 
+            style={{ width: '126px', height: '52px', borderRadius: '50px', backgroundColor: '#DFDF87', border: 'none', boxShadow: '0px 0px 4px 0px #4188ED', color: '#0D0D0D', fontSize: '15px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            입력 누락
+          </button>
+          )}
+          {btnStatus === 'FAIL'&&(
+          <button 
+            onClick={handleSaveAndNext} 
+            style={{ width: '126px', height: '52px', borderRadius: '50px', backgroundColor: '#E53134', border: 'none', boxShadow: '0px 0px 4px 0px #4188ED', color: '#FFFFFF', fontSize: '15px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            저장 실패
+          </button>
+          )}
         </div>
 
       </div>
