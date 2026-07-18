@@ -27,7 +27,7 @@ const SECTION_TITLE: React.CSSProperties = {
 const DUMMY_PATIENT = {
   name: '홍길동',
   birth_date: '1950-01-01',
-  level: '경도인지장애',
+  dignosis: '경도인지장애',
 };
 
 const INDICATORS = [
@@ -62,15 +62,24 @@ const STATS = [
   { label: '일평균 힌트 사용', value: '2.4회' },
 ];
 
+// 날짜 포맷 헬퍼
+function formatDate(daysAgo: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const suffix = daysAgo === 0 ? ' (오늘)' : ` (${weekdays[d.getDay()]})`;
+  return `${d.getMonth() + 1}월 ${d.getDate()}일${suffix}`;
+}
+
 const DAILY_SUMMARY = [
   {
-    date: '5월 26일 (오늘)',
+    date: formatDate(0),
     desc: '수면 보통 · 답변 성공률 60%',
     isToday: true,
     tags: [] as string[],
   },
   {
-    date: '5월 25일 (일)',
+    date: formatDate(1),
     desc: '수면 부족 · 답변 성공률 45%',
     isToday: false,
     tags: ['수면 부족', '반복 발화'],
@@ -78,24 +87,25 @@ const DAILY_SUMMARY = [
 ];
 
 // SVG 차트 상수
-// Y축 라벨 영역 포함 전체 SVG 크기
-const SVG_W = 612;
-const SVG_H = 360;
-const Y_LABEL_W = 44;   // Y축 라벨 너비
-const PAD_R = 12;
-const PAD_T = 12;
-const PAD_B = 28;       // X축 날짜 영역
+// rect(그래프 영역) 612x360, 그 바깥에 Y라벨/X날짜
+const RECT_W = 612;
+const RECT_H = 360;
+const Y_LABEL_SPACE = 44; // Y축 라벨 공간 (rect 왼쪽)
+const X_LABEL_SPACE = 30; // X축 날짜 공간 (rect 아래)
+const SVG_W = RECT_W + Y_LABEL_SPACE;      // 656
+const SVG_H = RECT_H + X_LABEL_SPACE;      // 390
 
-// 실제 그래프 그려지는 영역
-const PLOT_X = Y_LABEL_W;
-const PLOT_Y = PAD_T;
-const PLOT_W = SVG_W - Y_LABEL_W - PAD_R;
-const PLOT_H = SVG_H - PAD_T - PAD_B;
+// 라인이 그려지는 영역 (rect 내부에 약간 패딩)
+const PAD = 12;
+const PLOT_X = Y_LABEL_SPACE;              // rect 시작 x
+const PLOT_Y = PAD;                        // rect 내 top 패딩
+const PLOT_W = RECT_W - PAD * 2;           // 라인 가로 범위
+const PLOT_H = RECT_H - PAD * 2;           // 라인 세로 범위
 
 function makeLine(values: number[]): string {
   return values
     .map((v, i) => {
-      const x = PLOT_X + (i / (values.length - 1)) * PLOT_W;
+      const x = PLOT_X + PAD + (i / (values.length - 1)) * PLOT_W;
       const y = PLOT_Y + PLOT_H * (1 - v / 100);
       return `${x},${y}`;
     })
@@ -158,14 +168,14 @@ export default function S19_CargiverReport() {
             style={{
               fontSize: 16, fontWeight: 700, height: 67,
               display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-              gap: 24, paddingRight: 40,
+              gap: 24, paddingRight: 348,
             }}
           >
             <button onClick={() => navigate('/cargiver-home')}
-              style={{ ...F, color: 'var(--color-neutral-10)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700 }}>
+              style={{ ...F, color: 'var(--color-neutral-gray)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700 }}>
               홈
             </button>
-            <button onClick={() => navigate('/cargiver-mypage')}
+            <button onClick={() => navigate('/mypage')}
               style={{ ...F, color: 'var(--color-neutral-gray)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700 }}>
               마이페이지
             </button>
@@ -185,7 +195,7 @@ export default function S19_CargiverReport() {
               width: 936,
               height: 551,
               borderRadius: 10,
-              border: '1px solid #8E8E98',
+              border: '1px solid var(--color-neutral-gray)',
               background:
                 'linear-gradient(180deg, rgba(223,223,135,0.20) 0%, rgba(248,249,250,0.20) 100%), rgba(65,136,237,0.05)',
               boxShadow: '0 0 4px 0 #4188ED',
@@ -261,35 +271,42 @@ export default function S19_CargiverReport() {
               <div style={{ display: 'flex', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
                 {INDICATORS.filter(ind => activeLines.has(ind.key)).map(({ key, color }) => (
                   <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 24, height: 3, background: color, borderRadius: 2 }} />
+                    <div style={{ width: 24, height: 3, background: color, strokeWidth: 5,borderRadius: 2 }} />
                     <span style={{ ...F, fontSize: 13, color: '#0D0D0D' }}>{key}</span>
                   </div>
                 ))}
               </div>
 
-              {/* SVG 차트 */}
+              {/* SVG 차트 - 그래프 박스 기준 top:102, left:210 */}
               <svg
                 width={SVG_W}
                 height={SVG_H}
                 viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-                style={{ display: 'block', overflow: 'visible' }}
+                style={{ position: 'absolute', top: 102, left: 210, display: 'block', overflow: 'visible' }}
               >
+                {/* 플롯 영역 배경 (rect 612x360) */}
+                <rect
+                  x={Y_LABEL_SPACE}
+                  y={0}
+                  width={RECT_W}
+                  height={RECT_H}
+                  fill="var(--color-neutral-100, #F8F9FA)"
+                />
+
                 {/* Y축 라벨 + 가로 그리드 점선 */}
                 {[0, 25, 50, 75, 100].map(v => {
-                  const y = PLOT_Y + PLOT_H * (1 - v / 100);
+                  const y = PAD + PLOT_H * (1 - v / 100);
                   return (
                     <g key={v}>
-                      {/* 그리드 점선 */}
                       <line
-                        x1={PLOT_X} y1={y} x2={PLOT_X + PLOT_W} y2={y}
-                        stroke="#4188ED" strokeWidth="0.8"
-                        strokeDasharray={v === 100 ? 'none' : '4 3'}
+                        x1={Y_LABEL_SPACE} y1={y} x2={Y_LABEL_SPACE + RECT_W} y2={y}
+                        stroke="#4188ED" strokeWidth="1"
+                        strokeDasharray="4 3"
                         opacity="0.4"
                       />
-                      {/* Y축 라벨 */}
                       <text
-                        x={PLOT_X - 6} y={y + 4}
-                        textAnchor="end" fontSize="12" fill="#797980"
+                        x={Y_LABEL_SPACE - 8} y={y + 5}
+                        textAnchor="end" fontSize="14" fill="#797980"
                       >{v}%</text>
                     </g>
                   );
@@ -297,15 +314,15 @@ export default function S19_CargiverReport() {
 
                 {/* Y축 선 */}
                 <line
-                  x1={PLOT_X} y1={PLOT_Y}
-                  x2={PLOT_X} y2={PLOT_Y + PLOT_H}
+                  x1={Y_LABEL_SPACE} y1={0}
+                  x2={Y_LABEL_SPACE} y2={RECT_H}
                   stroke="#4188ED" strokeWidth="1.5"
                 />
 
                 {/* X축 선 */}
                 <line
-                  x1={PLOT_X} y1={PLOT_Y + PLOT_H}
-                  x2={PLOT_X + PLOT_W} y2={PLOT_Y + PLOT_H}
+                  x1={Y_LABEL_SPACE} y1={RECT_H}
+                  x2={Y_LABEL_SPACE + RECT_W} y2={RECT_H}
                   stroke="#4188ED" strokeWidth="1.5"
                 />
 
@@ -322,12 +339,12 @@ export default function S19_CargiverReport() {
                   />
                 ))}
 
-                {/* X축 날짜 */}
+                {/* X축 날짜 (rect 아래) */}
                 {DATES.map((d, i) => {
-                  const x = PLOT_X + (i / (DATES.length - 1)) * PLOT_W;
+                  const x = Y_LABEL_SPACE + PAD + (i / (DATES.length - 1)) * PLOT_W;
                   return (
-                    <text key={d} x={x} y={SVG_H - 6}
-                      textAnchor="middle" fontSize="13" fill="#797980">{d}</text>
+                    <text key={d} x={x} y={RECT_H + 22}
+                      textAnchor="middle" fontSize="14" fill="#797980">{d}</text>
                   );
                 })}
               </svg>

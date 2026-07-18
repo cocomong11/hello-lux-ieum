@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import PageLayout from '../components/common/PageLayout'
 
 const imgUpload = "https://www.figma.com/api/mcp/asset/daa64d7e-c69f-46f7-a280-9ff3c5e757b0"
 const imgPolygon = "https://www.figma.com/api/mcp/asset/e85d2d33-89b8-4942-b51e-e59cf186889b"
@@ -13,19 +14,11 @@ const CATEGORIES: Category[] = ['가족 정보', '지인 정보', '장소 정보
 
 export default function S07_MemoryDB() {
   const navigate = useNavigate()
-  const [scale, setScale] = useState(1)
   const [activeCategory, setActiveCategory] = useState<Category>('가족 정보')
   const [members, setMembers] = useState([
     { relation: '배우자', name: '김순자 / 여보', age: '78세' },
     { relation: '', name: '', age: '' },
   ])
-
-  useEffect(() => {
-    const update = () => setScale(window.innerWidth / 1920)
-    update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
 
   const updateMember = (idx: number, field: 'relation' | 'name' | 'age', value: string) => {
     setMembers(prev => prev.map((m, i) => i === idx ? { ...m, [field]: value } : m))
@@ -82,8 +75,7 @@ export default function S07_MemoryDB() {
   ]
 
   return (
-    <div style={{ position: 'relative', width: '100vw', height: CANVAS_H * scale, overflowX: 'hidden', background: '#f8f9fa' }}>
-      <div style={{ width: 1920, height: CANVAS_H, position: 'absolute', top: 0, left: 0, transformOrigin: 'top left', transform: `scale(${scale})`, background: '#f8f9fa' }}>
+    <PageLayout canvasHeight={CANVAS_H} scrollable>
 
         {/* ═══ 왼쪽 사이드바 ═══ */}
         <div style={{
@@ -230,7 +222,6 @@ export default function S07_MemoryDB() {
         }}>
           <span style={{ fontSize: 22, fontWeight: 700, color: '#f8f9fa', whiteSpace: 'nowrap' }}>완료 →</span>
         </button>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

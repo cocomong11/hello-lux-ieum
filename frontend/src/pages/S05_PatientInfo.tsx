@@ -1,25 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import PageLayout from '../components/common/PageLayout'
 
 const CANVAS_H = 1718
 const F: React.CSSProperties = { fontFamily: 'Pretendard Variable, Pretendard, sans-serif' }
 
 export default function S05_PatientInfo() {
   const navigate = useNavigate()
-  const [scale, setScale] = useState(1)
   const [name, setName] = useState('')
   const [birthdate, setBirthdate] = useState('')
   const [gender, setGender] = useState<'남성' | '여성' | '선택 안 함'>('남성')
   const [diagnosis, setDiagnosis] = useState('')
   const [level, setLevel] = useState<'낮음' | '보통' | '높음'>('낮음')
   const [companion, setCompanion] = useState<'동행' | '혼자'>('동행')
-
-  useEffect(() => {
-    const update = () => setScale(window.innerWidth / 1920)
-    update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
 
   const SectionTitle = ({ left = 636, top, children }: { left?: number; top: number; children: string }) => (
     <p style={{ ...F, position: 'absolute', left, top, margin: 0, fontSize: 30, fontWeight: 700, lineHeight: '1.4', color: '#0d0d0d', whiteSpace: 'nowrap' }}>
@@ -95,8 +88,7 @@ export default function S05_PatientInfo() {
   )
 
   return (
-    <div style={{ position: 'relative', width: '100vw', height: CANVAS_H * scale, overflowX: 'hidden', background: '#f8f9fa' }}>
-      <div style={{ width: 1920, height: CANVAS_H, position: 'absolute', top: 0, left: 0, transformOrigin: 'top left', transform: `scale(${scale})`, background: '#f8f9fa' }}>
+    <PageLayout canvasHeight={CANVAS_H} scrollable>
 
         {/* ─── 환자 기본 정보 ─── */}
         <SectionTitle top={135}>환자 기본 정보</SectionTitle>
@@ -138,7 +130,6 @@ export default function S05_PatientInfo() {
         {/* ─── 네비게이션 ─── */}
         <NavBtn left={636} label="← 이전" onClick={() => navigate(-1)} dark />
         <NavBtn left={1172} label="다음 →" onClick={() => navigate('/voice-setting')} />
-      </div>
-    </div>
+    </PageLayout>
   )
 }

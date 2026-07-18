@@ -1,22 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import PageLayout from '../components/common/PageLayout'
 
 export default function S03_Register() {
   const navigate = useNavigate()
-  const [scale, setScale] = useState(1)
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [showPwConfirm, setShowPwConfirm] = useState(false)
-
-  useEffect(() => {
-    const update = () => setScale(window.innerWidth / 1920)
-    update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
 
   const inputBox = (
     top: number,
@@ -88,20 +81,7 @@ export default function S03_Register() {
   )
 
   return (
-    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#f8f9fa' }}>
-      <div
-        style={{
-          width: 1920,
-          height: 1080,
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          transformOrigin: 'top left',
-          transform: `scale(${scale})`,
-          background: '#f8f9fa',
-          fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
-        }}
-      >
+    <PageLayout canvasHeight={1080}>
         {/* Title */}
         <p style={{
           position: 'absolute',
@@ -256,7 +236,6 @@ export default function S03_Register() {
             }}
           >로그인 하기</span>
         </p>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

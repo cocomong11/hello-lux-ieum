@@ -7,7 +7,7 @@ type Props = {
   patient: {
     name: string;
     birth_date: string; // "YYYY-MM-DD"
-    level: string;
+    dignosis: string;
   } | null;
 };
 //나이 계산 함수
@@ -29,7 +29,13 @@ const MENUS = [
   { title: '연계 알림',   path: '/cargiver-alerm'  },
 ];
 
+const SUB_MENUS = ['가족', '지인', '장소', '음식', '인생 사건'];
+
 const MENU_TOPS = [361, 450, 539, 628];
+
+// S21(기억 DB 수정) active일 때 메뉴 tops
+// 기억DB 박스 height 264 + gap 30 → 연계알림이 밀림
+const MENU_TOPS_UPDATE = [361, 450, 539, 539 + 264 + 30]; // 833
 
 export default function CaregiverSidebar({ patient }: Props) {
   const navigate  = useNavigate();
@@ -156,60 +162,118 @@ export default function CaregiverSidebar({ patient }: Props) {
             margin: 0,
           }}
         >
-          {patient.level}
+          {patient.dignosis}
         </p>
       </div>
 
       {/* 메뉴 항목 */}
-      {MENUS.map((menu, i) => {
+      {(() => {
+        const isUpdatePage = location.pathname === '/cargiver-update';
+        const tops = isUpdatePage ? MENU_TOPS_UPDATE : MENU_TOPS;
+
+        return MENUS.map((menu, i) => {
         const isActive = location.pathname === menu.path;
         const isHovered = hoveredPath === menu.path;
+        const isUpdateMenu = menu.path === '/cargiver-update';
+        const isUpdateActive = isActive && isUpdateMenu;
+        const currentCategory = new URLSearchParams(location.search).get('category') || '가족';
+
         return (
-          <div
-            key={menu.path}
-            onMouseEnter={() => setHoveredPath(menu.path)}
-            onMouseLeave={() => setHoveredPath(null)}
-            onClick={() => navigate(menu.path)}
-            style={{
-              position: 'absolute',
-              top: MENU_TOPS[i],
-              left: 47,
-              width: 289,
-              height: 59,
-              borderTopLeftRadius: 50,
-              borderBottomLeftRadius: 50,
-              border: '2px solid rgba(65, 136, 237, 0.5)',
-              background: isActive
-                ? 'var(--color-primary-20, #0F66E2)'
-                : isHovered
-                ? 'rgba(65, 136, 237, 0.1)'
-                : 'var(--color-neutral-100)',
-              boxShadow: isActive
-                ? '0 0 8px 0 var(--color-primary)'
-                : isHovered
-                ? '0 0 6px 0 rgba(65, 136, 237, 0.3)'
-                : 'none',
-              transition: 'background 0.15s, box-shadow 0.15s',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              paddingLeft: 29,
-            }}
-          >
-            <span
+          <div key={menu.path}>
+            {/* 일반 메뉴 버튼 (기억 DB 수정 active 상태 제외) */}
+            {!isUpdateActive && (
+            <div
+              onMouseEnter={() => setHoveredPath(menu.path)}
+              onMouseLeave={() => setHoveredPath(null)}
+              onClick={() => navigate(isUpdateMenu ? `${menu.path}?category=가족` : menu.path)}
               style={{
-                fontSize: 22,
-                fontWeight: 400,
-                lineHeight: '155%',
-                color: isActive ? 'var(--color-neutral-100)' : 'inherit',
-                pointerEvents: 'none',
+                position: 'absolute',
+                top: tops[i],
+                left: 47,
+                width: 289,
+                height: 59,
+                borderTopLeftRadius: 50,
+                borderBottomLeftRadius: 50,
+                border: '2px solid rgba(65, 136, 237, 0.5)',
+                background: isActive
+                  ? 'var(--color-primary-20, #0F66E2)'
+                  : isHovered
+                  ? 'rgba(65, 136, 237, 0.1)'
+                  : 'var(--color-neutral-100)',
+                boxShadow: isActive
+                  ? '0 0 8px 0 var(--color-primary)'
+                  : isHovered
+                  ? '0 0 6px 0 rgba(65, 136, 237, 0.3)'
+                  : 'none',
+                transition: 'background 0.15s, box-shadow 0.15s',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                paddingLeft: 29,
               }}
             >
-              {menu.title}
-            </span>
+              <span
+                style={{
+                  fontSize: 22,
+                  fontWeight: 400,
+                  lineHeight: '155%',
+                  color: isActive ? 'var(--color-neutral-100)' : 'inherit',
+                  pointerEvents: 'none',
+                }}
+              >
+                {menu.title}
+              </span>
+            </div>
+            )}
+
+            {/* 기억 DB 수정 메뉴 - active 상태: 하나의 큰 박스 */}
+            {isUpdateActive && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: tops[i],
+                  left: 47,
+                  width: 291,
+                  height: 264,
+                  borderRadius: '50px 0 0 50px',
+                  border: '2px solid rgba(65, 136, 237, 0.50)',
+                  background: '#0F66E2',
+                  boxShadow: '0 0 8px 0 #4188ED',
+                  boxSizing: 'border-box',
+                  padding: '13px 28px 13px 29px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                {/* 타이틀 */}
+                <span style={{ fontSize: 22, fontWeight: 700, lineHeight: '155%', color: 'var(--color-neutral-100)' }}>
+                  기억 DB 수정
+                </span>
+
+                {/* 서브메뉴 - 오른쪽 정렬 */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end',gap: 6 }}>
+                  {SUB_MENUS.map(sub => (
+                    <span
+                      key={sub}
+                      onClick={e => { e.stopPropagation(); navigate(`/cargiver-update?category=${sub}`); }}
+                      style={{
+                        fontFamily: 'Pretendard Variable',
+                        fontSize: 22,
+                        fontWeight: currentCategory === sub ? 700 : 400,
+                        color: currentCategory === sub ? 'var(--color-neutral-100)' : 'var(--color-neutral-100)',
+                        cursor: 'pointer',
+                        lineHeight: '155%',
+                      }}
+                    >
+                      {currentCategory === sub ? '· ' : ''}{sub}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         );
-      })}
+      })})()}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CaregiverSidebar from '../components/CaregiverSidebar';
+import redEmark from '../assets/redEmark.svg';
 
 const DESIGN_W = 1920;
 const DESIGN_H = 1246;
@@ -22,7 +23,7 @@ const SECTION_TITLE: React.CSSProperties = {
 const DUMMY_PATIENT = {
   name: '홍길동',
   birth_date: '1950-01-01',
-  level: '경도인지장애',
+  dignosis: '경도인지장애',
 };
 
 const TODAY_STATS = [
@@ -32,15 +33,19 @@ const TODAY_STATS = [
   { label: '힌트 사용',     value: '2회'    },
 ];
 
-const BAR_DATA = [
-  { date: '5/20', height: 120 },
-  { date: '5/21', height: 90  },
-  { date: '5/22', height: 140 },
-  { date: '5/23', height: 60  },
-  { date: '5/24', height: 80  },
-  { date: '5/25', height: 100 },
-  { date: '오늘', height: 180 },
-];
+// 오늘 기준 7일 날짜 생성
+function getLast7Days(): { date: string; percent: number }[] {
+  const today = new Date();
+  const percents = [67, 50, 78, 33, 44, 56, 100]; // 더미 성공률
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (6 - i));
+    const label = i === 6 ? '오늘' : `${d.getMonth() + 1}/${d.getDate()}`;
+    return { date: label, percent: percents[i] };
+  });
+}
+
+const BAR_DATA = getLast7Days();
 
 const MEMORY_TAGS  = ['장소 기억', '날짜/시간'];
 const EMOTION_TAGS = ['반복 발화 (5/25)', '불안 반응 (5/25)'];
@@ -95,7 +100,7 @@ export default function S18_CargiverHome() {
               justifyContent: 'flex-end',
               alignItems: 'center',
               gap: 24,
-              paddingRight: 40,
+              paddingRight: 348,
             }}
           >
             <button
@@ -105,7 +110,7 @@ export default function S18_CargiverHome() {
               홈
             </button>
             <button
-              onClick={() => navigate('/cargiver-mypage')}
+              onClick={() => navigate('/mypage')}
               style={{ ...F, color: 'var(--color-neutral-gray)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700 }}
             >
               마이페이지
@@ -136,8 +141,8 @@ export default function S18_CargiverHome() {
             {/* 경고 아이콘 */}
             <div
               style={{
-                width: 44,
-                height: 44,
+                width: 62,
+                height: 62,
                 borderRadius: 60,
                 border: '2px solid #E53134',
                 background: 'var(--Neutral-100, #F8F9FA)',
@@ -147,15 +152,15 @@ export default function S18_CargiverHome() {
                 flexShrink: 0,
               }}
             >
-              <span style={{ ...F, fontSize: 22, fontWeight: 700, color: '#E53134' }}>!</span>
+               <img src={redEmark} alt="경고" style={{ width: 44, height: 44, flexShrink: 0, aspectRatio: 1/1 }} />
             </div>
 
             {/* 텍스트 */}
             <div style={{ flex: 1 }}>
-              <p style={{ ...F, margin: 0, fontSize: 30, fontWeight: 700, color: 'var(--Tertiary-80, #E53134)', lineHeight: '140%' }}>
+              <p style={{ ...F, margin: 0, fontSize: 30, fontWeight: 700, lineHeight: '140%', color: '#E53134' }}>
                 확인 필요 알림
               </p>
-              <p style={{ ...F, margin: '6px 0 0', fontSize: 18, fontWeight: 400, color: '#797980' }}>
+              <p style={{ ...F, margin: '6px 0 0', fontSize: 22, fontWeight: 400, lineHeight: '155%',color: 'var(--color-neutral-10)' }}>
                 반복 발화와 불안 반응이 기록되었습니다. 보호자 확인이 필요합니다.
               </p>
             </div>
@@ -198,17 +203,17 @@ export default function S18_CargiverHome() {
                 width: 224,
                 height: 124,
                 borderRadius: 10,
-                border: '1px solid #8E8E98',
+                border: '1px solid var(--color-neutral-60)',
                 background: 'rgba(65,136,237,0.05)',
-                boxShadow: '0 0 4px 0 rgba(65,136,237,0.35)',
+                boxShadow: '0 0 4px 0 #4188ED',
                 boxSizing: 'border-box',
-                padding: '20px 22px',
+                padding: '19px 29px',
               }}
             >
-              <p style={{ ...F, margin: 0, fontSize: 16, fontWeight: 400, color: '#797980' }}>
+              <p style={{ ...F, margin: 0, fontSize: 22, fontWeight: 400, lineHeight:'155%', color: 'var(--color-neutral-10)' }}>
                 {stat.label}
               </p>
-              <p style={{ ...F, margin: '8px 0 0', fontSize: 28, fontWeight: 700, color: '#0D0D0D' }}>
+              <p style={{ ...F, margin: 0, fontSize: 36, fontWeight: 700, color: '#0D0D0D' }}>
                 {stat.value}
               </p>
             </div>
@@ -229,33 +234,36 @@ export default function S18_CargiverHome() {
               width: 936,
               height: 252,
               borderRadius: 10,
-              border: '1px solid #8E8E98',
+              border: '1px solid var(--color--neutral-60)',
               background: 'rgba(65,136,237,0.05)',
-              boxShadow: '0 0 4px 0 rgba(65,136,237,0.35)',
+              boxShadow: '0 0 4px 0 #4188ED',
+              boxSizing: 'border-box',
+              paddingLeft: 30,
+              paddingBottom: 21,
+              paddingRight: 30,
               display: 'flex',
               alignItems: 'flex-end',
               justifyContent: 'space-around',
-              padding: '20px 32px 36px',
-              boxSizing: 'border-box',
             }}
           >
             {BAR_DATA.map((bar) => {
               const isToday = bar.date === '오늘';
-              const barH = (bar.height / 180) * (252 - 56);
+              const chartH = 252 - 42 - 68; // 142px = 100%
+              const barH = (bar.percent / 100) * chartH;
               return (
                 <div
                   key={bar.date}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
+                  style={{ display: 'flex', flexDirection: 'column', textAlign: 'center' ,gap: 8 }}
                 >
                   <div
                     style={{
-                      width: 72,
+                      width: 115,
                       height: barH,
-                      borderRadius: '4px 4px 0 0',
-                      background: isToday ? '#4188ED' : '#C4C4C4',
+                      borderRadius: '10px 10px 0 0',
+                      background: isToday ? 'var(--color-primary-dark)' : 'var(--color-neutral-80)',
                     }}
                   />
-                  <span style={{ ...F, fontSize: 16, fontWeight: isToday ? 700 : 400, color: isToday ? '#4188ED' : '#797980' }}>
+                  <span style={{ ...F, fontSize: 22, fontWeight: 400, color: isToday ? 'var(--color-neutral-10)' : 'var(--color-neutral-60)' }}>
                     {bar.date}
                   </span>
                 </div>
@@ -286,14 +294,13 @@ export default function S18_CargiverHome() {
                   display: 'inline-flex',
                   padding: '6px 19px',
                   alignItems: 'center',
-                  gap: 10,
                   borderRadius: 10,
-                  border: '1px solid #0F66E2',
-                  background: '#4188ED',
-                  boxShadow: '0 0 4px 0 rgba(65,136,237,0.45)',
+                  border: '1px solid var(--color-primary-dark)',
+                  background: 'var(--color-primary)',
+                  boxShadow: '0 0 4px 0 #4188ED',
                 }}
               >
-                <span style={{ ...F, fontSize: 18, fontWeight: 600, color: '#F8F9FA' }}>{tag}</span>
+                <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-100)' }}>{tag}</span>
               </div>
             ))}
           </div>
@@ -318,14 +325,13 @@ export default function S18_CargiverHome() {
                   display: 'inline-flex',
                   padding: '6px 19px',
                   alignItems: 'center',
-                  gap: 10,
                   borderRadius: 10,
-                  border: '1px solid #0F66E2',
+                  border: '1px solid var(--color-primary-dark)',
                   background: '#DFDF87',
-                  boxShadow: '0 0 4px 0 rgba(65,136,237,0.45)',
+                  boxShadow: '0 0 4px 0 #4188ED'
                 }}
               >
-                <span style={{ ...F, fontSize: 18, fontWeight: 600, color: '#0D0D0D' }}>{tag}</span>
+                <span style={{ ...F, fontSize: 22, fontWeight: 700, lineHeight:'155%', color: '#0D0D0D' }}>{tag}</span>
               </div>
             ))}
           </div>

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRole } from '../utils/role';
+import PageLayout from '../components/common/PageLayout';
 
 const imgLinkIcon =
   'https://www.figma.com/api/mcp/asset/aa1b8209-b761-4d7b-9b15-e3b34cdf625e';
@@ -55,19 +56,19 @@ export default function S08_CodeLink() {
   };
 
   return (
-    <div
-      style={{
-        ...F,
-        width: '100vw',
-        minHeight: '100vh',
-        background: '#f8f9fa',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-start',
-        overflowX: 'hidden',
-      }}
-    >
-      {/* 실제 화면 영역 */}
+    <PageLayout noCanvas>
+      <div
+        style={{
+          ...F,
+          width: '100%',
+          minHeight: 'calc(100vh - 52px)',
+          background: '#f8f9fa',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          overflowX: 'hidden',
+        }}
+      >
       <main
         style={{
           width: 393,
@@ -258,6 +259,7 @@ export default function S08_CodeLink() {
           연동 확인
         </button>
       </main>
-    </div>
+      </div>
+    </PageLayout>
   );
 }

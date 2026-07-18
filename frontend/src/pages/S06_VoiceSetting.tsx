@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import PageLayout from '../components/common/PageLayout'
 
 const CANVAS_H = 1542
 const F: React.CSSProperties = { fontFamily: 'Pretendard Variable, Pretendard, sans-serif' }
 
 export default function S06_VoiceSetting() {
   const navigate = useNavigate()
-  const [scale, setScale] = useState(1)
   const [formal, setFormal] = useState(true)
   const [autoPlay, setAutoPlay] = useState(true)
   const [repeat, setRepeat] = useState(true)
@@ -14,13 +14,6 @@ export default function S06_VoiceSetting() {
   const [positiveFeedback, setPositiveFeedback] = useState(true)
   const [speed, setSpeed] = useState<'느리게' | '보통' | '빠르게'>('느리게')
   const [sentenceLen, setSentenceLen] = useState<'짧음 (권장)' | '보통' | '길음'>('짧음 (권장)')
-
-  useEffect(() => {
-    const update = () => setScale(window.innerWidth / 1920)
-    update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
 
   const SectionTitle = ({ top, children }: { top: number; children: string }) => (
     <p style={{ ...F, position: 'absolute', left: 636, top, margin: 0, fontSize: 30, fontWeight: 700, lineHeight: '1.4', color: '#0d0d0d', whiteSpace: 'nowrap' }}>
@@ -70,8 +63,7 @@ export default function S06_VoiceSetting() {
   )
 
   return (
-    <div style={{ position: 'relative', width: '100vw', height: CANVAS_H * scale, overflowX: 'hidden', background: '#f8f9fa' }}>
-      <div style={{ width: 1920, height: CANVAS_H, position: 'absolute', top: 0, left: 0, transformOrigin: 'top left', transform: `scale(${scale})`, background: '#f8f9fa' }}>
+    <PageLayout canvasHeight={CANVAS_H} scrollable>
 
         {/* ─── 말투 설정 ─── */}
         <SectionTitle top={135}>말투 설정</SectionTitle>
@@ -148,7 +140,6 @@ export default function S06_VoiceSetting() {
         }}>
           <span style={{ fontSize: 22, fontWeight: 700, color: '#f8f9fa', whiteSpace: 'nowrap' }}>다음 →</span>
         </button>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

@@ -20,6 +20,12 @@ import S19_CargiverReport from '../pages/S19_CargiverReport'
 import S20_CargiverMemo from '../pages/S20_CargiverMemo'
 import S21_CargiverUpdate from '../pages/S21_CargiverUpdate'
 import S22_CargiverAlerm from '../pages/S22_CargiverAlerm'
+
+
+import S23_DoctorHome from '../pages/S23_DoctorHome'
+import S24_DoctorDashboard from '../pages/S24_DoctorDashboard'
+import S26_DoctorLevel from '../pages/S26_DoctorLevel'
+
 import S27_MyPage       from '../pages/S27_MyPage'
 
 
@@ -65,6 +71,11 @@ const router = createBrowserRouter([
   { path: '/cargiver-memo', element: <S20_CargiverMemo />},
   { path: '/cargiver-update', element: <S21_CargiverUpdate />},
   { path: '/cargiver-alerm', element: <S22_CargiverAlerm />},
+
+  // ── 의료진 흐름───────────────────────────────────────────
+  { path: '/doctor-home', element: <S23_DoctorHome />},
+  { path: '/doctor-dashboard', element: <S24_DoctorDashboard />},
+  { path: '/doctor-level', element: <S26_DoctorLevel/>},
 ])
 
 export default router

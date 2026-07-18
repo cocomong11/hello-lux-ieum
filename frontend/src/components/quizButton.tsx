@@ -18,7 +18,6 @@ export default function QuizVoiceController({
   resultDescription
 }: QuizVoiceControllerProps) {
   const [isRecording, setIsRecording] = useState<boolean>(false);
-  // 초기 상태는 따옴표 없이 순수 placeholder만 둡니다.
   const [myAnswer, setMyAnswer] = useState<string>(placeholder);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [duration, setDuration] = useState<string>('0.0');
@@ -160,7 +159,7 @@ export default function QuizVoiceController({
           }}
         >
           <span style={{ fontFamily: 'Inter', fontWeight: 700, fontSize: '30px', color: '#FFFFFF', letterSpacing: '1px' }}>
-            {isRecording ? 'STOP' : 'MIC'}
+            MIC
           </span>
         </div>
 
