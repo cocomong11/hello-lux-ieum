@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import logoSrc from '../../assets/images/S-01/Group15.png';
+import logoSrc from '../../assets/logo.png';
 
 const HEADER_HEIGHT = 68;
 
@@ -81,7 +81,11 @@ export default function Navbar() {
           <button type='button' onClick={() => navigate('/')} style={linkStyle}>
             홈
           </button>
-          <button type='button' onClick={() => navigate('/login')} style={linkStyle}>
+          <button
+            type='button'
+            onClick={() => navigate('/login')}
+            style={linkStyle}
+          >
             로그인
           </button>
         </nav>

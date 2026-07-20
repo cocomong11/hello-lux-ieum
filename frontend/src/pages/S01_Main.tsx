@@ -2,65 +2,101 @@ import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/common/PageLayout';
 
-// ── Figma 에셋 ───────────────────────────────────────────
-const imgImage3 =
-  'https://www.figma.com/api/mcp/asset/91123542-8818-4dcd-be22-be6f6a2e31d9'; // 히어로 사이드 포토
-const imgGroup15 =
-  'https://www.figma.com/api/mcp/asset/d5690299-979c-4ced-b722-1d421058e8ed'; // 이음 로고
-const imgImage11 =
-  'https://www.figma.com/api/mcp/asset/46d14432-9ac4-43c8-b8f1-62cccb2869b1'; // 환자 아이콘
-const imgImage9 =
-  'https://www.figma.com/api/mcp/asset/6a8db2b4-4805-40cc-8a90-99192f1def91'; // 보호자 아이콘
-const imgImage8 =
-  'https://www.figma.com/api/mcp/asset/17482c18-1e7a-434b-9b4e-f10ac0ca4dc1'; // 의료진 아이콘
-const imgGroup6 =
-  'https://www.figma.com/api/mcp/asset/a94bccde-4a1a-41c4-9be7-2a630a0fb90f'; // 시작하기 화살표
-const imgGroup7 =
-  'https://www.figma.com/api/mcp/asset/c68f45c0-6d17-40d2-853c-4e63a96e699c'; // 로그인 화살표
-const imgImage5 =
-  'https://www.figma.com/api/mcp/asset/e12fba34-bb68-4e3d-b686-eb348812a7ca'; // 피처 마스크 형태
-const imgImage6 =
-  'https://www.figma.com/api/mcp/asset/3939e7f5-e60c-41dd-952a-0fbda24d2367'; // 인지활동 사진
-const imgImage7 =
-  'https://www.figma.com/api/mcp/asset/6e4eaec9-460d-4c95-8b36-224d5963682e'; // 보호자·의료진 사진
-const imgImage10 =
-  'https://www.figma.com/api/mcp/asset/641dfd11-75e8-46a9-a5dd-d44f74ede2a1'; // 기억DB 사진
+// ── 로컬 에셋 (frontend/src/assets/) ─────────────────────
+import imgHeroBg from '../assets/mainbar.png';
+import imgLogoWhite from '../assets/logoWhite.png';
+import imgHeroLeft from '../assets/mainleft.png';
+import imgHeroRight from '../assets/mainright.png';
+import imgFeatureCognitive from '../assets/mainf.png';
+import imgFeatureCare from '../assets/maint.png';
+import imgFeatureMemory from '../assets/mains.png';
+import imgIconPatient from '../assets/patient.png';
+import imgIconCaregiver from '../assets/caregiver.png';
+import imgIconDoctor from '../assets/doctor.png';
+import imgBtnLogin from '../assets/mainarrow1.png';
+import imgBtnStart from '../assets/mainarrow2.png';
 
 const DESIGN_W = 1920;
-const DESIGN_H = 3120;
 
 const F: CSSProperties = {
   fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
+};
+
+// 재사용 가능한 카드 스타일
+const cardStyle: CSSProperties = {
+  width: 392,
+  height: 356,
+  background: '#ffffff',
+  borderRadius: 24,
+  boxShadow: '0 4px 30px rgba(32, 115, 232, 0.08)',
+  border: '1px solid rgba(65, 136, 237, 0.15)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  padding: '45px 20px',
+  boxSizing: 'border-box',
+  gap: 20,
+};
+
+// 재사용 가능한 뱃지(라벨) 스타일
+const badgeStyle: CSSProperties = {
+  background: '#eef2a5',
+  borderRadius: 30,
+  padding: '8px 20px',
+  fontSize: 18,
+  fontWeight: 700,
+  color: '#0d0d0d',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 };
 
 export default function S01_Main() {
   const navigate = useNavigate();
 
   return (
-    <PageLayout canvasHeight={DESIGN_H} scrollable>
-        {/* ════ Hero 전체 배경 영역 ════ */}
+    <PageLayout scrollable>
+      <div
+        style={{
+          ...F,
+          position: 'relative',
+          width: '100%',
+          maxWidth: DESIGN_W,
+          minHeight: '100vh',
+          margin: '0 auto',
+          background: '#fcfcfd',
+          overflow: 'hidden',
+        }}
+      >
+        {/* ════ Hero 전체 배경 영역 (피그마 원본 좌표 완벽 복구!) ════ */}
         <div
           style={{
             position: 'absolute',
             top: 0,
-            left: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
             width: DESIGN_W,
             height: 1200,
             overflow: 'hidden',
             pointerEvents: 'none',
+            zIndex: 0,
           }}
         >
-          {/* 기본 그라데이션 배경 */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background:
-                'linear-gradient(90deg, #f5fbfd 0%, #dcecf9 36%, #bfd8f4 66%, #98c3f2 100%)',
-            }}
-          />
+          {/* 기본 배경 (mainbar.png) */}
+          <div style={{ position: 'absolute', inset: 0 }}>
+            <img
+              alt=''
+              src={imgHeroBg}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block',
+              }}
+            />
+          </div>
 
-          {/* 좌측 배경 사진 */}
+          {/* 좌측 뇌 배경 사진 */}
           <div
             style={{
               position: 'absolute',
@@ -69,7 +105,6 @@ export default function S01_Main() {
               width: 1838,
               height: 1575,
               opacity: 0.32,
-
               WebkitMaskImage:
                 'linear-gradient(90deg, black 0%, black 72%, rgba(0,0,0,0.45) 88%, transparent 100%)',
               maskImage:
@@ -79,7 +114,7 @@ export default function S01_Main() {
             <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
               <img
                 alt=''
-                src={imgImage3}
+                src={imgHeroLeft}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -91,7 +126,7 @@ export default function S01_Main() {
                 }}
               />
             </div>
-
+            {/* 파란색 Hue 블렌드 효과 복구 */}
             <div
               style={{
                 position: 'absolute',
@@ -102,7 +137,7 @@ export default function S01_Main() {
             />
           </div>
 
-          {/* 우측 배경 사진 */}
+          {/* 우측 뇌 배경 사진 */}
           <div
             style={{
               position: 'absolute',
@@ -111,7 +146,6 @@ export default function S01_Main() {
               width: 1900,
               height: 1575,
               opacity: 0.32,
-
               WebkitMaskImage:
                 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.4) 14%, black 30%, black 100%)',
               maskImage:
@@ -121,7 +155,7 @@ export default function S01_Main() {
             <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
               <img
                 alt=''
-                src={imgImage3}
+                src={imgHeroRight}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -133,7 +167,7 @@ export default function S01_Main() {
                 }}
               />
             </div>
-
+            {/* 파란색 Hue 블렌드 효과 복구 */}
             <div
               style={{
                 position: 'absolute',
@@ -144,7 +178,7 @@ export default function S01_Main() {
             />
           </div>
 
-          {/* 전체 톤 보정 */}
+          {/* 전체 톤 보정 (피그마 원본) */}
           <div
             style={{
               position: 'absolute',
@@ -152,785 +186,441 @@ export default function S01_Main() {
               background: 'rgba(255,255,255,0.16)',
             }}
           />
-        </div>
 
-        {/* ── 이음 로고 ── */}
-        <div
-          style={{
-            position: 'absolute',
-            left: DESIGN_W / 2 - 549 / 2 + 0.73,
-            top: 132,
-            width: 549,
-            height: 219,
-          }}
-        >
-          <img
-            alt='이음'
-            src={imgGroup15}
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'block',
-            }}
-          />
-        </div>
-
-        {/* ── 서브타이틀 ── */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 399,
-            left: 0,
-            right: 0,
-            textAlign: 'center',
-          }}
-        >
-          <p
-            style={{
-              ...F,
-              fontSize: 36,
-              fontWeight: 600,
-              lineHeight: 1.35,
-              color: '#0d0d0d',
-              margin: 0,
-            }}
-          >
-            경증 치매 환자를 위한 디지털 케어 플랫폼
-          </p>
-          <p
-            style={{
-              ...F,
-              fontSize: 36,
-              fontWeight: 600,
-              lineHeight: 1.35,
-              color: '#0d0d0d',
-              margin: 0,
-            }}
-          >
-            인지 기능 유지 · 보호자 기록 · 의료진 리포트
-          </p>
-        </div>
-
-        {/* ── 역할 카드: 환자 ── */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 348,
-            top: 566,
-            width: 392,
-            height: 356,
-            background: '#f8f9fa',
-            borderRadius: 15,
-            filter: 'drop-shadow(0px 0px 4px #2073e8)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            paddingTop: 43,
-            paddingBottom: 42,
-            paddingLeft: 92,
-            paddingRight: 91,
-            gap: 24,
-            boxSizing: 'border-box',
-          }}
-        >
-          <div
-            style={{
-              width: 125,
-              height: 125,
-              flexShrink: 0,
-              position: 'relative',
-            }}
-          >
-            <img
-              alt='환자'
-              src={imgImage11}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <p
-              style={{
-                ...F,
-                fontSize: 36,
-                fontWeight: 700,
-                lineHeight: 1.35,
-                color: '#0f66e2',
-                margin: 0,
-              }}
-            >
-              환자
-            </p>
-            <p
-              style={{
-                ...F,
-                fontSize: 22,
-                fontWeight: 400,
-                lineHeight: 1.55,
-                color: '#797980',
-                margin: 0,
-              }}
-            >
-              TTS로 듣고 말로 답하는
-            </p>
-            <p
-              style={{
-                ...F,
-                fontSize: 22,
-                fontWeight: 400,
-                lineHeight: 1.55,
-                color: '#797980',
-                margin: 0,
-              }}
-            >
-              매일 인지 자극 활동
-            </p>
-          </div>
-        </div>
-
-        {/* ── 역할 카드: 보호자 ── */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 764,
-            top: 566,
-            width: 392,
-            height: 356,
-            background: '#f8f9fa',
-            borderRadius: 15,
-            filter: 'drop-shadow(0px 0px 4px #2073e8)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            paddingTop: 43,
-            paddingBottom: 42,
-            paddingLeft: 97,
-            paddingRight: 97,
-            gap: 24,
-            boxSizing: 'border-box',
-          }}
-        >
-          <div
-            style={{
-              width: 118,
-              height: 125,
-              flexShrink: 0,
-              position: 'relative',
-            }}
-          >
-            <img
-              alt='보호자'
-              src={imgImage9}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <p
-              style={{
-                ...F,
-                fontSize: 36,
-                fontWeight: 700,
-                lineHeight: 1.35,
-                color: '#0f66e2',
-                margin: 0,
-              }}
-            >
-              보호자
-            </p>
-            <p
-              style={{
-                ...F,
-                fontSize: 22,
-                fontWeight: 400,
-                lineHeight: 1.55,
-                color: '#797980',
-                margin: 0,
-              }}
-            >
-              활동 지원 건강 기록
-            </p>
-            <p
-              style={{
-                ...F,
-                fontSize: 22,
-                fontWeight: 400,
-                lineHeight: 1.55,
-                color: '#797980',
-                margin: 0,
-              }}
-            >
-              삶의 기억 DB 업데이트
-            </p>
-          </div>
-        </div>
-
-        {/* ── 역할 카드: 의료진 ── */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 1180,
-            top: 566,
-            width: 392,
-            height: 356,
-            background: '#f8f9fa',
-            borderRadius: 15,
-            filter: 'drop-shadow(0px 0px 4px #2073e8)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            paddingTop: 43,
-            paddingBottom: 42,
-            paddingLeft: 91,
-            paddingRight: 91,
-            gap: 24,
-            boxSizing: 'border-box',
-          }}
-        >
-          <div
-            style={{
-              width: 85,
-              height: 125,
-              flexShrink: 0,
-              position: 'relative',
-            }}
-          >
-            <img
-              alt='의료진'
-              src={imgImage8}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <p
-              style={{
-                ...F,
-                fontSize: 36,
-                fontWeight: 700,
-                lineHeight: 1.35,
-                color: '#0f66e2',
-                margin: 0,
-              }}
-            >
-              의료진
-            </p>
-            <p
-              style={{
-                ...F,
-                fontSize: 22,
-                fontWeight: 400,
-                lineHeight: 1.55,
-                color: '#797980',
-                margin: 0,
-              }}
-            >
-              K-MMSE + 일일 데이터
-            </p>
-            <p
-              style={{
-                ...F,
-                fontSize: 22,
-                fontWeight: 400,
-                lineHeight: 1.55,
-                color: '#797980',
-                margin: 0,
-              }}
-            >
-              진료 참고 리포트 확인
-            </p>
-          </div>
-        </div>
-
-        {/* ── CTA: 시작하기 ── */}
-        <button
-          onClick={() => navigate('/register')}
-          style={{
-            ...F,
-            position: 'absolute',
-            top: 991,
-            left: 717,
-            width: 274,
-            height: 63,
-            background: '#0d0d0d',
-            borderRadius: 50,
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 10,
-            paddingLeft: 30,
-            paddingRight: 10,
-            boxSizing: 'border-box',
-          }}
-        >
-          <span
-            style={{
-              ...F,
-              fontSize: 22,
-              fontWeight: 800,
-              color: '#f8f9fa',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            시작하기(신규 가입)
-          </span>
-
-          <div
-            style={{
-              width: 50,
-              height: 50,
-              flexShrink: 0,
-              position: 'relative',
-            }}
-          >
-            <img
-              alt=''
-              src={imgGroup6}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-              }}
-            />
-          </div>
-        </button>
-
-        {/* ── CTA: 로그인 ── */}
-        <button
-          onClick={() => navigate('/login')}
-          style={{
-            ...F,
-            position: 'absolute',
-            top: 991,
-            left: 1046,
-            width: 157,
-            height: 63,
-            background: '#0f66e2',
-            borderRadius: 50,
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 10,
-            paddingLeft: 30,
-            paddingRight: 10,
-            boxSizing: 'border-box',
-          }}
-        >
-          <span
-            style={{
-              ...F,
-              fontSize: 22,
-              fontWeight: 800,
-              color: '#f8f9fa',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            로그인
-          </span>
-
-          <div
-            style={{
-              width: 50,
-              height: 50,
-              flexShrink: 0,
-              position: 'relative',
-            }}
-          >
-            <img
-              alt=''
-              src={imgGroup7}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-              }}
-            />
-          </div>
-        </button>
-
-        {/* ════ 피처 섹션 ════ */}
-
-        <p
-          style={{
-            ...F,
-            position: 'absolute',
-            top: 1304,
-            left: 0,
-            right: 0,
-            margin: 0,
-            textAlign: 'center',
-            fontSize: 54,
-            fontWeight: 700,
-            lineHeight: 1.3,
-            color: '#0d0d0d',
-          }}
-        >
-          주요 서비스 안내
-        </p>
-
-        {/* ── Feature 1: 매일 인지 자극 활동 ── */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 183,
-            top: 1216,
-            width: 1184,
-            height: 666,
-            WebkitMaskImage: `url("${imgImage5}")`,
-            WebkitMaskSize: '725px 339px',
-            WebkitMaskPosition: '165px 294px',
-            WebkitMaskRepeat: 'no-repeat',
-            maskImage: `url("${imgImage5}")`,
-            maskSize: '725px 339px',
-            maskPosition: '165px 294px',
-            maskRepeat: 'no-repeat',
-          }}
-        >
-          <img
-            alt=''
-            src={imgImage6}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              display: 'block',
-            }}
-          />
-        </div>
-
-        <div
-          style={{
-            position: 'absolute',
-            left: 1161,
-            top: 1555,
-            background: '#dfdf87',
-            borderRadius: 50,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingLeft: 20,
-            paddingRight: 20,
-            paddingTop: 10,
-            paddingBottom: 10,
-            height: 42,
-            boxSizing: 'border-box',
-          }}
-        >
-          <span
-            style={{
-              ...F,
-              fontSize: 22,
-              fontWeight: 700,
-              lineHeight: 1.55,
-              color: '#0d0d0d',
-            }}
-          >
-            환자
-          </span>
-        </div>
-
-        <p
-          style={{
-            ...F,
-            position: 'absolute',
-            top: 1624,
-            left: 1161,
-            fontSize: 54,
-            fontWeight: 700,
-            lineHeight: 1.3,
-            color: '#0d0d0d',
-            margin: 0,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          매일 인지 자극 활동
-        </p>
-
-        <p
-          style={{
-            ...F,
-            position: 'absolute',
-            top: 1721,
-            left: 1161,
-            fontSize: 22,
-            fontWeight: 400,
-            lineHeight: 1.55,
-            color: '#797980',
-            margin: 0,
-          }}
-        >
-          짧고 쉬운 문장과 음성 안내 및 단계별 힌트 제공
-          <br />
-          퀴즈, 미술, 음악 등 다채로운 활동 연계
-        </p>
-
-        {/* ── Feature 2: 보호자·의료진 연계 ── */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 348,
-            top: 2030,
-            background: '#dfdf87',
-            borderRadius: 50,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingLeft: 20,
-            paddingRight: 20,
-            paddingTop: 10,
-            paddingBottom: 10,
-            height: 42,
-            boxSizing: 'border-box',
-          }}
-        >
-          <span
-            style={{
-              ...F,
-              fontSize: 22,
-              fontWeight: 700,
-              lineHeight: 1.55,
-              color: '#0d0d0d',
-            }}
-          >
-            보호자
-          </span>
-        </div>
-
-        <div
-          style={{
-            position: 'absolute',
-            left: 462,
-            top: 2030,
-            background: '#dfdf87',
-            borderRadius: 50,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingLeft: 20,
-            paddingRight: 20,
-            paddingTop: 10,
-            paddingBottom: 10,
-            height: 42,
-            boxSizing: 'border-box',
-          }}
-        >
-          <span
-            style={{
-              ...F,
-              fontSize: 22,
-              fontWeight: 700,
-              lineHeight: 1.55,
-              color: '#0d0d0d',
-            }}
-          >
-            의료진
-          </span>
-        </div>
-
-        <p
-          style={{
-            ...F,
-            position: 'absolute',
-            top: 2099,
-            left: 348,
-            fontSize: 54,
-            fontWeight: 700,
-            lineHeight: 1.3,
-            color: '#0d0d0d',
-            margin: 0,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          보호자·의료진 연계
-        </p>
-
-        <p
-          style={{
-            ...F,
-            position: 'absolute',
-            top: 2196,
-            left: 348,
-            fontSize: 22,
-            fontWeight: 400,
-            lineHeight: 1.55,
-            color: '#797980',
-            margin: 0,
-          }}
-        >
-          일일 건강 데이터 기록 및 건강 변화 추이 분석
-          <br />
-          월별 K-MMSE 검사 리포트 통합 조회 기능 제공
-        </p>
-
-        <div
-          style={{
-            position: 'absolute',
-            left: 833,
-            top: 1937,
-            width: 784,
-            height: 441,
-            WebkitMaskImage: `url("${imgImage5}")`,
-            WebkitMaskSize: '725px 339px',
-            WebkitMaskPosition: '7px 48px',
-            WebkitMaskRepeat: 'no-repeat',
-            maskImage: `url("${imgImage5}")`,
-            maskSize: '725px 339px',
-            maskPosition: '7px 48px',
-            maskRepeat: 'no-repeat',
-          }}
-        >
-          <img
-            alt=''
-            src={imgImage7}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              display: 'block',
-            }}
-          />
-        </div>
-
-        {/* ── Feature 3: 개인 기억 DB 활용 ── */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 304,
-            top: 2433,
-            width: 789,
-            height: 366,
-            WebkitMaskImage: `url("${imgImage5}")`,
-            WebkitMaskSize: '725px 339px',
-            WebkitMaskPosition: '44px 27px',
-            WebkitMaskRepeat: 'no-repeat',
-            maskImage: `url("${imgImage5}")`,
-            maskSize: '725px 339px',
-            maskPosition: '44px 27px',
-            maskRepeat: 'no-repeat',
-          }}
-        >
-          <img
-            alt=''
-            src={imgImage10}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              display: 'block',
-            }}
-          />
-
+          {/* 하단 자연스러운 페이드 아웃 */}
           <div
             style={{
               position: 'absolute',
-              inset: 0,
-              background: '#0f66e2',
-              mixBlendMode: 'color',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 250,
+              background: 'linear-gradient(to bottom, transparent, #fcfcfd)',
             }}
           />
         </div>
 
+        {/* ════ 메인 콘텐츠 (Flexbox 유지) ════ */}
         <div
           style={{
-            position: 'absolute',
-            left: 1161,
-            top: 2505,
-            background: '#dfdf87',
-            borderRadius: 50,
+            position: 'relative',
+            zIndex: 10,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            paddingLeft: 20,
-            paddingRight: 20,
-            paddingTop: 10,
-            paddingBottom: 10,
-            height: 42,
-            boxSizing: 'border-box',
           }}
         >
-          <span
+          {/* ── 로고 및 타이틀 ── */}
+          <div
             style={{
-              ...F,
-              fontSize: 22,
-              fontWeight: 700,
-              lineHeight: 1.55,
-              color: '#0d0d0d',
+              marginTop: 120,
+              display: 'flex',
+              justifyContent: 'center',
             }}
           >
-            환자
-          </span>
+            <img
+              src={imgLogoWhite}
+              alt='이음 로고'
+              style={{ width: 400, objectFit: 'contain' }}
+            />
+          </div>
+
+          <div
+            style={{
+              marginTop: 24,
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontSize: 32,
+                fontWeight: 700,
+                color: '#111',
+              }}
+            >
+              경증 치매 환자를 위한 디지털 케어 플랫폼
+            </p>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 32,
+                fontWeight: 500,
+                color: '#333',
+              }}
+            >
+              인지 기능 유지 · 보호자 기록 · 의료진 리포트
+            </p>
+          </div>
+
+          {/* ── 역할 카드 3종 세트 ── */}
+          <div style={{ display: 'flex', gap: 24, marginTop: 70 }}>
+            <div style={cardStyle}>
+              <div
+                style={{ height: 130, display: 'flex', alignItems: 'center' }}
+              >
+                <img
+                  src={imgIconPatient}
+                  alt='환자 아이콘'
+                  style={{ height: 110 }}
+                />
+              </div>
+              <div
+                style={{
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
+              >
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: 32,
+                    fontWeight: 800,
+                    color: '#0f66e2',
+                  }}
+                >
+                  환자
+                </h3>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 20,
+                    color: '#666',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  TTS로 듣고 말로 답하는
+                  <br />
+                  매일 인지 자극 활동
+                </p>
+              </div>
+            </div>
+
+            <div style={cardStyle}>
+              <div
+                style={{ height: 130, display: 'flex', alignItems: 'center' }}
+              >
+                <img
+                  src={imgIconCaregiver}
+                  alt='보호자 아이콘'
+                  style={{ height: 110 }}
+                />
+              </div>
+              <div
+                style={{
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
+              >
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: 32,
+                    fontWeight: 800,
+                    color: '#0f66e2',
+                  }}
+                >
+                  보호자
+                </h3>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 20,
+                    color: '#666',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  활동 지원 건강 기록
+                  <br />
+                  삶의 기억 DB 업데이트
+                </p>
+              </div>
+            </div>
+
+            <div style={cardStyle}>
+              <div
+                style={{ height: 130, display: 'flex', alignItems: 'center' }}
+              >
+                <img
+                  src={imgIconDoctor}
+                  alt='의료진 아이콘'
+                  style={{ height: 100 }}
+                />
+              </div>
+              <div
+                style={{
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
+              >
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: 32,
+                    fontWeight: 800,
+                    color: '#0f66e2',
+                  }}
+                >
+                  의료진
+                </h3>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 20,
+                    color: '#666',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  K-MMSE + 일일 데이터
+                  <br />
+                  진료 참고 리포트 확인
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ── 시작하기 & 로그인 버튼 ── */}
+          <div style={{ display: 'flex', gap: 24, marginTop: 60 }}>
+            <button
+              onClick={() => navigate('/register')}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              <img
+                src={imgBtnStart}
+                alt='시작하기'
+                style={{ height: 60, objectFit: 'contain' }}
+              />
+            </button>
+            <button
+              onClick={() => navigate('/login')}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              <img
+                src={imgBtnLogin}
+                alt='로그인'
+                style={{ height: 60, objectFit: 'contain' }}
+              />
+            </button>
+          </div>
+
+          {/* ════ 주요 서비스 안내 피처 섹션 ════ */}
+          <div
+            style={{
+              marginTop: 180,
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <h2
+              style={{
+                fontSize: 48,
+                fontWeight: 800,
+                color: '#111',
+                marginBottom: 100,
+              }}
+            >
+              주요 서비스 안내
+            </h2>
+
+            <div
+              style={{
+                display: 'flex',
+                width: 1224,
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 140,
+              }}
+            >
+              <img
+                src={imgFeatureCognitive}
+                alt='인지 활동'
+                style={{
+                  width: 560,
+                  height: 315,
+                  borderRadius: 24,
+                  objectFit: 'cover',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+                }}
+              />
+              <div
+                style={{
+                  width: 560,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 20,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div style={badgeStyle}>환자</div>
+                <h3
+                  style={{
+                    fontSize: 44,
+                    fontWeight: 800,
+                    color: '#111',
+                    margin: 0,
+                  }}
+                >
+                  매일 인지 자극 활동
+                </h3>
+                <p
+                  style={{
+                    fontSize: 22,
+                    color: '#555',
+                    lineHeight: 1.6,
+                    margin: 0,
+                  }}
+                >
+                  짧고 쉬운 문장과 음성 안내 및 단계별 힌트 제공
+                  <br />
+                  퀴즈, 미술, 음악 등 다채로운 활동 연계
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                width: 1224,
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 140,
+              }}
+            >
+              <div
+                style={{
+                  width: 560,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 20,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div style={badgeStyle}>보호자</div>
+                  <div style={badgeStyle}>의료진</div>
+                </div>
+                <h3
+                  style={{
+                    fontSize: 44,
+                    fontWeight: 800,
+                    color: '#111',
+                    margin: 0,
+                  }}
+                >
+                  보호자·의료진 연계
+                </h3>
+                <p
+                  style={{
+                    fontSize: 22,
+                    color: '#555',
+                    lineHeight: 1.6,
+                    margin: 0,
+                  }}
+                >
+                  일일 건강 데이터 기록 및 건강 변화 추이 분석
+                  <br />
+                  월별 K-MMSE 검사 리포트 통합 조회 기능 제공
+                </p>
+              </div>
+              <img
+                src={imgFeatureCare}
+                alt='보호자 연계'
+                style={{
+                  width: 560,
+                  height: 315,
+                  borderRadius: 24,
+                  objectFit: 'cover',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                width: 1224,
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 160,
+              }}
+            >
+              <img
+                src={imgFeatureMemory}
+                alt='기억 DB'
+                style={{
+                  width: 560,
+                  height: 315,
+                  borderRadius: 24,
+                  objectFit: 'cover',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+                }}
+              />
+              <div
+                style={{
+                  width: 560,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 20,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div style={badgeStyle}>환자</div>
+                <h3
+                  style={{
+                    fontSize: 44,
+                    fontWeight: 800,
+                    color: '#111',
+                    margin: 0,
+                  }}
+                >
+                  개인 기억 DB 활용
+                </h3>
+                <p
+                  style={{
+                    fontSize: 22,
+                    color: '#555',
+                    lineHeight: 1.6,
+                    margin: 0,
+                  }}
+                >
+                  가족 사진, 지인, 장소 정보를 활용한 개인 맞춤형
+                  <br />
+                  회상 질문 생성 기능
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              width: '100%',
+              height: 120,
+              background: 'linear-gradient(90deg, #f7f9ce 0%, #d3e4fe 100%)',
+            }}
+          />
         </div>
-
-        <p
-          style={{
-            ...F,
-            position: 'absolute',
-            top: 2574,
-            left: 1161,
-            fontSize: 54,
-            fontWeight: 700,
-            lineHeight: 1.3,
-            color: '#0d0d0d',
-            margin: 0,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          개인 기억 DB 활용
-        </p>
-
-        <p
-          style={{
-            ...F,
-            position: 'absolute',
-            top: 2671,
-            left: 1161,
-            fontSize: 22,
-            fontWeight: 400,
-            lineHeight: 1.55,
-            color: '#797980',
-            margin: 0,
-          }}
-        >
-          가족 사진, 지인, 장소 정보를 활용한 개인 맞춤형
-          <br />
-          회상 질문 생성 기능
-        </p>
-
-        {/* ── 하단 푸터 바 ── */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            width: DESIGN_W,
-            height: 118,
-            background: '#e5dfc8',
-          }}
-        />
+      </div>
     </PageLayout>
   );
 }
