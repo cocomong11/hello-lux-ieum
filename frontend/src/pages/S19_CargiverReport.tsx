@@ -171,7 +171,7 @@ export default function S19_CargiverReport() {
               gap: 24, paddingRight: 348,
             }}
           >
-            <button onClick={() => navigate('/cargiver-home')}
+            <button onClick={() => navigate('/caregiver-home')}
               style={{ ...F, color: 'var(--color-neutral-gray)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700 }}>
               홈
             </button>
