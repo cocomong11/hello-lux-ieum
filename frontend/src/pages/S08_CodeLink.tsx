@@ -1,264 +1,310 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRole } from '../utils/role';
+import { getRole, roleHome } from '../utils/role';
 import PageLayout from '../components/common/PageLayout';
-import imgLinkIcon from '../assets/link.png'; // 연동 아이콘
 
-// 더미 환자 정보
-const DUMMY_PATIENT = {
-  name: '홍길동',
-  age: 80,
-  level: '보통',
-};
-
-const F: React.CSSProperties = {
-  fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
-};
-
-export default function S08_CodeLink() {
+export default function S02_Login() {
   const navigate = useNavigate();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [autoLogin, setAutoLogin] = useState(false);
 
-  const [code, setCode] = useState('');
-  const [patient, setPatient] = useState<typeof DUMMY_PATIENT | null>(null);
-
-  const isComplete = code.length === 6;
-
-  const handleChange = (raw: string) => {
-    const next = raw
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, '')
-      .slice(0, 6);
-
-    setCode(next);
-
-    if (next.length === 6) {
-      setPatient(DUMMY_PATIENT);
-    } else {
-      setPatient(null);
-    }
+  const inputBase: React.CSSProperties = {
+    width: '100%',
+    height: 81,
+    border: '1px solid #8e8e98',
+    borderRadius: 10,
+    boxShadow: '0 0 4px #4188ed',
+    background: '#f8f9fa',
+    display: 'flex',
+    alignItems: 'center',
+    paddingLeft: 29,
+    paddingRight: 29,
+    boxSizing: 'border-box',
+    marginBottom: 24,
   };
 
-  const handleConfirm = () => {
-    if (!isComplete) return;
-
-    const role = getRole();
-
-    if (role === 'guardian') {
-      navigate('/guardian-home');
-    } else if (role === 'doctor') {
-      navigate('/doctor-home');
-    } else {
-      navigate('/patient-home');
-    }
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    border: 'none',
+    outline: 'none',
+    background: 'transparent',
+    fontSize: 22,
+    fontWeight: 400,
+    lineHeight: '1.55',
+    color: '#0d0d0d',
+    fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
   };
 
   return (
-    <PageLayout noCanvas>
+    <PageLayout scrollable>
       <div
         style={{
-          ...F,
-          width: '100%',
-          minHeight: 'calc(100vh - 52px)',
-          background: '#f8f9fa',
           display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'flex-start',
-          overflowX: 'hidden',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '100%',
+          padding: '120px 0',
+          minHeight: 'calc(100vh - 68px)',
+          boxSizing: 'border-box',
         }}
       >
-        <main
+        {/* Title */}
+        <p
           style={{
-            width: 393,
-            minHeight: 852,
-            background: '#f8f9fa',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            paddingTop: 52,
-            boxSizing: 'border-box',
+            fontSize: 36,
+            fontWeight: 700,
+            lineHeight: '1.35',
+            color: '#0d0d0d',
+            margin: '0 0 16px 0',
           }}
         >
-          {/* 아이콘 */}
-          <div
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: '50%',
-              overflow: 'hidden',
-              marginBottom: 14,
-            }}
-          >
-            <img
-              src={imgLinkIcon}
-              alt='연동 아이콘'
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'block',
-                objectFit: 'cover',
-              }}
-            />
-          </div>
+          로그인
+        </p>
 
-          {/* 제목 */}
-          <h1
-            style={{
-              ...F,
-              margin: 0,
-              fontSize: 14,
-              fontWeight: 700,
-              lineHeight: 1.35,
-              color: '#0d0d0d',
-              textAlign: 'center',
-            }}
-          >
-            환자 코드 연동
-          </h1>
+        {/* Subtitle */}
+        <p
+          style={{
+            fontSize: 22,
+            fontWeight: 400,
+            lineHeight: '1.55',
+            color: '#797980',
+            margin: '0 0 50px 0',
+          }}
+        >
+          이음 서비스를 더 편리하게 이용해보세요
+        </p>
 
-          {/* 설명 */}
-          <p
-            style={{
-              ...F,
-              margin: '4px 0 0',
-              fontSize: 7,
-              fontWeight: 400,
-              lineHeight: 1.55,
-              color: '#797980',
-              textAlign: 'center',
-            }}
-          >
-            환자가 발급받은 6자리 코드를 입력해주세요
-          </p>
-
-          {/* 코드 입력 영역 */}
-          <div
-            onClick={() => inputRef.current?.focus()}
-            style={{
-              position: 'relative',
-              display: 'flex',
-              gap: 7,
-              marginTop: 21,
-              cursor: 'text',
-            }}
-          >
+        <div
+          style={{
+            width: 648,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* Email input */}
+          <div style={inputBase}>
             <input
-              ref={inputRef}
-              value={code}
-              onChange={(e) => handleChange(e.target.value)}
-              maxLength={6}
-              inputMode='text'
-              autoComplete='off'
-              style={{
-                position: 'absolute',
-                inset: 0,
-                opacity: 0,
-                border: 'none',
-                outline: 'none',
-                pointerEvents: 'none',
-              }}
+              type='email'
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder='이메일을 입력하세요'
+              style={inputStyle}
             />
-
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div
-                key={index}
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 4,
-                  background: 'rgba(65, 136, 237, 0.05)',
-                  border: '1px solid #4188ed',
-                  boxShadow: '0 0 4px rgba(65, 136, 237, 0.45)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <span
-                  style={{
-                    ...F,
-                    fontSize: 10,
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    color: '#0d0d0d',
-                  }}
-                >
-                  {code[index] ?? ''}
-                </span>
-              </div>
-            ))}
           </div>
 
-          {/* 환자 정보 미리보기 */}
-          {patient && (
-            <div
+          {/* Password input */}
+          <div style={inputBase}>
+            <input
+              type={showPw ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder='비밀번호를 입력하세요'
+              style={{ ...inputStyle, flex: 1 }}
+            />
+            <button
+              type='button'
+              onClick={() => setShowPw((v) => !v)}
               style={{
-                width: 184,
-                minHeight: 34,
-                marginTop: 14,
-                background: 'rgba(65, 136, 237, 0.05)',
-                border: '1px solid #4188ed',
-                borderRadius: 4,
-                boxShadow: '0 0 4px rgba(65, 136, 237, 0.35)',
-                padding: '7px 9px',
-                boxSizing: 'border-box',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                color: '#8e8e98',
+                flexShrink: 0,
               }}
             >
-              <p
-                style={{
-                  ...F,
-                  margin: 0,
-                  fontSize: 8,
-                  fontWeight: 700,
-                  lineHeight: 1.35,
-                  color: '#0d0d0d',
-                }}
-              >
-                환자 정보 미리보기
-              </p>
+              {showPw ? (
+                <svg
+                  width='22'
+                  height='22'
+                  viewBox='0 0 24 24'
+                  fill='none'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                >
+                  <path d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94' />
+                  <path d='M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19' />
+                  <line x1='1' y1='1' x2='23' y2='23' />
+                </svg>
+              ) : (
+                <svg
+                  width='22'
+                  height='22'
+                  viewBox='0 0 24 24'
+                  fill='none'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                >
+                  <path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z' />
+                  <circle cx='12' cy='12' r='3' />
+                </svg>
+              )}
+            </button>
+          </div>
 
-              <p
-                style={{
-                  ...F,
-                  margin: '4px 0 0',
-                  fontSize: 6,
-                  fontWeight: 400,
-                  lineHeight: 1.55,
-                  color: '#797980',
-                }}
-              >
-                이름 : {patient.name} / 나이 : {patient.age}세 / 지원 수준 :{' '}
-                {patient.level}
-              </p>
-            </div>
-          )}
-
-          {/* 연동 확인 버튼 */}
-          <button
-            onClick={handleConfirm}
-            disabled={!isComplete}
+          {/* Auto login checkbox */}
+          <div
             style={{
-              ...F,
-              width: 184,
-              height: 25,
-              marginTop: 12,
-              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              marginBottom: 40,
+              cursor: 'pointer',
+            }}
+            onClick={() => setAutoLogin((v) => !v)}
+          >
+            <div
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: 6,
+                border: autoLogin ? '1px solid #4188ed' : '1px solid #8e8e98',
+                background: autoLogin ? '#4188ed' : '#f8f9fa',
+                boxShadow: '0 0 4px #797980',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {autoLogin && (
+                <svg width='14' height='10' viewBox='0 0 14 10' fill='none'>
+                  <path
+                    d='M1 5L5 9L13 1'
+                    stroke='white'
+                    strokeWidth='2'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                  />
+                </svg>
+              )}
+            </div>
+            <p
+              style={{
+                fontSize: 22,
+                fontWeight: 400,
+                lineHeight: '1.55',
+                color: '#0d0d0d',
+                margin: 0,
+              }}
+            >
+              자동 로그인
+            </p>
+          </div>
+
+          {/* Login button */}
+          <button
+            onClick={() => {
+              const role = getRole();
+              navigate(role ? roleHome[role] : '/role-select');
+            }}
+            style={{
+              width: '100%',
+              height: 81,
+              background: '#0f66e2',
               borderRadius: 50,
-              background: isComplete ? '#0f66e2' : '#dddde6',
-              color: isComplete ? '#f8f9fa' : '#8e8e98',
-              fontSize: 7,
-              fontWeight: 700,
-              lineHeight: 1.55,
-              cursor: isComplete ? 'pointer' : 'not-allowed',
-              boxShadow: isComplete
-                ? '0 0 4px rgba(65, 136, 237, 0.45)'
-                : 'none',
+              border: 'none',
+              boxShadow: '0 0 2px #4188ed',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 40,
             }}
           >
-            연동 확인
+            <span
+              style={{
+                fontSize: 22,
+                fontWeight: 700,
+                lineHeight: '1.55',
+                color: '#f8f9fa',
+                fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
+              }}
+            >
+              로그인
+            </span>
           </button>
-        </main>
+
+          {/* 아이디 찾기 | 비밀번호 찾기 */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 14,
+              marginBottom: 60,
+            }}
+          >
+            <button
+              type='button'
+              onClick={() => navigate('/find-id')}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                padding: 0,
+                margin: 0,
+                fontSize: 22,
+                fontWeight: 400,
+                lineHeight: 1.55,
+                color: '#0d0d0d',
+                cursor: 'pointer',
+              }}
+            >
+              아이디 찾기
+            </button>
+            <span
+              style={{
+                display: 'inline-block',
+                width: 1,
+                height: 20,
+                background: '#8e8e98',
+                flexShrink: 0,
+              }}
+            />
+            <button
+              type='button'
+              onClick={() => navigate('/find-password')}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                padding: 0,
+                margin: 0,
+                fontSize: 22,
+                fontWeight: 400,
+                lineHeight: 1.55,
+                color: '#0d0d0d',
+                cursor: 'pointer',
+              }}
+            >
+              비밀번호 찾기
+            </button>
+          </div>
+
+          {/* 회원가입 하기 */}
+          <p
+            style={{
+              fontSize: 22,
+              fontWeight: 400,
+              lineHeight: '1.55',
+              color: '#8e8e98',
+              margin: 0,
+              textAlign: 'center',
+            }}
+          >
+            아직 이음 회원이 아니신가요?{' '}
+            <span
+              onClick={() => navigate('/register')}
+              style={{ fontWeight: 600, color: '#0f66e2', cursor: 'pointer' }}
+            >
+              회원가입 하기
+            </span>
+          </p>
+        </div>
       </div>
     </PageLayout>
   );
