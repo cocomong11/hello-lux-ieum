@@ -139,7 +139,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex', flexDirection: 'column'
   },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-  headerTitle: { fontWeight: 700, fontSize: '22px', color: '#0D0D0D', fontFamily: 'sans-serif' },
+  headerTitle: { fontWeight: 700, fontSize: '22px', color: '#0D0D0D', fontFamily: "'Pretendard Variable', Pretendard, sans-serif" },
   closeBtn: {
     padding: '5px 16px', borderRadius: '41.3px', border: '0.83px solid #0D0D0D',
     backgroundColor: '#F8F9FA', fontWeight: 700, fontSize: '16px', cursor: 'pointer',
@@ -168,12 +168,12 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   hintStepTitle: {
     position: 'absolute', width: '95px', height: '34px', top: '28px', left: '29px',
-    fontFamily: 'Pretendard Variable, sans-serif', fontWeight: 400, fontSize: '20px',
+    fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 400, fontSize: '20px',
     lineHeight: '155%', color: '#0F66E2', textAlign: 'left', margin: 0, padding: 0
   },
   hintText: {
     position: 'absolute', width: '456px', height: '34px', top: '68px', left: '29px',
-    fontFamily: 'Pretendard Variable, sans-serif', fontWeight: 700, fontSize: '19px',
+    fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '19px',
     lineHeight: '155%', color: '#0D0D0D', textAlign: 'left', margin: 0, padding: 0
   },
   listenHintBtn: {
