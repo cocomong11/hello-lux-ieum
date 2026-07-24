@@ -67,7 +67,7 @@ export default function S17_ActivityReport() {
       width: '100%', 
       minHeight: '100vh', 
       backgroundColor: '#FFFFFF', 
-      fontFamily: 'Pretendard Variable, sans-serif',
+      fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -75,7 +75,7 @@ export default function S17_ActivityReport() {
       paddingBottom: '120px'
     }}>
       <Header/>
-      <div style={{ width: '805px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ width: '805px', display: 'flex', flexDirection: 'column', alignItems: 'center',transform: 'translateX(6px)' }}>
         
         {/* 원형 축하 폭죽 박스 */}
         <div style={{
@@ -91,7 +91,8 @@ export default function S17_ActivityReport() {
           padding: '17px',
           gap: '10px',
           boxSizing: 'border-box',
-          marginBottom: '35px'
+          marginBottom: '35px',
+          marginTop:'60px'
         }}>
           <CelebrationIcon />
         </div>
@@ -146,7 +147,7 @@ export default function S17_ActivityReport() {
 
         {/* 1. 오늘 활동 요약 섹션 */}
         <div style={{ width: '100%', textAlign: 'left', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '30px', fontWeight: 700, color: '#0D0D0D', lineHeight: '140%', margin: 0, fontFamily: 'Inter, sans-serif' }}>
+          <h2 style={{ fontSize: '30px', fontWeight: 700, color: '#0D0D0D', lineHeight: '140%', margin: 0, fontFamily: "'Pretendard Variable', Pretendard, sans-serif" }}>
             오늘 활동 요약
           </h2>
         </div>
@@ -173,7 +174,7 @@ export default function S17_ActivityReport() {
 
         {/* 2. 유형별 분석 섹션 */}
         <div style={{ width: '100%', textAlign: 'left', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '30px', fontWeight: 700, color: '#0D0D0D', lineHeight: '140%', margin: 0, fontFamily: 'Inter, sans-serif' }}>
+          <h2 style={{ fontSize: '30px', fontWeight: 700, color: '#0D0D0D', lineHeight: '140%', margin: 0, fontFamily: "'Pretendard Variable', Pretendard, sans-serif" }}>
             유형별 분석
           </h2>
         </div>

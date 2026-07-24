@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 function LogoIcon() {
   return (
-    <svg width="72" height="29" viewBox="0 0 72 29" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="60" height="24" viewBox="0 0 72 29" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M35.6956 7.3335C32.1986 7.3335 29.3623 10.1698 29.3623 13.6668C29.3623 17.1638 32.1986 20.0001 35.6956 20.0001C39.1926 20.0001 42.029 17.1638 42.029 13.6668C42.029 10.1698 39.1926 7.3335 35.6956 7.3335ZM35.6956 16.5316C34.1123 16.5316 32.8308 15.2502 32.8308 13.6668C32.8308 12.0835 34.1123 10.802 35.6956 10.802C37.279 10.802 38.5604 12.0835 38.5604 13.6668C38.5604 15.2502 37.279 16.5316 35.6956 16.5316Z" fill="#2073E8"/>
       <path d="M63.0286 0C59.5316 0 56.6953 2.91097 56.6953 6.49999C56.6953 10.089 59.5316 13 63.0286 13C66.5256 13 69.362 10.089 69.362 6.49999C69.362 2.91097 66.5256 0 63.0286 0ZM63.0286 9.44018C61.4453 9.44018 60.1638 8.12499 60.1638 6.49999C60.1638 4.87499 61.4453 3.5598 63.0286 3.5598C64.612 3.5598 65.8934 4.87499 65.8934 6.49999C65.8934 8.12499 64.612 9.44018 63.0286 9.44018Z" fill="#2073E8"/>
       <path d="M68.5532 20H57.5041C57.0598 20 56.6953 20.3637 56.6953 20.8198V28.1802C56.6953 28.6305 57.0541 29 57.5041 29H68.5532C68.9975 29 69.362 28.6363 69.362 28.1802V20.8198C69.362 20.3695 69.0031 20 68.5532 20ZM65.9162 26.1828H60.1411V22.8114H65.9162V26.1828Z" fill="#2073E8"/>
@@ -21,26 +21,74 @@ function LogoIcon() {
 
 export default function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isHome = location.pathname === '/patient-home' || location.pathname === '/';
 
   return (
-    <header style={{
-      width: '100%',
-      height: '60px',
-      backgroundImage: 'linear-gradient(180deg, rgba(223, 223, 135, 0.2) 0%, rgba(248, 249, 250, 0.2) 100%), linear-gradient(0deg, rgba(65, 136, 237, 0.05), rgba(65, 136, 237, 0.05)), linear-gradient(0deg, #F8F9FA, #F8F9FA)',
-      boxShadow: '0px 4px 4px 0px #4188ED0D',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 40px',
-      boxSizing: 'border-box',
-      marginBottom: '40px'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center',marginLeft: '60px' }}>
-        <LogoIcon />
-      </div>
-      <div style={{ display: 'flex', gap: '20px', fontSize: '13px', color: '#797980' }}>
-        <span style={{ cursor: 'pointer' }} onClick={() => navigate('/patient-home')}>홈</span>
-        <span style={{ cursor: 'pointer' }} onClick={() => navigate('/mypage')}>마이페이지</span>
+    <header
+      style={{
+        width: '100%',
+        height: '52px',
+        backgroundImage:
+          'linear-gradient(180deg, rgba(223, 223, 135, 0.2) 0%, rgba(248, 249, 250, 0.2) 100%), linear-gradient(0deg, rgba(65, 136, 237, 0.05), rgba(65, 136, 237, 0.05)), linear-gradient(0deg, #F8F9FA, #F8F9FA)',
+        boxShadow: '0px 4px 4px 0px #4188ED0D',
+        display: 'flex',
+        justifyContent: 'center',
+        padding: '0 24px', 
+        boxSizing: 'border-box',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '970px', 
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between', 
+        }}
+      >
+        {/* 로고 영역 */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            cursor: 'pointer',
+          }}
+          onClick={() => navigate('/patient-home')}
+        >
+          <LogoIcon />
+        </div>
+
+        {/* 메뉴 영역 */}
+        <nav
+          style={{
+            display: 'flex',
+            gap: '32px',
+            fontSize: '13px',
+            fontWeight: 500,
+            fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
+          }}
+        >
+          <span
+            style={{
+              cursor: 'pointer',
+              color: isHome ? '#2073E8' : '#797980',
+            }}
+            onClick={() => navigate('/patient-home')}
+          >
+            홈
+          </span>
+          <span
+            style={{
+              cursor: 'pointer',
+              color: '#797980',
+            }}
+            onClick={() => navigate('/mypage')}
+          >
+            마이페이지
+          </span>
+        </nav>
       </div>
     </header>
   );

@@ -12,7 +12,7 @@ export default function S14_DrawAlong() {
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null); // 업로드된 파일명
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false); // 안내 듣기 토글 상태
 
-  // 관찰 체크리스트 상태
+  // 관찰 체크리스트 
   const [checklist, setChecklist] = useState({
     item1: true,
     item2: false,
@@ -45,7 +45,7 @@ export default function S14_DrawAlong() {
     }}>
       <Header/>
 
-     {/* 2. 중앙 레이아웃 콘텐트 */}
+     
       <main style={{
         width: '100%',
         display: 'flex',
@@ -62,30 +62,30 @@ export default function S14_DrawAlong() {
           alignItems: 'flex-start'
         }}>
 
-          {/* 상단 뱃지 라인 */}
+         
           <div style={{ display: 'flex', gap: '10px', marginBottom: '26px' }}>
             <div style={{
               height: '42px', borderRadius: '50px', background: '#4188ED',
               display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px'
             }}>
-              <span style={{ fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '22px', color: '#FFFFFF' }}>그림 인지 활동 (오프라인)</span>
+              <span style={{ fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '22px', color: '#FFFFFF' }}>그림 인지 활동 (오프라인)</span>
             </div>
             <div style={{
               height: '42px', borderRadius: '50px', background: '#DFDF87',
               display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px'
             }}>
-              <span style={{ fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '22px', color: '#0D0D0D' }}>보호자 체크 필요</span>
+              <span style={{ fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '22px', color: '#0D0D0D' }}>보호자 체크 필요</span>
             </div>
           </div>
 
-          {/* 메인 타이틀 명제 */}
+          
           <h1 style={{
-            margin: '0 0 26px 0', fontFamily: 'Inter', fontWeight: 700, fontSize: '30px', lineHeight: '140%', color: '#0D0D0D'
+            margin: '0 0 26px 0', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '30px', lineHeight: '140%', color: '#0D0D0D'
           }}>
             아래 제시된 그림을 따라 그려 주세요.
           </h1>
 
-          {/* 안내문 박스 (왼쪽 정렬) */}
+         
           <div style={{
             width: '100%', borderRadius: '10px', background: '#4188ED0D', border: '1px solid #8E8E98',
             boxShadow: '0px 0px 4px 0px #4188ED', padding: '23px 29px', boxSizing: 'border-box', marginBottom: '26px'
@@ -94,7 +94,7 @@ export default function S14_DrawAlong() {
               margin: 0, 
               paddingLeft: '10px', 
               textAlign: 'left',
-              fontFamily: 'Pretendard Variable', 
+              fontFamily: "'Pretendard Variable', Pretendard, sans-serif", 
               fontWeight: 400,
               fontSize: '22px', 
               lineHeight: '155%', 
@@ -109,7 +109,7 @@ export default function S14_DrawAlong() {
             </ol>
           </div>
 
-          {/* 안내 듣기 / 다시 듣기 버튼 인터랙션 */}
+          
           <button 
             onClick={() => setIsAudioPlaying(!isAudioPlaying)}
             style={{
@@ -132,25 +132,25 @@ export default function S14_DrawAlong() {
             {isAudioPlaying ? (
               <>
                 <span style={{ color: '#FFFFFF', fontSize: '18px', fontWeight: 'bold' }}>↻</span>
-                <span style={{ fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '18px', color: '#FFFFFF' }}>다시 듣기</span>
+                <span style={{ fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '18px', color: '#FFFFFF' }}>다시 듣기</span>
               </>
             ) : (
               <>
                 <span style={{ color: '#0F66E2', fontSize: '18px' }}>▶</span>
-                <span style={{ fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '18px', color: '#0F66E2' }}>안내 듣기</span>
+                <span style={{ fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '18px', color: '#0F66E2' }}>안내 듣기</span>
               </>
             )}
           </button>
 
-          {/* 큰 그레이 박스 감싸기 */}
+         
           <div style={{
             width: '100%', borderRadius: '10px', background: '#4188ED0D', padding: '24px',
             boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '40px'
           }}>
             
-            {/* 세부 파트 1: 환자에게 보여줄 그림 */}
+            
             <div>
-              <h2 style={{ margin: '0 0 14px 0', fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '22px', color: '#0D0D0D',textAlign: 'left' }}>
+              <h2 style={{ margin: '0 0 14px 0', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '22px', color: '#0D0D0D',textAlign: 'left' }}>
                 환자에게 보여줄 그림
               </h2>
               <div style={{
@@ -158,7 +158,7 @@ export default function S14_DrawAlong() {
                 border: '1px solid #8E8E98', boxShadow: '0px 0px 4px 0px #4188ED',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
-                <span style={{ fontFamily: 'Pretendard Variable', fontWeight: 400, fontSize: '22px', color: '#797980' }}>(제시 그림)</span>
+                <span style={{ fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 400, fontSize: '22px', color: '#797980' }}>(제시 그림)</span>
               </div>
               
               {/* 크게보기 / 인쇄용 버튼  */}
@@ -167,7 +167,7 @@ export default function S14_DrawAlong() {
                   onClick={() => window.open('about:blank', '_blank')} // 추후 원본 이미지 경로 지정 가능하게 해둠
                   style={{
                     padding: '8px 20px', borderRadius: '8px', border: '1px solid #8E8E98', background: '#FFFFFF',
-                    fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '16px', color: '#0D0D0D', cursor: 'pointer'
+                    fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '16px', color: '#0D0D0D', cursor: 'pointer'
                   }}
                 >
                   크게 보기
@@ -176,7 +176,7 @@ export default function S14_DrawAlong() {
                   onClick={() => window.print()} //  브라우저 인쇄 모듈 기본 연동
                   style={{
                     padding: '8px 20px', borderRadius: '8px', border: '1px solid #8E8E98', background: '#FFFFFF',
-                    fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '16px', color: '#0D0D0D', cursor: 'pointer'
+                    fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '16px', color: '#0D0D0D', cursor: 'pointer'
                   }}
                 >
                   인쇄용 PDF
@@ -184,7 +184,7 @@ export default function S14_DrawAlong() {
               </div>
             </div>
 
-            {/* 세부 파트 2: 파일 업로드 영역 */}
+           
             <div>
               <input 
                 type="file" 
@@ -203,13 +203,13 @@ export default function S14_DrawAlong() {
                 }}
               >
                 <p style={{
-                  margin: 0, fontFamily: 'Pretendard Variable', fontWeight: 400, fontSize: '22px',
+                  margin: 0, fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 400, fontSize: '22px',
                   lineHeight: '155%', color: '#797980', textAlign: 'center'
                 }}>
                   종이에 그린 그림 사진 올리기
                 </p>
                 <p style={{
-                  margin: '4px 0 0 0', fontFamily: 'Pretendard Variable', fontWeight: 400, fontSize: '16px',
+                  margin: '4px 0 0 0', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 400, fontSize: '16px',
                   color: '#999999', textAlign: 'center'
                 }}>
                   보호자가 직접 촬영하여 업로드 해주세요. (JPG/PNG 최대 5MB)
@@ -219,7 +219,7 @@ export default function S14_DrawAlong() {
                   style={{ width: '42px', height: '42px', display: 'block',margin: '12px auto 0 auto',opacity: 0.4,alignItems: 'center' }} />
 
                 <p style={{
-                  margin: 0, fontFamily: 'Pretendard Variable', fontWeight: 400, fontSize: '22px',
+                  margin: 0, fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 400, fontSize: '22px',
                   lineHeight: '155%', color: '#797980', textAlign: 'center'
                 }}></p>
 
@@ -246,8 +246,8 @@ export default function S14_DrawAlong() {
             </div>
           </div>
 
-          {/* 3. 보호자 평가 · 수행 정도 */}
-          <h2 style={{ margin: '0 0 16px 0', fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '22px', color: '#0D0D0D' }}>
+         
+          <h2 style={{ margin: '0 0 16px 0', fontFamily:"'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '22px', color: '#0D0D0D' }}>
             보호자 평가 · 수행 정도
           </h2>
           
@@ -321,12 +321,12 @@ export default function S14_DrawAlong() {
                   }}>{box.title}</span>
                   
                   <span style={{
-                    fontFamily: 'Pretendard Variable', fontWeight: 400, fontSize: '18px',
+                    fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 400, fontSize: '18px',
                     color: styleState.textColor
                   }}>{box.desc}</span>
                   
                   <span style={{
-                    fontFamily: 'Pretendard Variable', fontWeight: 400, fontSize: '14px',
+                    fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 400, fontSize: '14px',
                     color: styleState.subColor, marginTop: '2px'
                   }}>{box.sub}</span>
                 </div>
@@ -334,8 +334,7 @@ export default function S14_DrawAlong() {
             })}
           </div>
 
-          {/* 4. 관찰 체크리스트 */}
-          <h2 style={{ margin: '0 0 16px 0', fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '22px', color: '#0D0D0D' }}>
+          <h2 style={{ margin: '0 0 16px 0', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '22px', color: '#0D0D0D' }}>
             관찰 체크리스트
           </h2>
 
@@ -364,7 +363,7 @@ export default function S14_DrawAlong() {
                     {isChecked && <span style={{ color: '#FFFFFF', fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
                   </div>
                   <span style={{
-                    fontFamily: 'Pretendard Variable', fontWeight: 400, fontSize: '22px', color: '#0D0D0D'
+                    fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 400, fontSize: '22px', color: '#0D0D0D'
                   }}>
                     {item.label}
                   </span>
@@ -374,7 +373,7 @@ export default function S14_DrawAlong() {
           </div>
 
           {/* 5. 소요 시간 */}
-          <h2 style={{ margin: '0 0 14px 0', fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '22px', color: '#0D0D0D' }}>
+          <h2 style={{ margin: '0 0 14px 0', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '22px', color: '#0D0D0D' }}>
             소요 시간
           </h2>
           <div style={{
@@ -388,13 +387,13 @@ export default function S14_DrawAlong() {
               onChange={(e) => setDuration(e.target.value)}
               style={{
                 width: '100%', background: 'transparent', border: 'none', outline: 'none',
-                fontFamily: 'Pretendard Variable', fontWeight: 400, fontSize: '22px', color: '#0D0D0D'
+                fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 400, fontSize: '22px', color: '#0D0D0D'
               }}
             />
           </div>
 
           {/* 6. 활동 중 감정 상태 */}
-          <h2 style={{ margin: '0 0 16px 0', fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '22px', color: '#0D0D0D' }}>
+          <h2 style={{ margin: '0 0 16px 0', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '22px', color: '#0D0D0D' }}>
             활동 중 감정 상태
           </h2>
           <div style={{ display: 'flex', gap: '16px', width: '100%', flexWrap: 'wrap', marginBottom: '40px' }}>
@@ -439,7 +438,7 @@ export default function S14_DrawAlong() {
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                     
-                    fontFamily: 'Pretendard Variable',
+                    fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
                     fontWeight: 400,
                     fontSize: '18px',
                     lineHeight: '155%',
@@ -458,7 +457,7 @@ export default function S14_DrawAlong() {
           </div>
 
           {/* 7. 보호자 메모 */}
-          <h2 style={{ margin: '0 0 14px 0', fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '22px', color: '#0D0D0D' }}>
+          <h2 style={{ margin: '0 0 14px 0', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '22px', color: '#0D0D0D' }}>
             보호자 메모 (선택)
           </h2>
           <div style={{
@@ -472,7 +471,7 @@ export default function S14_DrawAlong() {
               rows={3}
               style={{
                 width: '100%', background: 'transparent', border: 'none', outline: 'none',
-                resize: 'none', fontFamily: 'Pretendard Variable', fontWeight: 400,
+                resize: 'none', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 400,
                 fontSize: '22px', lineHeight: '155%', color: '#0D0D0D'
               }}
             />
@@ -485,7 +484,7 @@ export default function S14_DrawAlong() {
               style={{
               width: '121px', height: '59px', borderRadius: '50px', backgroundColor: '#0D0D0D',
               border: 'none', boxShadow: '0px 0px 4px 0px #4188ED',
-              fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '18px', color: '#FFFFFF', cursor: 'pointer'
+              fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '18px', color: '#FFFFFF', cursor: 'pointer'
             }}>
               그만하기
             </button>
@@ -495,7 +494,7 @@ export default function S14_DrawAlong() {
               style={{
                 width: '151px', height: '59px', borderRadius: '50px', backgroundColor: '#4188ED',
                 border: 'none', boxShadow: '0px 0px 4px 0px #4188ED',
-                fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '18px', color: '#FFFFFF', cursor: 'pointer'
+                fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '18px', color: '#FFFFFF', cursor: 'pointer'
               }}
             >
               활동 완료 →

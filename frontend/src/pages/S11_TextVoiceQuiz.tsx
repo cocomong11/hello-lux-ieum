@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import HintPopup from '../pages/S16_HintPopup';  
 import Header from '../components/patientHeader';
 import QuizVoiceController from '../components/quizButton'; 
+
 export default function S11_TextVoiceQuiz() {
   const navigate = useNavigate();
   const [isListening, setIsListening] = useState<boolean>(false);
@@ -19,21 +20,27 @@ export default function S11_TextVoiceQuiz() {
   return (
     <div style={{
       width: '100%', minHeight: '100vh', backgroundColor: '#FFFFFF',
-      fontFamily: 'Pretendard Variable, Inter, sans-serif',
+      fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       boxSizing: 'border-box', paddingBottom: '120px', position: 'relative'
     }}>
       
       <Header/>
 
-      {/* 메인 콘텐츠 영역 */}
-      <div style={{ width: '648px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+      
+      <div style={{ 
+        width: '648px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'flex-start',
+        transform: 'translateX(6px)' 
+      }}>
         
         {/* 상단 뱃지 */}
         <div style={{
           width: '184px', height: '42px', borderRadius: '50px', backgroundColor: '#4188ED',
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 20px',
-          boxSizing: 'border-box', gap: '10px', marginBottom: '26px'
+          boxSizing: 'border-box', gap: '10px', marginBottom: '26px', marginTop: '60px'
         }}>
           <span style={{ fontWeight: 700, fontSize: '18px', color: '#F8F9FA' }}>주관식 음성 퀴즈</span>
         </div>
@@ -45,24 +52,25 @@ export default function S11_TextVoiceQuiz() {
         }}>
           오늘이 몇 월 며칠인지 말씀해 주세요.
         </h1>
+        
         <button 
-        onClick={() => setIsListening(!isListening)}
-        style={{
-          width: '154px', height: '46px', borderRadius: '10px', boxSizing: 'border-box',
-          padding: '6px 19px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: '10px', cursor: 'pointer', transition: 'all 0.2s ease',
-          backgroundColor: isListening ? '#0F66E2' : '#4188ED0D',
-          border: isListening ? '1px solid #DFDF87' : '1px solid #0F66E2',
-          boxShadow: '0px 0px 4px 0px #4188ED'
-        }}
-      >
-        <span style={{
-          fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '20px',
-          lineHeight: '155%', textAlign: 'center', color: isListening ? '#FFFFFF' : '#0F66E2'
-        }}>
-          {isListening ? '↻ 다시 듣기' : '▶ 문제 듣기'}
-        </span>
-      </button>
+          onClick={() => setIsListening(!isListening)}
+          style={{
+            width: '154px', height: '46px', borderRadius: '10px', boxSizing: 'border-box',
+            padding: '6px 19px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: '10px', cursor: 'pointer', transition: 'all 0.2s ease',
+            backgroundColor: isListening ? '#0F66E2' : '#4188ED0D',
+            border: isListening ? '1px solid #DFDF87' : '1px solid #0F66E2',
+            boxShadow: '0px 0px 4px 0px #4188ED'
+          }}
+        >
+          <span style={{
+            fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '20px',
+            lineHeight: '155%', textAlign: 'center', color: isListening ? '#FFFFFF' : '#0F66E2'
+          }}>
+            {isListening ? '↻ 다시 듣기' : '▶ 문제 듣기'}
+          </span>
+        </button>
 
         <QuizVoiceController 
           onHintClick={handleHintClick}
@@ -73,10 +81,10 @@ export default function S11_TextVoiceQuiz() {
           onSuccessSubmit={(finalDuration) => console.log('소요시간:', finalDuration)}
         />
 
-        {/* 하단 액션 버튼 그룹 */}
+        {/* 하단 버튼 그룹 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '40px' }}>
           <button
-            onClick={() =>  navigate('/patient-home')}
+            onClick={() => navigate('/patient-home')}
             style={{
               width: '121px', height: '59px', borderRadius: '50px', backgroundColor: '#0D0D0D',
               border: 'none', boxShadow: '0px 0px 4px 0px #4188ED',
