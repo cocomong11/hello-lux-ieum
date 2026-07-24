@@ -1,16 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import HintPopup from '../pages/S16_HintPopup'; 
+import HintPopup from '../pages/S16_HintPopup';  
 import Header from '../components/patientHeader';
 import QuizVoiceController from '../components/quizButton'; 
-
-
-const DESIGN = {
-  WIDTH: '1920px',
-  MIN_HEIGHT: '1407px',
-  HEADER_HEIGHT: '68px',
-  CONTENT_WIDTH: '648px',
-} as const;
 
 export default function S11_TextVoiceQuiz() {
   const navigate = useNavigate();
@@ -26,182 +18,104 @@ export default function S11_TextVoiceQuiz() {
   };
 
   return (
-    <div
-      style={{
-        width: '100%',
-        minHeight: DESIGN.MIN_HEIGHT, 
-        backgroundColor: '#FFFFFF',
-        fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        boxSizing: 'border-box',
-        position: 'relative',
-      }}
-    >
-      {/* 상단 헤더 */}
-      <Header />
+    <div style={{
+      width: '100%', minHeight: '100vh', backgroundColor: '#FFFFFF',
+      fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      boxSizing: 'border-box', paddingBottom: '120px', position: 'relative'
+    }}>
+      
+      <Header/>
 
-      {/* 1920px 기준 중앙 메인 콘텐츠 영역 */}
-      <main
-        style={{
-          width: '100%',
-          maxWidth: DESIGN.WIDTH, 
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          paddingTop: '80px',
-          paddingBottom: '120px',
-          boxSizing: 'border-box',
-          flex: 1,
-        }}
-      >
-        <div
+      
+      <div style={{ 
+        width: '648px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'flex-start',
+        transform: 'translateX(6px)' 
+      }}>
+        
+        {/* 상단 뱃지 */}
+        <div style={{
+          width: '184px', height: '42px', borderRadius: '50px', backgroundColor: '#4188ED',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 20px',
+          boxSizing: 'border-box', gap: '10px', marginBottom: '26px', marginTop: '60px'
+        }}>
+          <span style={{ fontWeight: 700, fontSize: '18px', color: '#F8F9FA' }}>주관식 음성 퀴즈</span>
+        </div>
+
+        {/* 퀴즈 질문 타이틀 */}
+        <h1 style={{
+          width: '458px', height: '42px', fontFamily: 'Inter', fontWeight: 700, fontSize: '30px',
+          lineHeight: '140%', color: '#0D0D0D', margin: '0 0 26px 0'
+        }}>
+          오늘이 몇 월 며칠인지 말씀해 주세요.
+        </h1>
+        
+        <button 
+          onClick={() => setIsListening(!isListening)}
           style={{
-            width: DESIGN.CONTENT_WIDTH, 
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
+            width: '154px', height: '46px', borderRadius: '10px', boxSizing: 'border-box',
+            padding: '6px 19px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: '10px', cursor: 'pointer', transition: 'all 0.2s ease',
+            backgroundColor: isListening ? '#0F66E2' : '#4188ED0D',
+            border: isListening ? '1px solid #DFDF87' : '1px solid #0F66E2',
+            boxShadow: '0px 0px 4px 0px #4188ED'
           }}
         >
-          {/* 상단 뱃지 */}
-          <div
-            style={{
-              width: '184px',
-              height: '42px',
-              borderRadius: '50px',
-              backgroundColor: '#4188ED',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '10px 20px',
-              boxSizing: 'border-box',
-              gap: '10px',
-              marginBottom: '26px',
-            }}
-          >
-            <span style={{ fontWeight: 700, fontSize: '18px', color: '#F8F9FA' }}>
-              주관식 음성 퀴즈
-            </span>
-          </div>
+          <span style={{
+            fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '20px',
+            lineHeight: '155%', textAlign: 'center', color: isListening ? '#FFFFFF' : '#0F66E2'
+          }}>
+            {isListening ? '↻ 다시 듣기' : '▶ 문제 듣기'}
+          </span>
+        </button>
 
-          {/* 퀴즈 질문 타이틀 */}
-          <h1
-            style={{
-              width: '100%',
-              maxWidth: '458px',
-              fontWeight: 700,
-              fontSize: '30px',
-              lineHeight: '140%',
-              color: '#0D0D0D',
-              margin: '0 0 26px 0',
-            }}
-          >
-            오늘이 몇 월 며칠인지 말씀해 주세요.
-          </h1>
+        <QuizVoiceController 
+          onHintClick={handleHintClick}
+          hintCount={hintCount}
+          placeholder="“오월 이십육일이요.”"
+          resultTitle="정답입니다!"
+          resultDescription="잘하셨어요! 질문에 정확히 답변해 주셨어요."
+          onSuccessSubmit={(finalDuration) => console.log('소요시간:', finalDuration)}
+        />
 
-          {/* 문제 듣기 버튼 */}
+        {/* 하단 버튼 그룹 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '40px' }}>
           <button
-            onClick={() => setIsListening(!isListening)}
+            onClick={() => navigate('/patient-home')}
             style={{
-              width: '154px',
-              height: '46px',
-              borderRadius: '10px',
-              boxSizing: 'border-box',
-              padding: '6px 19px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              backgroundColor: isListening ? '#0F66E2' : '#4188ED0D',
-              border: isListening ? '1px solid #DFDF87' : '1px solid #0F66E2',
-              boxShadow: '0px 0px 4px 0px #4188ED',
-              marginBottom: '20px',
+              width: '121px', height: '59px', borderRadius: '50px', backgroundColor: '#0D0D0D',
+              border: 'none', boxShadow: '0px 0px 4px 0px #4188ED',
+              fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '18px', color: '#FFFFFF', cursor: 'pointer'
             }}
           >
-            <span
-              style={{
-                fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
-                fontWeight: 700,
-                fontSize: '20px',
-                lineHeight: '155%',
-                textAlign: 'center',
-                color: isListening ? '#FFFFFF' : '#0F66E2',
-              }}
-            >
-              {isListening ? '↻ 다시 듣기' : '▶ 문제 듣기'}
-            </span>
+            그만하기
           </button>
 
-          {/* 퀴즈 음성 컨트롤러 */}
-          <QuizVoiceController
-            onHintClick={handleHintClick}
-            hintCount={hintCount}
-            placeholder="“오월 이십육일이요.”"
-            resultTitle="정답입니다!"
-            resultDescription="잘하셨어요! 질문에 정확히 답변해 주셨어요."
-            onSuccessSubmit={(finalDuration) => console.log('소요시간:', finalDuration)}
-          />
-
-          {/* 하단 액션 버튼 그룹 */}
-          <div
+          <button
+            onClick={() => navigate('/patient-photo')}
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              width: '100%',
-              marginTop: '40px',
+              width: '151px', height: '59px', borderRadius: '50px', backgroundColor: '#4188ED',
+              border: 'none', boxShadow: '0px 0px 4px 0px #4188ED',
+              fontFamily: 'Pretendard Variable', fontWeight: 700, fontSize: '18px', color: '#FFFFFF', cursor: 'pointer'
             }}
           >
-            <button
-              onClick={() => navigate('/patient-home')}
-              style={{
-                width: '121px',
-                height: '59px',
-                borderRadius: '50px',
-                backgroundColor: '#0D0D0D',
-                border: 'none',
-                boxShadow: '0px 0px 4px 0px #4188ED',
-                fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
-                fontWeight: 700,
-                fontSize: '18px',
-                color: '#FFFFFF',
-                cursor: 'pointer',
-              }}
-            >
-              그만하기
-            </button>
-
-            <button
-              onClick={() => navigate('/patient-photo')}
-              style={{
-                width: '151px',
-                height: '59px',
-                borderRadius: '50px',
-                backgroundColor: '#4188ED',
-                border: 'none',
-                boxShadow: '0px 0px 4px 0px #4188ED',
-                fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
-                fontWeight: 700,
-                fontSize: '18px',
-                color: '#FFFFFF',
-                cursor: 'pointer',
-              }}
-            >
-              다음 활동 →
-            </button>
-          </div>
+            다음 활동 →
+          </button>
         </div>
-      </main>
+
+      </div>
 
       {/* 힌트 팝업 */}
       {isHintOpen && (
-        <HintPopup
-          onClose={() => setIsHintOpen(false)}
-          onStepChange={(maxStep) => setHintCount(maxStep)}
+        <HintPopup 
+          onClose={() => setIsHintOpen(false)}             
+          onStepChange={(maxStep) => setHintCount(maxStep)} 
         />
       )}
+
     </div>
   );
 }

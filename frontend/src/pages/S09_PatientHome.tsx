@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/patientHeader'; 
+import Header from '../components/patientHeader';
+
 const F: CSSProperties = {
   fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
@@ -27,15 +28,15 @@ export default function S09_PatientHome() {
     const completedStatus = sessionStorage.getItem('todayActivityCompleted');
     if (completedStatus === 'true') {
       setIsCompleted(true);
-     
     }
+    sessionStorage.removeItem('todayActivityCompleted');
   }, []);
 
   return (
     <div
       style={{
         ...F,
-        width: '100%',
+        width: '100vw',
         minHeight: '100vh',
         backgroundColor: '#F8F9FA',
         display: 'flex',
@@ -43,12 +44,11 @@ export default function S09_PatientHome() {
         alignItems: 'center',
         boxSizing: 'border-box',
         paddingBottom: '80px',
+        overflowX: 'hidden',
       }}
     >
-      {/* ─── 1. 상단 슬림 Navbar (Header로 수정) ─── */}
       <Header />
 
-      {/* ─── 2. 메인 콘텐츠 영역 (이미지 비율 중앙 700px) ─── */}
       <main
         style={{
           ...F,
@@ -58,7 +58,7 @@ export default function S09_PatientHome() {
           flexDirection: 'column',
           alignItems: 'flex-start',
           marginTop: '60px',
-          padding: '0 16px',
+          padding: '0 20px',
           boxSizing: 'border-box',
         }}
       >
@@ -84,7 +84,7 @@ export default function S09_PatientHome() {
               whiteSpace: 'nowrap',
             }}
           >
-            안녕하세요, 홍길동님! 👋
+            안녕하세요, 홍길동님!🖐️
           </p>
 
           <p
@@ -116,12 +116,11 @@ export default function S09_PatientHome() {
           </p>
         </section>
 
-        {/* 오늘의 두뇌 활동 */}
         <h2
           style={{
             ...F,
             margin: '0 0 14px 0',
-            fontSize: '22px',
+            fontSize: '27px',
             fontWeight: 700,
             lineHeight: '1.3',
             color: '#0d0d0d',
@@ -130,7 +129,6 @@ export default function S09_PatientHome() {
           오늘의 두뇌 활동
         </h2>
 
-        {/* 대형 카드 */}
         <div
           style={{
             position: 'relative',
@@ -143,14 +141,14 @@ export default function S09_PatientHome() {
             boxSizing: 'border-box',
             background:
               'linear-gradient(0deg, rgba(65, 136, 237, 0.05), rgba(65, 136, 237, 0.05)), linear-gradient(180deg, rgba(32, 115, 232, 0.2) 0%, rgba(223, 223, 135, 0.2) 100%)',
-            marginBottom: '36px',
+            marginBottom: '50px'
           }}
         >
           <p
             style={{
               ...F,
               margin: 0,
-              fontSize: '19px',
+              fontSize: '23px',
               fontWeight: 700,
               lineHeight: '1.3',
               color: '#0d0d0d',
@@ -204,9 +202,9 @@ export default function S09_PatientHome() {
               ...F,
               position: 'absolute',
               left: '26px',
-              bottom: '20px',
+              bottom: '18px',
               width: 'calc(100% - 52px)',
-              height: '50px',
+              height: '60px',
               borderRadius: '50px',
               cursor: isCompleted ? 'default' : 'pointer',
               display: 'flex',
@@ -233,11 +231,10 @@ export default function S09_PatientHome() {
           </button>
         </div>
 
-        {/* 오늘 이만큼 했어요 */}
         <h2
           style={{
             ...F,
-            margin: '0 0 14px 0',
+            margin: '0 0 16px 0',
             fontSize: '22px',
             fontWeight: 700,
             lineHeight: '1.3',
@@ -247,13 +244,13 @@ export default function S09_PatientHome() {
           오늘 이만큼 했어요
         </h2>
 
-        {/* 통계 상자 */}
+        
         <div
           style={{
             display: 'flex',
             width: '100%',
             gap: '16px',
-            marginBottom: '36px',
+            marginBottom: '55px'
           }}
         >
           {[
@@ -321,7 +318,7 @@ export default function S09_PatientHome() {
           ))}
         </div>
 
-        {/* 하단 버튼 영역 */}
+
         <div
           style={{
             display: 'flex',
