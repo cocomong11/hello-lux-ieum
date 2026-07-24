@@ -137,7 +137,6 @@ export default function QuizVoiceController({
 
   return (
     <>
-      {/* UI 영역은 기존 코드 유지하되, 화면에 뿌려줄 때만 이쁘게 따옴표를 붙여줍니다 */}
       <div style={{
         width: '648px', height: '335px', borderRadius: '10px', backgroundColor: '#4188ED0D',
         marginTop: '26px', display: 'flex', flexDirection: 'column', alignItems: 'center',
