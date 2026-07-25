@@ -8,7 +8,7 @@ const DESIGN_H = 1246;
 const CONTENT_LEFT = 636;
 
 const F: React.CSSProperties = {
-  fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
+  fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
 
 const SECTION_TITLE: React.CSSProperties = {

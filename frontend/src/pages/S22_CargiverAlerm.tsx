@@ -8,7 +8,7 @@ const DESIGN_H = 1765;
 const CONTENT_LEFT = 636;
 
 const F: React.CSSProperties = {
-  fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
+  fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
 
 const DUMMY_PATIENT = {
@@ -221,7 +221,7 @@ export default function S22_CargiverAlerm() {
               border: '1px solid #8E8E98',
               background: 'rgba(65,136,237,0.05)',
               boxShadow: '0 0 4px 0 #4188ED',
-              fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
+              fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
               fontSize: 22, fontWeight: 400, color: '#0D0D0D',
               resize: 'none', outline: 'none',
             }}
