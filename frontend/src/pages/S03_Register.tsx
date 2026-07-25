@@ -11,6 +11,26 @@ export default function S03_Register() {
   const [showPw, setShowPw] = useState(false);
   const [showPwConfirm, setShowPwConfirm] = useState(false);
 
+  // 📍 1. 에러 메시지를 관리할 상태 추가!
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleRegister = () => {
+    // 📍 2. alert 대신 setErrorMessage를 사용하도록 수정!
+    // 확실한 검증을 위해 passwordConfirm(비밀번호 확인) 칸이 비어있는지도 추가로 체크했어요.
+    if (!email || !code || !password || !passwordConfirm) {
+      setErrorMessage('* 모든 정보를 입력해 주세요.');
+      return;
+    }
+    if (password !== passwordConfirm) {
+      setErrorMessage('* 비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
+    // 이상 없으면 에러 메시지 초기화 후 다음 단계 이동
+    setErrorMessage('');
+    navigate('/role-select');
+  };
+
   const inputBox = (
     placeholder: string,
     value: string,
@@ -226,8 +246,24 @@ export default function S03_Register() {
             () => setShowPwConfirm((v) => !v),
           )}
 
+          {}
+          {errorMessage && (
+            <p
+              style={{
+                color: '#ff4d4f',
+                fontSize: 20,
+                fontWeight: 500,
+                margin: '0 0 16px 8px',
+                textAlign: 'left',
+                fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
+              }}
+            >
+              {errorMessage}
+            </p>
+          )}
+
           <button
-            onClick={() => navigate('/role-select')}
+            onClick={handleRegister}
             style={{
               width: '100%',
               height: 81,
