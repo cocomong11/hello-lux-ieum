@@ -8,7 +8,7 @@ const DESIGN_H = 3385;
 const CONTENT_LEFT = 636;
 
 const F: React.CSSProperties = {
-  fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
+  fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
 
 // 환자별 데이터

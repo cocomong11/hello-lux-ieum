@@ -23,10 +23,10 @@ function calcAge(birthDate: string): number {
 }
 
 const MENUS = [
-  { title: '변화 추이',   path: '/cargiver-report' },
-  { title: '메모 작성',   path: '/cargiver-memo'   },
-  { title: '기억 DB 수정', path: '/cargiver-update' },
-  { title: '연계 알림',   path: '/cargiver-alerm'  },
+  { title: '변화 추이',   path: '/caregiver-report' },
+  { title: '메모 작성',   path: '/caregiver-memo'   },
+  { title: '기억 DB 수정', path: '/caregiver-update' },
+  { title: '연계 알림',   path: '/caregiver-alerm'  },
 ];
 
 const SUB_MENUS = ['가족', '지인', '장소', '음식', '인생 사건'];
@@ -168,13 +168,13 @@ export default function CaregiverSidebar({ patient }: Props) {
 
       {/* 메뉴 항목 */}
       {(() => {
-        const isUpdatePage = location.pathname === '/cargiver-update';
+        const isUpdatePage = location.pathname === '/caregiver-update';
         const tops = isUpdatePage ? MENU_TOPS_UPDATE : MENU_TOPS;
 
         return MENUS.map((menu, i) => {
         const isActive = location.pathname === menu.path;
         const isHovered = hoveredPath === menu.path;
-        const isUpdateMenu = menu.path === '/cargiver-update';
+        const isUpdateMenu = menu.path === '/caregiver-update';
         const isUpdateActive = isActive && isUpdateMenu;
         const currentCategory = new URLSearchParams(location.search).get('category') || '가족';
 
@@ -255,7 +255,7 @@ export default function CaregiverSidebar({ patient }: Props) {
                   {SUB_MENUS.map(sub => (
                     <span
                       key={sub}
-                      onClick={e => { e.stopPropagation(); navigate(`/cargiver-update?category=${sub}`); }}
+                      onClick={e => { e.stopPropagation(); navigate(`/caregiver-update?category=${sub}`); }}
                       style={{
                         fontFamily: 'Pretendard Variable',
                         fontSize: 22,

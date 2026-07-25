@@ -10,7 +10,7 @@ const DESIGN_H = 1972;
 const CONTENT_LEFT = 636; // 348(sidebar) + 288
 
 const F: React.CSSProperties = {
-  fontFamily: '"Pretendard Variable", Pretendard, sans-serif',
+  fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
 
 const LABEL_STYLE: React.CSSProperties = {
@@ -80,7 +80,7 @@ function tagStyle(selected: boolean): React.CSSProperties {
     background: selected ? '#0F66E2' : '#F8F9FA',
     boxShadow: selected ? '0 0 4px 0 #4188ED' : '0 0 4px 0 #797980',
     cursor: 'pointer',
-    fontFamily: '"Pretendard Variable", Pretendard, sans-serif',
+    fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
     fontSize: 22,
     fontWeight: selected ? 700 : 400,
     color: selected ? '#F8F9FA' : '#0D0D0D',
@@ -210,7 +210,7 @@ export default function S20_CargiverMemo() {
         <div style={{ marginLeft: 348 }}>
           {/* 헤더 */}
           <div style={{ height: 67, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 24, paddingRight: 348 }}>
-            <button onClick={() => navigate('/cargiver-home')}
+            <button onClick={() => navigate('/caregiver-home')}
               style={{ ...F, fontSize: 16, fontWeight: 700, color: 'var(--color-neutral-gray)', background: 'none', border: 'none', cursor: 'pointer' }}>홈</button>
             <button onClick={() => navigate('/mypage')}
               style={{ ...F, fontSize: 16, fontWeight: 700, color: 'var(--color-neutral-gray)', background: 'none', border: 'none', cursor: 'pointer' }}>마이페이지</button>
@@ -373,7 +373,7 @@ export default function S20_CargiverMemo() {
               border: '1px solid #8E8E98',
               background: 'rgba(65,136,237,0.05)',
               boxShadow: '0 0 4px 0 #4188ED',
-              fontFamily: '"Pretendard Variable", Pretendard, sans-serif',
+              fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
               fontSize: 22,
               fontWeight: 400,
               color: '#0D0D0D',

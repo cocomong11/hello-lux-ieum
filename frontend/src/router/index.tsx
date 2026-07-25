@@ -61,16 +61,16 @@ const router = createBrowserRouter([
 
   // ── 보호자 흐름───────────────────────────────────────────
   
-  { path: '/cargiver-home', element: <S18_CargiverHome />},
+  { path: '/caregiver-home', element: <S18_CargiverHome />},
 
   // ── 계정 ───────────────────────────────────────────
-  { path: '/cargiver-mypage',        element: <S27_MyPage /> },
+  { path: '/caregiver-mypage',        element: <S27_MyPage /> },
 
   // ── 보호자 흐름───────────────────────────────────────────
-  { path: '/cargiver-report', element: <S19_CargiverReport />},
-  { path: '/cargiver-memo', element: <S20_CargiverMemo />},
-  { path: '/cargiver-update', element: <S21_CargiverUpdate />},
-  { path: '/cargiver-alerm', element: <S22_CargiverAlerm />},
+  { path: '/caregiver-report', element: <S19_CargiverReport />},
+  { path: '/caregiver-memo', element: <S20_CargiverMemo />},
+  { path: '/caregiver-update', element: <S21_CargiverUpdate />},
+  { path: '/caregiver-alerm', element: <S22_CargiverAlerm />},
 
   // ── 의료진 흐름───────────────────────────────────────────
   { path: '/doctor-home', element: <S23_DoctorHome />},

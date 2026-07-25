@@ -2,9 +2,7 @@ import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRole } from '../utils/role';
 import PageLayout from '../components/common/PageLayout';
-
-const imgLinkIcon =
-  'https://www.figma.com/api/mcp/asset/aa1b8209-b761-4d7b-9b15-e3b34cdf625e';
+import imgLinkIcon from '../assets/link.png'; // 연동 아이콘
 
 // 더미 환자 정보
 const DUMMY_PATIENT = {
@@ -46,8 +44,9 @@ export default function S08_CodeLink() {
 
     const role = getRole();
 
+    // 💡 라우터 설정에 맞춰서 경로를 수정해 드렸어요!
     if (role === 'guardian') {
-      navigate('/guardian-home');
+      navigate('/caregiver-home');
     } else if (role === 'doctor') {
       navigate('/doctor-home');
     } else {
@@ -56,39 +55,27 @@ export default function S08_CodeLink() {
   };
 
   return (
-    <PageLayout noCanvas>
+    <PageLayout scrollable>
       <div
         style={{
           ...F,
-          width: '100%',
-          minHeight: 'calc(100vh - 52px)',
-          background: '#f8f9fa',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'flex-start',
-          overflowX: 'hidden',
-        }}
-      >
-      <main
-        style={{
-          width: 393,
-          minHeight: 852,
-          background: '#f8f9fa',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          paddingTop: 52,
+          width: '100%',
+          padding: '120px 0',
+          minHeight: 'calc(100vh - 68px)',
           boxSizing: 'border-box',
         }}
       >
-        {/* 아이콘 */}
+        {/* 상단 아이콘 (로그인 화면 텍스트 사이즈에 맞게 살짝 키웠어요) */}
         <div
           style={{
-            width: 42,
-            height: 42,
+            width: 64,
+            height: 64,
             borderRadius: '50%',
             overflow: 'hidden',
-            marginBottom: 14,
+            marginBottom: 24,
           }}
         >
           <img
@@ -103,162 +90,175 @@ export default function S08_CodeLink() {
           />
         </div>
 
-        {/* 제목 */}
-        <h1
+        {/* Title (S02 로그인과 완벽 일치) */}
+        <p
           style={{
-            ...F,
-            margin: 0,
-            fontSize: 14,
+            fontSize: 36,
             fontWeight: 700,
-            lineHeight: 1.35,
+            lineHeight: '1.35',
             color: '#0d0d0d',
-            textAlign: 'center',
+            margin: '0 0 16px 0',
           }}
         >
           환자 코드 연동
-        </h1>
+        </p>
 
-        {/* 설명 */}
+        {/* Subtitle (S02 로그인과 완벽 일치) */}
         <p
           style={{
-            ...F,
-            margin: '4px 0 0',
-            fontSize: 7,
+            fontSize: 22,
             fontWeight: 400,
-            lineHeight: 1.55,
+            lineHeight: '1.55',
             color: '#797980',
-            textAlign: 'center',
+            margin: '0 0 50px 0',
           }}
         >
           환자가 발급받은 6자리 코드를 입력해주세요
         </p>
 
-        {/* 코드 입력 영역 */}
+        {/* 중앙 컨텐츠 영역 (S02처럼 648px로 고정) */}
         <div
-          onClick={() => inputRef.current?.focus()}
           style={{
-            position: 'relative',
+            width: 648,
             display: 'flex',
-            gap: 7,
-            marginTop: 21,
-            cursor: 'text',
+            flexDirection: 'column',
+            alignItems: 'center', // 가운데 정렬 추가
           }}
         >
-          <input
-            ref={inputRef}
-            value={code}
-            onChange={(e) => handleChange(e.target.value)}
-            maxLength={6}
-            inputMode='text'
-            autoComplete='off'
+          {/* 코드 입력 영역 */}
+          <div
+            onClick={() => inputRef.current?.focus()}
             style={{
-              position: 'absolute',
-              inset: 0,
-              opacity: 0,
-              border: 'none',
-              outline: 'none',
-              pointerEvents: 'none',
+              position: 'relative',
+              display: 'flex',
+              gap: 16, // 박스 사이 간격
+              cursor: 'text',
+              width: '100%',
+              justifyContent: 'space-between', // 648px 안에서 일정하게 띄우기
             }}
-          />
-
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div
-              key={index}
+          >
+            <input
+              ref={inputRef}
+              value={code}
+              onChange={(e) => handleChange(e.target.value)}
+              maxLength={6}
+              inputMode='text'
+              autoComplete='off'
               style={{
-                width: 28,
-                height: 28,
-                borderRadius: 4,
+                position: 'absolute',
+                inset: 0,
+                opacity: 0,
+                border: 'none',
+                outline: 'none',
+                pointerEvents: 'none',
+              }}
+            />
+
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={index}
+                style={{
+                  width: 90, // 로그인 폼 크기에 맞춰 큼직하게 변경!
+                  height: 90,
+                  borderRadius: 10,
+                  background: 'rgba(65, 136, 237, 0.05)',
+                  border: '1px solid #4188ed',
+                  boxShadow: '0 0 4px rgba(65, 136, 237, 0.45)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <span
+                  style={{
+                    ...F,
+                    fontSize: 36, // 글자 크기도 시원하게!
+                    fontWeight: 700,
+                    color: '#0d0d0d',
+                  }}
+                >
+                  {code[index] ?? ''}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* 환자 정보 미리보기 (넓어진 크기에 맞춰 디자인 조정) */}
+          {patient && (
+            <div
+              style={{
+                width: '100%',
+                marginTop: 30,
                 background: 'rgba(65, 136, 237, 0.05)',
                 border: '1px solid #4188ed',
-                boxShadow: '0 0 4px rgba(65, 136, 237, 0.45)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                borderRadius: 10,
+                boxShadow: '0 0 4px rgba(65, 136, 237, 0.35)',
+                padding: '24px',
                 boxSizing: 'border-box',
+                textAlign: 'center',
               }}
             >
-              <span
+              <p
                 style={{
                   ...F,
-                  fontSize: 10,
+                  margin: 0,
+                  fontSize: 22,
                   fontWeight: 700,
-                  lineHeight: 1,
+                  color: '#0f66e2',
+                }}
+              >
+                환자 정보 확인
+              </p>
+              <p
+                style={{
+                  ...F,
+                  margin: '12px 0 0',
+                  fontSize: 18,
+                  fontWeight: 400,
                   color: '#0d0d0d',
                 }}
               >
-                {code[index] ?? ''}
-              </span>
+                이름 : <b>{patient.name}</b> &nbsp;|&nbsp; 나이 :{' '}
+                <b>{patient.age}세</b> &nbsp;|&nbsp; 지원 수준 :{' '}
+                <b>{patient.level}</b>
+              </p>
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* 환자 정보 미리보기 */}
-        {patient && (
-          <div
+          {/* 연동 확인 버튼 (S02 로그인 버튼과 완벽 일치) */}
+          <button
+            onClick={handleConfirm}
+            disabled={!isComplete}
             style={{
-              width: 184,
-              minHeight: 34,
-              marginTop: 14,
-              background: 'rgba(65, 136, 237, 0.05)',
-              border: '1px solid #4188ed',
-              borderRadius: 4,
-              boxShadow: '0 0 4px rgba(65, 136, 237, 0.35)',
-              padding: '7px 9px',
-              boxSizing: 'border-box',
+              width: '100%',
+              height: 81,
+              marginTop: 50, // 위쪽 여백 넉넉히
+              marginBottom: 40,
+              background: isComplete ? '#0f66e2' : '#dddde6',
+              borderRadius: 50,
+              border: 'none',
+              boxShadow: isComplete ? '0 0 2px #4188ed' : 'none',
+              cursor: isComplete ? 'pointer' : 'not-allowed',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
             }}
           >
-            <p
+            <span
               style={{
-                ...F,
-                margin: 0,
-                fontSize: 8,
+                fontSize: 22,
                 fontWeight: 700,
-                lineHeight: 1.35,
-                color: '#0d0d0d',
+                lineHeight: '1.55',
+                color: isComplete ? '#f8f9fa' : '#8e8e98',
+                fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
               }}
             >
-              환자 정보 미리보기
-            </p>
-
-            <p
-              style={{
-                ...F,
-                margin: '4px 0 0',
-                fontSize: 6,
-                fontWeight: 400,
-                lineHeight: 1.55,
-                color: '#797980',
-              }}
-            >
-              이름 : {patient.name} / 나이 : {patient.age}세 / 지원 수준 :{' '}
-              {patient.level}
-            </p>
-          </div>
-        )}
-
-        {/* 연동 확인 버튼 */}
-        <button
-          onClick={handleConfirm}
-          disabled={!isComplete}
-          style={{
-            ...F,
-            width: 184,
-            height: 25,
-            marginTop: 12,
-            border: 'none',
-            borderRadius: 50,
-            background: isComplete ? '#0f66e2' : '#dddde6',
-            color: isComplete ? '#f8f9fa' : '#8e8e98',
-            fontSize: 7,
-            fontWeight: 700,
-            lineHeight: 1.55,
-            cursor: isComplete ? 'pointer' : 'not-allowed',
-            boxShadow: isComplete ? '0 0 4px rgba(65, 136, 237, 0.45)' : 'none',
-          }}
-        >
-          연동 확인
-        </button>
-      </main>
+              연동 확인
+            </span>
+          </button>
+        </div>
       </div>
     </PageLayout>
   );

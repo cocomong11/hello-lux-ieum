@@ -8,7 +8,7 @@ const DESIGN_H = 1246;
 const CONTENT_LEFT = 636;
 
 const F: React.CSSProperties = {
-  fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
+  fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
 
 const SECTION_TITLE: React.CSSProperties = {
@@ -104,7 +104,7 @@ export default function S18_CargiverHome() {
             }}
           >
             <button
-              onClick={() => navigate('/cargiver-home')}
+              onClick={() => navigate('/caregiver-home')}
               style={{ ...F, color: 'var(--color-primary-dark)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700 }}
             >
               홈
@@ -167,7 +167,7 @@ export default function S18_CargiverHome() {
 
             {/* 확인하러 가기 버튼 */}
             <button
-              onClick={() => navigate('/cargiver-alerm')}
+              onClick={() => navigate('/caregiver-alerm')}
               style={{
                 ...F,
                 flexShrink: 0,
