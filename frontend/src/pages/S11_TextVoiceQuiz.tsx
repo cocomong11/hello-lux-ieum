@@ -47,8 +47,8 @@ export default function S11_TextVoiceQuiz() {
 
         {/* 퀴즈 질문 타이틀 */}
         <h1 style={{
-          width: '458px', height: '42px', fontFamily: 'Inter', fontWeight: 700, fontSize: '30px',
-          lineHeight: '140%', color: '#0D0D0D', margin: '0 0 26px 0'
+          width: '458px', fontFamily: "'Pretendard Variable', Pretendard, sans-serif",  fontWeight: 700, fontSize: '28px',
+               lineHeight: '140%', color: '#0D0D0D', margin: '0 0 26px 0'
         }}>
           오늘이 몇 월 며칠인지 말씀해 주세요.
         </h1>
