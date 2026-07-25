@@ -7,7 +7,7 @@ const DESIGN_H = 1773;
 const CONTENT_LEFT = 636;
 
 const F: React.CSSProperties = {
-  fontFamily: '"Pretendard Variable", Pretendard, sans-serif',
+  fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
 
 const PATIENTS_DB: Record<number, {
@@ -101,7 +101,7 @@ export default function S26_DoctorLevel() {
         <div style={{ marginLeft: 348 }}>
           {/* 헤더 */}
           <div style={{ height: 67, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 24, paddingRight: 348 }}>
-            <button onClick={() => navigate('/doctor-home')} style={{ ...F, color: 'var(--color-neutral-10)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700 }}>홈</button>
+            <button onClick={() => navigate('/doctor-home')} style={{ ...F, color: 'var(--color-neutral-gray)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700 }}>홈</button>
             <button onClick={() => navigate('/mypage')} style={{ ...F, color: 'var(--color-neutral-gray)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700 }}>마이페이지</button>
           </div>
 

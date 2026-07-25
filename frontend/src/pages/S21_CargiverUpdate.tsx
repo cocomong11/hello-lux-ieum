@@ -7,7 +7,7 @@ const DESIGN_H = 1747;
 const CONTENT_LEFT = 636;
 
 const F: React.CSSProperties = {
-  fontFamily: '"Pretendard Variable", Pretendard, sans-serif',
+  fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
 
 const DUMMY_PATIENT = {
@@ -22,6 +22,7 @@ type MemberEntry = {
   alias: string;
   keyword: string;
   isEditing: boolean;
+  photo?: string; // 미리보기 URL
 };
 
 const INITIAL_MEMBERS: Record<string, MemberEntry[]> = {
@@ -34,6 +35,15 @@ const INITIAL_MEMBERS: Record<string, MemberEntry[]> = {
   '음식': [{ name: '', age: '', alias: '', keyword: '', isEditing: true }],
   '노래': [{ name: '', age: '', alias: '', keyword: '', isEditing: true }],
   '인생 사건': [{ name: '', age: '', alias: '', keyword: '', isEditing: true }],
+};
+
+const LEVELS: Record<string, { field1: string; field2: string; field3: string }> = {
+  '가족':     { field1: '이름', field2: '나이', field3: '호칭 / 유사표현' },
+  '지인':     { field1: '이름', field2: '나이', field3: '호칭 / 유사표현' },
+  '장소':     { field1: '이름', field2: '위치', field3: '호칭 / 유사표현' },
+  '음식':     { field1: '이름', field2: '',     field3: '호칭 / 유사표현' },
+  '노래':     { field1: '이름', field2: '',     field3: '호칭 / 유사표현' },
+  '인생 사건': { field1: '이름', field2: '당시 나이', field3: '호칭 / 유사표현' },
 };
 
 const PREVIEW_QUESTIONS = [
@@ -50,7 +60,7 @@ function inputBoxStyle(isEditing: boolean): React.CSSProperties {
     background: isEditing ? 'rgba(65,136,237,0.05)' : '#F8F9FA',
     boxShadow: isEditing ? '0 0 4px 0 #4188ED' : '0 0 4px 0 #797980',
     padding: '10px 14px',
-    fontFamily: '"Pretendard Variable", Pretendard, sans-serif',
+    fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
     fontSize: 22,
     fontWeight: 400,
     color: '#0D0D0D',
@@ -166,8 +176,8 @@ export default function S21_CargiverUpdate() {
                     position: 'relative',
                   }}
                 >
-                  {/* 사진 영역 */}
-                  <div style={{
+                  {/* 사진 영역 - 클릭하면 파일 선택 */}
+                  <label style={{
                     position: 'absolute', top: 21, left: 23,
                     width: 138, height: 129,
                     display: 'flex',
@@ -176,13 +186,34 @@ export default function S21_CargiverUpdate() {
                     border: '0.6px solid #8E8E98',
                     background: 'var(--color-neutral-90, #DDDDE6)',
                     boxShadow: '0 0 2.4px 0 #4188ED',
+                    cursor: 'pointer',
+                    overflow: 'hidden',
                   }}>
-                    <span style={{ ...F, fontSize: 14, color: '#797980', textAlign: 'center' }}>{category} 사진</span>
-                  </div>
+                    {member.photo ? (
+                      <img src={member.photo} alt="업로드된 사진" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ ...F, fontSize: 14, color: '#797980', textAlign: 'center' }}>{category} 사진</span>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const url = URL.createObjectURL(file);
+                          setMembers(prev => ({
+                            ...prev,
+                            [category]: prev[category].map((m, i) => i === idx ? { ...m, photo: url } : m),
+                          }));
+                        }
+                      }}
+                    />
+                  </label>
 
                   {/* 이름 */}
                   <div style={{ position: 'absolute', top: 21, left: 188 }}>
-                    <p style={{ ...F, fontSize: 22, fontWeight: 400, lineHeight: '155%', color: '#0D0D0D', margin: 0 }}>이름</p>
+                    <p style={{ ...F, fontSize: 22, fontWeight: 400, lineHeight: '155%', color: '#0D0D0D', margin: 0 }}>{LEVELS[category]?.field1 || '이름'}</p>
                     <input
                       value={member.name}
                       onChange={e => updateMember(idx, 'name', e.target.value)}
@@ -191,9 +222,10 @@ export default function S21_CargiverUpdate() {
                     />
                   </div>
 
-                  {/* 나이 */}
+                  {/* 나이/위치/당시나이 */}
+                  {LEVELS[category]?.field2 && (
                   <div style={{ position: 'absolute', top: 21, left: 407 }}>
-                    <p style={{ ...F, fontSize: 22, fontWeight: 400, lineHeight: '155%', color: '#0D0D0D', margin: 0 }}>나이</p>
+                    <p style={{ ...F, fontSize: 22, fontWeight: 400, lineHeight: '155%', color: '#0D0D0D', margin: 0 }}>{LEVELS[category].field2}</p>
                     <input
                       value={member.age}
                       onChange={e => updateMember(idx, 'age', e.target.value)}
@@ -201,10 +233,11 @@ export default function S21_CargiverUpdate() {
                       style={{ ...inputBoxStyle(isEdit), width: 150, marginTop: 14,paddingTop:23,paddingLeft:29,paddingBottom:24 }}
                     />
                   </div>
+                  )}
 
                   {/* 호칭 / 유사표현 */}
-                  <div style={{ position: 'absolute', top: 21, left: 570 }}>
-                    <p style={{ ...F, fontSize: 22, fontWeight: 400, lineHeight: '155%', color: '#0D0D0D', margin: 0 }}>호칭 / 유사표현</p>
+                  <div style={{ position: 'absolute', top: 21, left: LEVELS[category]?.field2 ? 570 : 407 }}>
+                    <p style={{ ...F, fontSize: 22, fontWeight: 400, lineHeight: '155%', color: '#0D0D0D', margin: 0 }}>{LEVELS[category]?.field3 || '호칭 / 유사표현'}</p>
                     <input
                       value={member.alias}
                       onChange={e => updateMember(idx, 'alias', e.target.value)}
