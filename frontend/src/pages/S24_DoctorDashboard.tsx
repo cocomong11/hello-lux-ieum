@@ -40,12 +40,9 @@ const PATIENTS_DB: Record<number, {
       [40, 38, 35, 30, 28, 25],
     ],
     latestRates: [
-      { label: '지남력-시간', value: 80 },
-      { label: '지남력-장소', value: 80 },
-      { label: '언어 능력', value: 70 },
-      { label: '기억 회상', value: 40 },
-      { label: '주의·계산', value: 60 },
-      { label: '시공간 구성', value: 20 },
+      { label: '유형1', value: 80 },
+      { label: '유형2', value: 80 },
+      { label: '유형3', value: 70 },
     ],
     dailyScores: {
       1: 65, 2: 70, 3: 61, 4: 38, 5: 55,
@@ -258,8 +255,8 @@ export default function S24_DoctorDashboard() {
               </svg>
             </div>
 
-            {/* 5월 문항별 정답률 (최신) */}
-            <p style={{ ...F, fontSize: 22, fontWeight: 700, width: '218px', color: '#0D0D0D', margin: '20px 0 24px 0' }}>5월 문항별 정답률 (최신)</p>
+            {/* 5월 문항별 정답률 */}
+            <p style={{ ...F, fontSize: 22, fontWeight: 700, width: '218px', color: '#0D0D0D', margin: '20px 0 24px 0' }}>5월 유형별 정답률</p>
             <div style={{ width: 936, marginBottom: 57 }}>
               {patientData.latestRates.map(item => (
                 <div key={item.label} style={{ display: 'flex', alignItems: 'center', marginBottom: 18, gap: 40}}>
