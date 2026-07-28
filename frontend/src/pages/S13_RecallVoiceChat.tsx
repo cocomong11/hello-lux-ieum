@@ -130,7 +130,6 @@ export default function S13_RecallVoiceChat() {
       {isHintOpen && (
         <HintPopup 
           onClose={() => setIsHintOpen(false)}             
-          onStepChange={(maxStep) => setHintCount(maxStep)} 
         />
       )}
     </div>

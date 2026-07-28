@@ -112,7 +112,6 @@ export default function S11_TextVoiceQuiz() {
       {isHintOpen && (
         <HintPopup 
           onClose={() => setIsHintOpen(false)}             
-          onStepChange={(maxStep) => setHintCount(maxStep)} 
         />
       )}
 
