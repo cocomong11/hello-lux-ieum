@@ -137,7 +137,6 @@ export default function QuizVoiceController({
 
   return (
     <>
-      
       <div style={{
         width: '648px', height: '335px', borderRadius: '10px', backgroundColor: '#4188ED0D',
         marginTop: '26px', display: 'flex', flexDirection: 'column', alignItems: 'center',
