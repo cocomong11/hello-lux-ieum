@@ -217,7 +217,6 @@ export default function S05_PatientInfo() {
             gap: 60,
           }}
         >
-          {/* 1. 환자 기본 정보 */}
           <div>
             <SectionTitle>환자 기본 정보</SectionTitle>
 
@@ -280,7 +279,6 @@ export default function S05_PatientInfo() {
             </div>
           </div>
 
-          {/* 2. 인지 지원 수준 */}
           <div>
             <SectionTitle>인지 지원 수준</SectionTitle>
             <Label required>수준 선택</Label>
@@ -298,7 +296,6 @@ export default function S05_PatientInfo() {
             />
           </div>
 
-          {/* 3. 보호자 동행 여부 */}
           <div>
             <SectionTitle>보호자 동행 여부</SectionTitle>
             <div style={{ display: 'flex', gap: 12 }}>
@@ -315,7 +312,6 @@ export default function S05_PatientInfo() {
             </div>
           </div>
 
-          {/* 네비게이션 */}
           <div
             style={{
               display: 'flex',

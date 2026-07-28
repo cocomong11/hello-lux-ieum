@@ -196,7 +196,7 @@ export default function S12_PhotoRecallQuiz() {
       {isHintOpen && (
         <HintPopup 
           onClose={() => setIsHintOpen(false)}             
-          onStepChange={(maxStep) => setHintCount(maxStep)} 
+          
         />
       )}
     </div>

@@ -48,7 +48,6 @@ export default function S02_Login() {
           padding: '120px 0',
         }}
       >
-        {/* Title */}
         <p
           style={{
             fontSize: 36,
@@ -61,7 +60,6 @@ export default function S02_Login() {
           로그인
         </p>
 
-        {/* Subtitle */}
         <p
           style={{
             fontSize: 22,
@@ -81,7 +79,6 @@ export default function S02_Login() {
             flexDirection: 'column',
           }}
         >
-          {/* Email input */}
           <div style={inputBase}>
             <input
               type='email'
@@ -92,7 +89,6 @@ export default function S02_Login() {
             />
           </div>
 
-          {/* Password input */}
           <div style={inputBase}>
             <input
               type={showPw ? 'text' : 'password'}
@@ -146,7 +142,6 @@ export default function S02_Login() {
             </button>
           </div>
 
-          {/* Auto login checkbox */}
           <div
             style={{
               display: 'flex',
@@ -195,7 +190,6 @@ export default function S02_Login() {
             </p>
           </div>
 
-          {/* Login button */}
           <button
             onClick={() => {
               const role = getRole();
@@ -228,7 +222,6 @@ export default function S02_Login() {
             </span>
           </button>
 
-          {/* 아이디 찾기 | 비밀번호 찾기 */}
           <div
             style={{
               display: 'flex',
@@ -283,7 +276,6 @@ export default function S02_Login() {
             </button>
           </div>
 
-          {/* 회원가입 하기 */}
           <p
             style={{
               fontSize: 22,
