@@ -23,9 +23,7 @@ const PATIENTS_DB: Record<number, {
 
 const LEVELS = [
   { num: 1, label: '쉬움', desc: '힌트0' },
- 
   { num: 2, label: '보통', desc: '힌트1' },
- 
   { num: 3, label: '어려움', desc: '힌트1~2' },
 ];
 
@@ -33,7 +31,7 @@ const HINT_OPTIONS = ['없음', '보통', '1~2개'];
 const TTS_LENGTH = ['짧음', '보통'];
 const TTS_SPEED = ['느리게', '보통'];
 
-const PREV_HISTORY = [
+const INITIAL_HISTORY = [
   { title: '3단계로 조정 · 2026. 03. 15', desc: '진료 참고 데이터 검토 후 2단계 → 3단계 상향 [담당 : 김민준]' },
   { title: '2단계 유지 · 2026. 01. 10', desc: '상태 안정적 현행 유지 결정 [담당 : 김민준]' },
 ];
@@ -61,6 +59,7 @@ export default function S26_DoctorLevel() {
   const [ttsSpeed, setTtsSpeed] = useState('느리게');
   const [reason, setReason] = useState('5월 K-MMSE 결과 및 플랫폼 데이터 종합 검토 후 현행 유지 결정.');
   const [savedMsg, setSavedMsg] = useState(false);
+  const [history, setHistory] = useState(INITIAL_HISTORY);
 
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
@@ -69,7 +68,17 @@ export default function S26_DoctorLevel() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  const handleSave = () => { setSavedMsg(true); setTimeout(() => setSavedMsg(false), 2000); };
+  const handleSave = () => {
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}. ${String(today.getMonth() + 1).padStart(2, '0')}. ${String(today.getDate()).padStart(2, '0')}`;
+    const newEntry = {
+      title: `${selectedLevel}단계로 조정 · ${dateStr}`,
+      desc: reason + ` [담당 : 김민준]`,
+    };
+    setHistory(prev => [newEntry, ...prev]);
+    setSavedMsg(true);
+    setTimeout(() => setSavedMsg(false), 2000);
+  };
 
   // 토글 컴포넌트
   const Toggle = ({ value, onChange }: { value: boolean; onChange: () => void }) => (
@@ -250,7 +259,7 @@ export default function S26_DoctorLevel() {
 
             {/* 이전 조정 이력 */}
             <p style={{ ...F, fontSize: 22, fontWeight: 700, lineHeight: '155%', color: '#0D0D0D', marginTop: 81, marginBottom: 20 }}>이전 조정 이력</p>
-            {PREV_HISTORY.map((item, i) => (
+            {history.map((item, i) => (
               <div key={i} style={{
                 display: 'inline-flex', width: 936, padding: '20px 29px', flexDirection: 'column',
                 justifyContent: 'center', alignItems: 'flex-start',
