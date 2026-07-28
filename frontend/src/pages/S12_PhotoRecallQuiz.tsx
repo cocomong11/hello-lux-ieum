@@ -22,7 +22,7 @@ export default function S12_PhotoRecallQuiz() {
     <div style={{
       width: '100%', 
       minHeight: '100vh', 
-      backgroundColor: '#FFFFFF',
+      backgroundColor: '#F8F9FA',
       fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
       boxSizing: 'border-box', 
       paddingBottom: '120px'
@@ -196,7 +196,6 @@ export default function S12_PhotoRecallQuiz() {
       {isHintOpen && (
         <HintPopup 
           onClose={() => setIsHintOpen(false)}             
-          onStepChange={(maxStep) => setHintCount(maxStep)} 
         />
       )}
     </div>

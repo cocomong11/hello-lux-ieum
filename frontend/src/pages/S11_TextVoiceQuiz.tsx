@@ -19,7 +19,7 @@ export default function S11_TextVoiceQuiz() {
 
   return (
     <div style={{
-      width: '100%', minHeight: '100vh', backgroundColor: '#FFFFFF',
+      width: '100%', minHeight: '100vh', backgroundColor: '#F8F9FA',
       fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       boxSizing: 'border-box', paddingBottom: '120px', position: 'relative'
@@ -112,7 +112,6 @@ export default function S11_TextVoiceQuiz() {
       {isHintOpen && (
         <HintPopup 
           onClose={() => setIsHintOpen(false)}             
-          onStepChange={(maxStep) => setHintCount(maxStep)} 
         />
       )}
 
