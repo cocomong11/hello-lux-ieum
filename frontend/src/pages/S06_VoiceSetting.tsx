@@ -72,12 +72,10 @@ export default function S06_VoiceSetting() {
             width: 34,
             height: 34,
             borderRadius: '50%',
-            // 👇 켜졌을 때는 요청하신 #DFDF87, 꺼졌을 때는 연한 회색으로 변해요!
             background: value ? '#DFDF87' : '#c6c6cc',
             top: '50%',
             transform: 'translateY(-50%)',
             left: value ? 40 : 4,
-            // 👇 움직임뿐만 아니라 색상도 부드럽게 변하도록 애니메이션을 추가했어요!
             transition: 'left 0.2s, background 0.2s',
             boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
           }}
@@ -149,7 +147,6 @@ export default function S06_VoiceSetting() {
             gap: 60,
           }}
         >
-          {/* 1. 말투 설정 */}
           <div>
             <SectionTitle>말투 설정</SectionTitle>
             <ToggleRow
@@ -164,7 +161,6 @@ export default function S06_VoiceSetting() {
             />
           </div>
 
-          {/* 2. TTS 음성 속도 */}
           <div>
             <SectionTitle>TTS 음성 속도</SectionTitle>
             <div style={{ display: 'flex', gap: 12 }}>
@@ -186,7 +182,6 @@ export default function S06_VoiceSetting() {
             </div>
           </div>
 
-          {/* 3. 문장 길이 */}
           <div>
             <SectionTitle>문장 길이</SectionTitle>
             <div style={{ display: 'flex', gap: 12 }}>
@@ -208,7 +203,6 @@ export default function S06_VoiceSetting() {
             </div>
           </div>
 
-          {/* 4. 반복 안내 및 피드백 */}
           <div>
             <SectionTitle>반복 안내 및 피드백</SectionTitle>
             <ToggleRow
@@ -228,7 +222,6 @@ export default function S06_VoiceSetting() {
             />
           </div>
 
-          {/* 5. 예시 문장 미리보기 */}
           <div
             style={{
               width: '100%',
@@ -302,7 +295,6 @@ export default function S06_VoiceSetting() {
             </button>
           </div>
 
-          {/* 네비게이션 */}
           <div
             style={{
               display: 'flex',
