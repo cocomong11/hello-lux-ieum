@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-// PageLayout 대신 S21처럼 직접 레이아웃을 잡습니다.
 import imgUpload from '../assets/up-loading.png';
 import imgPolygon from '../assets/Polygon 2.svg';
 import MemoryDBSidebar, {
@@ -8,7 +7,7 @@ import MemoryDBSidebar, {
 } from '../components/MemoryDBSidebar';
 
 const CANVAS_H = 1660;
-const DESIGN_W = 1920; // S21처럼 기준 너비 추가
+const DESIGN_W = 1920;
 const SIDEBAR_W = 348;
 const F: React.CSSProperties = {
   fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
@@ -16,7 +15,7 @@ const F: React.CSSProperties = {
 
 export default function S07_MemoryDB() {
   const navigate = useNavigate();
-  const [scale, setScale] = useState(1); // 화면 스케일 상태 추가
+  const [scale, setScale] = useState(1);
 
   const [activeCategory, setActiveCategory] =
     useState<MemoryCategory>('가족 정보');
@@ -25,7 +24,6 @@ export default function S07_MemoryDB() {
     { name: '', age: '', relation: '' },
   ]);
 
-  // S21과 동일하게 화면 크기에 맞춰 스케일링 조절
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
     update();
@@ -230,11 +228,9 @@ export default function S07_MemoryDB() {
           background: 'var(--color-neutral-100)',
         }}
       >
-        {/* ═══ 왼쪽 사이드바 (기존 MemoryDBSidebar 유지) ═══ */}
         <MemoryDBSidebar active={activeCategory} onChange={setActiveCategory} />
 
         <div style={{ marginLeft: SIDEBAR_W }}>
-          {/* 헤더 (S21 Caregiver 화면과 동일한 홈/마이페이지 네비바) */}
           <div
             style={{
               height: 67,
@@ -276,9 +272,6 @@ export default function S07_MemoryDB() {
           </div>
         </div>
 
-        {/* ═══ 메인 콘텐츠 ═══ */}
-
-        {/* 가족 정보 섹션 타이틀 */}
         <p
           style={{
             ...F,
@@ -296,7 +289,6 @@ export default function S07_MemoryDB() {
           가족 정보
         </p>
 
-        {/* 첫 번째 멤버 행 (기존 데이터 - 채워진 상태) */}
         <ColLabel left={636} top={203}>
           이름
         </ColLabel>
@@ -332,7 +324,6 @@ export default function S07_MemoryDB() {
           filled
         />
 
-        {/* 두 번째 멤버 행 (빈 입력) */}
         <ColLabel left={636} top={358}>
           이름
         </ColLabel>
@@ -415,7 +406,6 @@ export default function S07_MemoryDB() {
           </span>
         </button>
 
-        {/* 사진 업로드 섹션 */}
         <p
           style={{
             ...F,
@@ -453,7 +443,6 @@ export default function S07_MemoryDB() {
         <PhotoBox left={950} top={771} label='지인 사진 업로드' />
         <PhotoBox left={1264} top={771} label='장소 사진 업로드' />
 
-        {/* 예상 생성 질문 미리보기 */}
         <div
           style={{
             position: 'absolute',
@@ -519,7 +508,6 @@ export default function S07_MemoryDB() {
             </div>
           ))}
 
-          {/* TTS 버튼 */}
           <button
             style={{
               ...F,
@@ -559,7 +547,6 @@ export default function S07_MemoryDB() {
           </button>
         </div>
 
-        {/* ─── 네비게이션 ─── */}
         <button
           onClick={() => navigate(-1)}
           style={{
