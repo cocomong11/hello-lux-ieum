@@ -40,12 +40,9 @@ const PATIENTS_DB: Record<number, {
       [40, 38, 35, 30, 28, 25],
     ],
     latestRates: [
-      { label: '지남력-시간', value: 80 },
-      { label: '지남력-장소', value: 80 },
-      { label: '언어 능력', value: 70 },
-      { label: '기억 회상', value: 40 },
-      { label: '주의·계산', value: 60 },
-      { label: '시공간 구성', value: 20 },
+      { label: '유형1', value: 80 },
+      { label: '유형2', value: 80 },
+      { label: '유형3', value: 70 },
     ],
     dailyScores: {
       1: 65, 2: 70, 3: 61, 4: 38, 5: 55,
@@ -113,7 +110,6 @@ const PATIENTS_DB: Record<number, {
   },
 };
 
-const MONTHS = ['12월', '1월', '2월', '3월', '4월', '5월'];
 const RATE_COLORS = ['#4188ED', '#797980', '#27AE60', '#F5A623', '#8E8E98'];
 
 export default function S24_DoctorDashboard() {
@@ -121,8 +117,9 @@ export default function S24_DoctorDashboard() {
   const [searchParams] = useSearchParams();
   const pCode = Number(searchParams.get('p_code')) || 1001;
   const [scale, setScale] = useState(1);
-  const [doctorComment, setDoctorComment] = useState('');
+  const [comments, setComments] = useState<Record<number, string>>({});
   const [savedMsg, setSavedMsg] = useState(false);
+  const [isEditingComment, setIsEditingComment] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('6개월');
   const [dailyPeriod, setDailyPeriod] = useState('3개월');
   const [selectedDay, setSelectedDay] = useState(26);
@@ -139,7 +136,9 @@ export default function S24_DoctorDashboard() {
   const patientData = PATIENTS_DB[pCode] || PATIENTS_DB[1001];
 
   useEffect(() => {
-    setDoctorComment(patientData.memo);
+    // 오늘 날짜에 기존 memo 넣기
+    const today = new Date();
+    setComments({ [today.getDate()]: patientData.memo });
   }, [pCode]);
 
   const patient = {
@@ -155,7 +154,7 @@ export default function S24_DoctorDashboard() {
       rate: patientData.stats.find(s => s.label === '성공률')?.value || '0%',
       hint: patientData.stats.find(s => s.label === '힌트 사용')?.value || '0회',
     },
-    memo: doctorComment,
+    memo: comments[selectedDay] || '',
   };
 
   const handleSave = () => {
@@ -166,6 +165,13 @@ export default function S24_DoctorDashboard() {
   // 달력 데이터 (동적)
   const daysInMonth = new Date(calYear, calMonth, 0).getDate();
   const startDayOfWeek = (new Date(calYear, calMonth - 1, 1).getDay() + 6) % 7; // 월=0
+
+  // 월별 리포트 MONTHS 동적 생성
+  const periodCount = selectedPeriod === '3개월' ? 3 : selectedPeriod === '1년' ? 12 : 6;
+  const MONTHS = Array.from({ length: periodCount }, (_, i) => {
+    const m = ((calMonth - periodCount + i) % 12 + 12) % 12 + 1;
+    return `${m}월`;
+  });
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: DESIGN_H * scale, overflowX: 'hidden', background: 'var(--color-neutral-100)' }}>
@@ -258,8 +264,8 @@ export default function S24_DoctorDashboard() {
               </svg>
             </div>
 
-            {/* 5월 문항별 정답률 (최신) */}
-            <p style={{ ...F, fontSize: 22, fontWeight: 700, width: '218px', color: '#0D0D0D', margin: '20px 0 24px 0' }}>5월 문항별 정답률 (최신)</p>
+            {/* n월 유형별 정답률 */}
+            <p style={{ ...F, fontSize: 22, fontWeight: 700, width: '218px', color: '#0D0D0D', margin: '20px 0 24px 0' }}>{calMonth}월 유형별 정답률</p>
             <div style={{ width: 936, marginBottom: 57 }}>
               {patientData.latestRates.map(item => (
                 <div key={item.label} style={{ display: 'flex', alignItems: 'center', marginBottom: 18, gap: 40}}>
@@ -306,16 +312,25 @@ export default function S24_DoctorDashboard() {
               </div>
             </div>
 
-            {/* 시작일 / 종료일 */}
-            <div style={{ display: 'flex', gap: 50,margin: '28px 0 20px' }}>
+            {/* 시작일 / 종료일 (동적) */}
+            {(() => {
+              const end = new Date();
+              const start = new Date();
+              if (dailyPeriod === '7일') start.setDate(end.getDate() - 7);
+              else if (dailyPeriod === '30일') start.setDate(end.getDate() - 30);
+              else if (dailyPeriod === '3개월') start.setMonth(end.getMonth() - 3);
+              else start.setMonth(end.getMonth() - 1); // 직접입력 기본 30일
+              const fmt = (d: Date) => `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getDate()).padStart(2, '0')}`;
+              return (
+            <div style={{ display: 'flex', gap: 50, margin: '28px 0 20px' }}>
               <div style={{
-                flex: 1, padding: '19px 122px',borderRadius: 10,
+                flex: 1, padding: '19px 122px', borderRadius: 10,
                 border: '1px solid var(--color-neutral-60)', background: 'var(--color-neutral-100)',
                 boxShadow: '0 0 4px 0 #797980',
-                display: 'flex',justifyContent: 'center', alignItems: 'center',
+                display: 'flex', justifyContent: 'center', alignItems: 'center',
               }}>
                 <span style={{ ...F, margin: '0 10px 0 0', fontSize: 22, fontWeight: 400, color: 'var(--color-neutral-gray)' }}>시작일</span>
-                <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>2026. 05. 01</span>
+                <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>{fmt(start)}</span>
               </div>
               <div style={{
                 flex: 1, padding: '19px 123px', borderRadius: 10,
@@ -323,10 +338,12 @@ export default function S24_DoctorDashboard() {
                 boxShadow: '0 0 4px 0 #797980',
                 display: 'flex', justifyContent: 'center', alignItems: 'center',
               }}>
-                <span style={{ ...F, fontSize: 22,  margin: '0 10px 0 0', fontWeight: 400, color: 'var(--color-neutral-gray)' }}>종료일</span>
-                <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>2026. 05. 31</span>
+                <span style={{ ...F, fontSize: 22, margin: '0 10px 0 0', fontWeight: 400, color: 'var(--color-neutral-gray)' }}>종료일</span>
+                <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>{fmt(end)}</span>
               </div>
             </div>
+              );
+            })()}
 
             {/* 기간 통계 카드 */}
             {(() => {
@@ -480,7 +497,7 @@ export default function S24_DoctorDashboard() {
                   return (
                     <div
                       key={day}
-                      onClick={() => setSelectedDay(day)}
+                      onClick={() => { setSelectedDay(day); setIsEditingComment(false); }}
                       style={{
                         width: 112, height: 98,
                         borderRadius: 10,
@@ -572,50 +589,72 @@ export default function S24_DoctorDashboard() {
 
             {/* ── 의사 코멘트 ── */}
             <p style={{ ...F, marginTop: '26px', fontSize: 30, fontWeight: 700, color: '#0D0D0D', margin: '0 0 16px' }}>의사 코멘트</p>
-            <textarea
-              value={doctorComment}
-              onChange={e => setDoctorComment(e.target.value)}
-              style={{
-                width: 936, height: 110,
-                padding: '23px 29px', boxSizing: 'border-box',
-                borderRadius: 10, border: '1px solid #8E8E98',
-                background: 'rgba(65,136,237,0.05)',
-                boxShadow: '0 0 4px 0 #4188ED',
-                ...F, fontSize: 22, fontWeight: 400, color: '#0D0D0D',
-                resize: 'none', outline: 'none',
-              }}
-            />
+            {(() => {
+              const today = new Date();
+              const isToday = selectedDay === today.getDate() && calMonth === today.getMonth() + 1 && calYear === today.getFullYear();
+              const canEdit = isToday || isEditingComment;
+              return (
+                <>
+                  <textarea
+                    value={comments[selectedDay] || ''}
+                    onChange={e => setComments(prev => ({ ...prev, [selectedDay]: e.target.value }))}
+                    disabled={!canEdit}
+                    style={{
+                      width: 936, height: 110,
+                      padding: '23px 29px', boxSizing: 'border-box',
+                      borderRadius: 10, border: '1px solid #8E8E98',
+                      background: canEdit ? 'rgba(65,136,237,0.05)' : '#F8F9FA',
+                      boxShadow: '0 0 4px 0 #4188ED',
+                      ...F, fontSize: 22, fontWeight: 400, color: '#0D0D0D',
+                      resize: 'none', outline: 'none',
+                      opacity: canEdit ? 1 : 0.8,
+                    }}
+                  />
 
-            {/* 버튼 행 */}
-            <div style={{ marginTop: 24, width: 936, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button
-                onClick={() => setDoctorComment('')}
-                style={{
-                  ...F, display: 'inline-flex', padding: '12px 22px',
-                  borderRadius: 50, background: '#F8F9FA', border: 'none',
-                  boxShadow: '0 0 4px 0 #E53134', cursor: 'pointer',
-                  fontSize: 22, fontWeight: 700, color: '#E53134',
-                }}
-              >삭제</button>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                {savedMsg && <span style={{ ...F, fontSize: 18, fontWeight: 600, color: '#4188ED' }}>저장되었습니다</span>}
-                <button style={{
-                  ...F, display: 'inline-flex', padding: '12px 22px',
-                  borderRadius: 50, background: '#F8F9FA', border: 'none',
-                  boxShadow: '0 0 4px 0 #0D0D0D', cursor: 'pointer',
-                  fontSize: 22, fontWeight: 700, color: '#0D0D0D',
-                }}>수정</button>
-                <button
-                  onClick={handleSave}
-                  style={{
-                    ...F, display: 'inline-flex', padding: '12px 22px',
-                    borderRadius: 50, background: '#4188ED', border: 'none',
-                    boxShadow: '0 0 4px 0 #4188ED', cursor: 'pointer',
-                    fontSize: 22, fontWeight: 700, color: '#F8F9FA',
-                  }}
-                >저장</button>
-              </div>
-            </div>
+                  {/* 버튼 행 */}
+                  <div style={{ marginTop: 24, width: 936, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {canEdit ? (
+                      <>
+                        <button
+                          onClick={() => { setComments(prev => ({ ...prev, [selectedDay]: '' })); setIsEditingComment(false); }}
+                          style={{
+                            ...F, display: 'inline-flex', padding: '12px 22px',
+                            borderRadius: 50, background: '#F8F9FA', border: 'none',
+                            boxShadow: '0 0 4px 0 #E53134', cursor: 'pointer',
+                            fontSize: 22, fontWeight: 700, color: '#E53134',
+                          }}
+                        >삭제</button>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                          {savedMsg && <span style={{ ...F, fontSize: 18, fontWeight: 600, color: '#4188ED' }}>저장되었습니다</span>}
+                          <button
+                            onClick={() => { handleSave(); setIsEditingComment(false); }}
+                            style={{
+                              ...F, display: 'inline-flex', padding: '12px 22px',
+                              borderRadius: 50, background: '#4188ED', border: 'none',
+                              boxShadow: '0 0 4px 0 #4188ED', cursor: 'pointer',
+                              fontSize: 22, fontWeight: 700, color: '#F8F9FA',
+                            }}
+                          >저장</button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div />
+                        <button
+                          onClick={() => setIsEditingComment(true)}
+                          style={{
+                            ...F, display: 'inline-flex', padding: '12px 22px',
+                            borderRadius: 50, background: '#F8F9FA', border: 'none',
+                            boxShadow: '0 0 4px 0 #0D0D0D', cursor: 'pointer',
+                            fontSize: 22, fontWeight: 700, color: '#0D0D0D',
+                          }}
+                        >수정</button>
+                      </>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
 
           </div>
         </div>

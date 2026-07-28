@@ -127,7 +127,7 @@ export default function DoctorSidebar({ patient }: Props) {
       {patient.recentKMMSE && (
         <div style={{ position: 'absolute', left: 49, top: 404}}>
           <p style={{ fontSize: 22, fontWeight: 700, lineHeight: '155%', color: 'var(--color-neutral-100)', margin: 0 }}>
-            {'>'} 최근 K-MMSE
+            {'>'} 최근 한달 기록
           </p>
           {patient.kmmseScore && (
             <p style={{ margin: '10px 0 0', fontSize: 36, fontWeight: 700, lineHeight: '135%', color: 'var(--color-neutral-100)' }}>

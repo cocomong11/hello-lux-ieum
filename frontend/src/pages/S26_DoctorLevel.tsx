@@ -22,18 +22,16 @@ const PATIENTS_DB: Record<number, {
 };
 
 const LEVELS = [
-  { num: 1, label: '매우 쉬움', desc: '빠른 필요/힌트 충분' },
-  { num: 2, label: '쉬움', desc: '단답형/반복 안내' },
-  { num: 3, label: '보통', desc: '텍스트와 사진 혼합' },
-  { num: 4, label: '어려움', desc: '범위 확장' },
-  { num: 5, label: '매우 어려움', desc: '자유 회상형' },
+  { num: 1, label: '쉬움', desc: '힌트0' },
+  { num: 2, label: '보통', desc: '힌트1' },
+  { num: 3, label: '어려움', desc: '힌트1~2' },
 ];
 
-const HINT_OPTIONS = ['적극 제공', '보통', '최소'];
+const HINT_OPTIONS = ['없음', '보통', '1~2개'];
 const TTS_LENGTH = ['짧음', '보통'];
 const TTS_SPEED = ['느리게', '보통'];
 
-const PREV_HISTORY = [
+const INITIAL_HISTORY = [
   { title: '3단계로 조정 · 2026. 03. 15', desc: '진료 참고 데이터 검토 후 2단계 → 3단계 상향 [담당 : 김민준]' },
   { title: '2단계 유지 · 2026. 01. 10', desc: '상태 안정적 현행 유지 결정 [담당 : 김민준]' },
 ];
@@ -47,12 +45,21 @@ export default function S26_DoctorLevel() {
   const patient = { ...patientData };
 
   const [selectedLevel, setSelectedLevel] = useState(3);
-  const [hintLevel, setHintLevel] = useState('적극 제공');
+
+  // 난이도에 따라 힌트 제공 수준 자동 결정
+  const getHintByLevel = (level: number): string => {
+    if (level === 1) return '없음';
+    if (level === 2) return '보통';
+    return '1~2개';
+  };
+
+  const hintLevel = getHintByLevel(selectedLevel);
   const [repeatAuto, setRepeatAuto] = useState(true);
   const [ttsLength, setTtsLength] = useState('짧음');
   const [ttsSpeed, setTtsSpeed] = useState('느리게');
   const [reason, setReason] = useState('5월 K-MMSE 결과 및 플랫폼 데이터 종합 검토 후 현행 유지 결정.');
   const [savedMsg, setSavedMsg] = useState(false);
+  const [history, setHistory] = useState(INITIAL_HISTORY);
 
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
@@ -61,7 +68,17 @@ export default function S26_DoctorLevel() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  const handleSave = () => { setSavedMsg(true); setTimeout(() => setSavedMsg(false), 2000); };
+  const handleSave = () => {
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}. ${String(today.getMonth() + 1).padStart(2, '0')}. ${String(today.getDate()).padStart(2, '0')}`;
+    const newEntry = {
+      title: `${selectedLevel}단계로 조정 · ${dateStr}`,
+      desc: reason + ` [담당 : 김민준]`,
+    };
+    setHistory(prev => [newEntry, ...prev]);
+    setSavedMsg(true);
+    setTimeout(() => setSavedMsg(false), 2000);
+  };
 
   // 토글 컴포넌트
   const Toggle = ({ value, onChange }: { value: boolean; onChange: () => void }) => (
@@ -128,11 +145,11 @@ export default function S26_DoctorLevel() {
                 display: 'inline-flex', height: 42, padding: '10px 20px', justifyContent: 'center', alignItems: 'center', gap: 10,
                 borderRadius: 50, background: '#4188ED',
               }}>
-                <span style={{ ...F, fontSize: 22, fontWeight: 700, lineHeight: '155%', color: '#F8F9FA' }}>3단계 보통</span>
+                <span style={{ ...F, fontSize: 22, fontWeight: 700, lineHeight: '155%', color: '#F8F9FA' }}>2단계 보통</span>
               </div>
             </div>
 
-            {/* 난이도 카드 5개 */}
+            {/* 난이도 카드 3개 */}
             <div style={{ display: 'flex', gap: 16, marginTop: 20 }}>
               {LEVELS.map(lv => {
                 const isSelected = selectedLevel === lv.num;
@@ -160,11 +177,22 @@ export default function S26_DoctorLevel() {
               padding: '24px 29px', boxSizing: 'border-box',
               display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 24, columnGap: 40,
             }}>
-              {/* 힌트 제공 수준 */}
+              {/* 힌트 제공 수준 (자동 - 수정 불가) */}
               <div>
                 <p style={{ ...F, fontSize: 22, fontWeight: 700, lineHeight: '155%', color: '#0D0D0D', margin: '0 0 16px' }}>힌트 제공 수준</p>
                 <div style={{ display: 'flex', gap: 10 }}>
-                  {HINT_OPTIONS.map(opt => <TagBtn key={opt} label={opt} selected={hintLevel === opt} onClick={() => setHintLevel(opt)} />)}
+                  {HINT_OPTIONS.map(opt => (
+                    <div key={opt} style={{
+                      display: 'inline-flex', padding: '6px 19px', justifyContent: 'center', alignItems: 'center', gap: 10,
+                      borderRadius: 10,
+                      border: hintLevel === opt ? '1px solid #DFDF87' : '1px solid #8E8E98',
+                      background: hintLevel === opt ? '#0F66E2' : '#F8F9FA',
+                      boxShadow: hintLevel === opt ? '0 0 4px 0 #4188ED' : '0 0 4px 0 #797980',
+                      opacity: hintLevel === opt ? 1 : 0.5,
+                    }}>
+                      <span style={{ ...F, fontSize: 22, fontWeight: hintLevel === opt ? 700 : 400, lineHeight: '155%', color: hintLevel === opt ? '#F8F9FA' : '#797980', textAlign: 'center' }}>{opt}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -231,7 +259,7 @@ export default function S26_DoctorLevel() {
 
             {/* 이전 조정 이력 */}
             <p style={{ ...F, fontSize: 22, fontWeight: 700, lineHeight: '155%', color: '#0D0D0D', marginTop: 81, marginBottom: 20 }}>이전 조정 이력</p>
-            {PREV_HISTORY.map((item, i) => (
+            {history.map((item, i) => (
               <div key={i} style={{
                 display: 'inline-flex', width: 936, padding: '20px 29px', flexDirection: 'column',
                 justifyContent: 'center', alignItems: 'flex-start',
