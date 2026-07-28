@@ -22,11 +22,11 @@ const PATIENTS_DB: Record<number, {
 };
 
 const LEVELS = [
-  { num: 1, label: '매우 쉬움', desc: '빠른 필요/힌트 충분' },
-  { num: 2, label: '쉬움', desc: '단답형/반복 안내' },
-  { num: 3, label: '보통', desc: '텍스트와 사진 혼합' },
-  { num: 4, label: '어려움', desc: '범위 확장' },
-  { num: 5, label: '매우 어려움', desc: '자유 회상형' },
+  { num: 1, label: '쉬움', desc: '빠른 필요/힌트 충분' },
+ 
+  { num: 2, label: '보통', desc: '텍스트와 사진 혼합' },
+ 
+  { num: 3, label: '어려움', desc: '자유 회상형' },
 ];
 
 const HINT_OPTIONS = ['적극 제공', '보통', '최소'];
@@ -132,7 +132,7 @@ export default function S26_DoctorLevel() {
               </div>
             </div>
 
-            {/* 난이도 카드 5개 */}
+            {/* 난이도 카드 3개 */}
             <div style={{ display: 'flex', gap: 16, marginTop: 20 }}>
               {LEVELS.map(lv => {
                 const isSelected = selectedLevel === lv.num;
