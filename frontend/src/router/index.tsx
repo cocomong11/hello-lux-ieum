@@ -12,7 +12,7 @@ import S10_DailyHealthCheck from '../pages/S10_DailyHealthCheck'
 import S11_TextVoiceQuiz from '../pages/S11_TextVoiceQuiz'
 import S12_PhotoRecallQuiz from '../pages/S12_PhotoRecallQuiz'
 import S13_RecallVoiceChat from '../pages/S13_RecallVoiceChat'
-import S14_DrawingCognitiveActivity from '../pages/S14_DrawAlong'
+
 
 import S17_ActivityReport from '../pages/S17_ActivityResult'
 import S18_CargiverHome from '../pages/S18_CargiverHome'
@@ -54,7 +54,6 @@ const router = createBrowserRouter([
   { path: '/patient-voicequiz',element: <S11_TextVoiceQuiz /> },
   { path: '/patient-photo',element: <S12_PhotoRecallQuiz /> },
   { path: '/patient-voicechat',element: <S13_RecallVoiceChat /> },
-  { path: '/patient-draw',element: <S14_DrawingCognitiveActivity /> },
   
   { path: '/patient-result',element: <S17_ActivityReport/> },
 
