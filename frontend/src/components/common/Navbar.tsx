@@ -1,22 +1,28 @@
-import { useNavigate } from 'react-router-dom';
-import logoSrc from '../../assets/images/S-01/Group15.png';
+import { useLocation, useNavigate } from 'react-router-dom';
+import logoSrc from '../../assets/logo.png';
 
 const HEADER_HEIGHT = 68;
 
+// 이 경로들에서만 '로그인'을 표시, 그 외 모든 페이지는 '마이페이지'를 표시
+const AUTH_PATHS = ['/', '/login', '/register'];
+
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const linkStyle: React.CSSProperties = {
+  const showLogin = AUTH_PATHS.includes(location.pathname);
+
+  const linkStyle = (active: boolean): React.CSSProperties => ({
     background: 'transparent',
     border: 'none',
-    color: '#797980',
+    color: active ? '#2073e8' : '#797980',
     cursor: 'pointer',
     fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
     fontSize: 14,
     fontWeight: 700,
     lineHeight: 1,
     padding: '10px 0',
-  };
+  });
 
   return (
     <header
@@ -78,12 +84,30 @@ export default function Navbar() {
             gap: 30,
           }}
         >
-          <button type='button' onClick={() => navigate('/')} style={linkStyle}>
+          <button
+            type='button'
+            onClick={() => navigate('/')}
+            style={linkStyle(location.pathname === '/')}
+          >
             홈
           </button>
-          <button type='button' onClick={() => navigate('/login')} style={linkStyle}>
-            로그인
-          </button>
+          {showLogin ? (
+            <button
+              type='button'
+              onClick={() => navigate('/login')}
+              style={linkStyle(location.pathname === '/login')}
+            >
+              로그인
+            </button>
+          ) : (
+            <button
+              type='button'
+              onClick={() => navigate('/mypage')}
+              style={linkStyle(location.pathname === '/mypage')}
+            >
+              마이페이지
+            </button>
+          )}
         </nav>
       </div>
     </header>

@@ -8,7 +8,7 @@ const DESIGN_H = 1080;
 const DESIGN_Left = 556;
 
 const F: React.CSSProperties = {
-  fontFamily: '"Pretendard Variable", Pretendard, sans-serif',
+  fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
 
 const DUMMY_DOCTOR = {
