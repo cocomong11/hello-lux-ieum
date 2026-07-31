@@ -32,9 +32,7 @@ const DUMMY_PATIENT = {
 
 const INDICATORS = [
   { key: '답변 성공률', checkImg: checkboxB, color: '#4188ED' },
-  { key: '회상 성공률', checkImg: checkboxY, color: '#DFDF87' },
-  { key: '힌트 사용량', checkImg: checkboxG, color: '#27AE60' },
-  { key: '다시 말하기', checkImg: checkboxB, color: '#4188ED' },
+  { key: '힌트 사용 여부', checkImg: checkboxG, color: '#27AE60' },
   { key: '응답 시간',   checkImg: checkboxY, color: '#DFDF87' },
   { key: '건강 상태',   checkImg: checkboxG, color: '#27AE60' },
   { key: '수면 상태',   checkImg: checkboxB, color: '#4188ED' },
@@ -118,6 +116,8 @@ export default function S19_CargiverReport() {
   const patient = DUMMY_PATIENT;
   const [period, setPeriod] = useState('최근 7일');
   const [showPeriodMenu, setShowPeriodMenu] = useState(false);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const [activeLines, setActiveLines] = useState<Set<string>>(
     new Set(['답변 성공률', '회상 성공률', '건강 상태'])
   );
@@ -247,6 +247,22 @@ export default function S19_CargiverReport() {
                   </div>
                 )}
               </div>
+
+              {/* 직접 선택 시 날짜 입력 */}
+              {period === '직접 선택' && (
+                <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <label style={{ ...F, fontSize: 13, color: '#0D0D0D' }}>
+                    시작
+                    <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
+                      style={{ ...F, display: 'block', width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #8E8E98', fontSize: 13, marginTop: 4 }} />
+                  </label>
+                  <label style={{ ...F, fontSize: 13, color: '#0D0D0D' }}>
+                    종료
+                    <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+                      style={{ ...F, display: 'block', width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #8E8E98', fontSize: 13, marginTop: 4 }} />
+                  </label>
+                </div>
+              )}
 
               <p style={{ ...F, margin: '0 0 12px', fontSize: 16, fontWeight: 700, color: '#0D0D0D' }}>지표</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

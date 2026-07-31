@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/DoctorSidebar';
 import polygon from '../assets/Polygon 2.svg';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const DESIGN_W = 1920;
 const DESIGN_H = 3385;
@@ -31,7 +32,7 @@ const PATIENTS_DB: Record<number, {
     dignosis: '경도인지장애',
     support_level: '보통',
     recentKMMSE: '2026.05.01',
-    kmmseScores: [25, 24, 23, 23, 22, 22],
+    kmmseScores: [1, 1, 3, 7, 0, 5],
     monthlyRates: [
       [80, 75, 70, 65, 60, 55],
       [70, 68, 65, 62, 60, 58],
@@ -64,7 +65,7 @@ const PATIENTS_DB: Record<number, {
     dignosis: '초기 치매',
     support_level: '높음',
     recentKMMSE: '2026.04.15',
-    kmmseScores: [20, 19, 19, 18, 18, 17],
+    kmmseScores: [1, 1, 3, 7, 0, 5],
     monthlyRates: [[70, 65, 60, 55, 50, 48], [60, 55, 50, 48, 45, 40], [75, 70, 65, 60, 58, 55], [50, 45, 40, 38, 35, 30], [35, 30, 28, 25, 22, 20]],
     latestRates: [
       { label: '지남력-시간', value: 48 },
@@ -89,7 +90,7 @@ const PATIENTS_DB: Record<number, {
     dignosis: '경도인지장애',
     support_level: '낮음',
     recentKMMSE: '2026.03.20',
-    kmmseScores: [26, 25, 25, 24, 24, 23],
+    kmmseScores: [1, 1, 3, 7, 0, 5],
     monthlyRates: [[85, 80, 78, 75, 72, 70], [75, 72, 70, 68, 65, 62], [80, 78, 75, 72, 70, 68], [55, 52, 50, 48, 45, 42], [45, 42, 40, 38, 35, 32]],
     latestRates: [
       { label: '지남력-시간', value: 70 },
@@ -110,8 +111,6 @@ const PATIENTS_DB: Record<number, {
   },
 };
 
-const RATE_COLORS = ['#4188ED', '#797980', '#27AE60', '#F5A623', '#8E8E98'];
-
 export default function S24_DoctorDashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -124,7 +123,7 @@ export default function S24_DoctorDashboard() {
   const [dailyPeriod, setDailyPeriod] = useState('3개월');
   const [selectedDay, setSelectedDay] = useState(26);
   const [calYear, setCalYear] = useState(2026);
-  const [calMonth, setCalMonth] = useState(5);
+  const [calMonth, setCalMonth] = useState(7);
 
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
@@ -173,6 +172,19 @@ export default function S24_DoctorDashboard() {
     return `${m}월`;
   });
 
+  // recharts 데이터 변환
+  const kmmseChartData = MONTHS.map((month, i) => ({
+    month,
+    score: patientData.kmmseScores[i] ?? null,
+  }));
+
+  const typeChartData = MONTHS.map((month, i) => ({
+    month,
+    '유형1': patientData.monthlyRates[0]?.[i] ?? null,
+    '유형2': patientData.monthlyRates[1]?.[i] ?? null,
+    '유형3': patientData.monthlyRates[2]?.[i] ?? null,
+  }));
+
   return (
     <div style={{ position: 'relative', width: '100vw', height: DESIGN_H * scale, overflowX: 'hidden', background: 'var(--color-neutral-100)' }}>
       <div
@@ -209,7 +221,7 @@ export default function S24_DoctorDashboard() {
                 borderRadius: 50, border: '1px solid #4188ED',
                 background: 'var(--color-primary)',
                 fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-100)', margin: 0,
-              }}>K-MMSE 문항별 정답률 월별 추세</p>
+              }}>K-MMSE 유형별 정답률 월별 추세</p>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                 {['3개월', '6개월', '1년'].map(period => (
                   <button key={period} onClick={() => setSelectedPeriod(period)} style={{
@@ -224,44 +236,51 @@ export default function S24_DoctorDashboard() {
               </div>
             </div>
 
-            {/* K-MMSE 총점 월별 추이 */}
-            <div style={{ width: 936, height: 330, borderRadius: 10, border: '1px solid #8E8E98', background: 'var(--Primary-g2, linear-gradient(180deg, rgba(223, 223, 135, 0.20) 0%, rgba(248, 249, 250, 0.20) 100%), rgba(65, 136, 237, 0.05))', boxShadow: '0 0 4px 0 #4188ED', 
-              padding: '19px 30px 21px 29px', boxSizing: 'border-box', marginBottom: 20 }}>
-              <p style={{ ...F, margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-10)' }}>K-MMSE 총점 월별 추이</p>
-              <svg width="878" height="236" style={{ marginTop: 10 }}>
-                <line x1="0" y1="65" x2="880" y2="65" stroke="#E0E0E0" strokeDasharray="4 3" />
-                <text x="0" y="12" fontSize="16" fill="var(--color-neutral-10)">30점</text>
-                <polyline
-                  points={patientData.kmmseScores.map((s, i) => `${i * 176},${130 - (s / 30) * 120}`).join(' ')}
-                  fill="none" stroke="#4188ED" strokeWidth="2.5" strokeLinejoin="round"
-                />
-                {patientData.kmmseScores.map((s, i) => (
-                  <g key={i}>
-                    <circle cx={i * 176} cy={130 - (s / 30) * 120} r="5" fill="#4188ED" />
-                    <text x={i * 176 + 8} y={130 - (s / 30) * 120 + 20} textAnchor="start" fontSize="16" fontWeight="400" fill="#4188ED">{s}</text>
-                    <text x={i * 176} y={220} textAnchor="middle" fontSize="22" fontWeight="400" fill="var(--color-neutral-10)">{MONTHS[i]}</text>
-                  </g>
-                ))}
-              </svg>
+            {/* K-MMSE기반 총점 월별 정답률 */}
+            <div style={{ width: 936, borderRadius: 10, border: '1px solid #8E8E98', background: 'var(--Primary-g2, linear-gradient(180deg, rgba(223, 223, 135, 0.20) 0%, rgba(248, 249, 250, 0.20) 100%), rgba(65, 136, 237, 0.05))', boxShadow: '0 0 4px 0 #4188ED', 
+              boxSizing: 'border-box', marginBottom: 20, paddingBottom:21 }}>
+              <p style={{ ...F, margin: '19px 0 10px 29px', fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-10)' }}>K-MMSE기반 질문 월별 정답률</p>
+              <ResponsiveContainer width="100%" height={236}>
+                <LineChart data={kmmseChartData} margin={{ top: 5, right: 30, left: 0, bottom: 12 }}>
+                  <CartesianGrid strokeDasharray="4 3" strokeWidth="0.5" vertical={false} fill="#F8F9FA" stroke="#4188ED" />
+                  <XAxis dataKey="month" width="51" axisLine={false} tickLine={false} tick={{ fontSize: 22, fill: 'var(--color-neutural-10)' }} tickMargin={18} />
+                  <YAxis domain={[0,'dataMax']} axisLine={false} tickLine={false} tick={{ fontSize: 16, fill: 'var(--color-neutural-10)' }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="score" stroke="#4188ED" strokeWidth={2.5} dot={{ r: 5, fill: '#4188ED' }} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
 
-            {/* 문항별 정답률 월별 추이 */}
-            <div style={{ width: 936, height: 371, borderRadius: 10, border: '1px solid #8E8E98', 
+            {/* 유형별 정답률 월별 추이 */}
+            <div style={{ width: 936,borderRadius: 10, border: '1px solid #8E8E98', 
               background: 'var(--Primary-g2, linear-gradient(180deg, rgba(223, 223, 135, 0.20) 0%, rgba(248, 249, 250, 0.20) 100%), rgba(65, 136, 237, 0.05))', 
-              boxShadow: '0 0 4px 0 #4188ED', padding: '20px 24px', boxSizing: 'border-box', marginBottom: 40 }}>
-              <p style={{ ...F, margin: 0, fontSize: 22, fontWeight: 700, color: '#0D0D0D' }}>문항별 정답률 월별 추세</p>
-              <svg width="880" height="130" style={{ marginTop: 10 }}>
-                {patientData.monthlyRates.map((rates, ri) => (
-                  <polyline
-                    key={ri}
-                    points={rates.map((r, i) => `${i * 176},${130 - (r / 100) * 120}`).join(' ')}
-                    fill="none" stroke={RATE_COLORS[ri]} strokeWidth="2" strokeLinejoin="round"
-                  />
-                ))}
-                {MONTHS.map((m, i) => (
-                  <text key={m} x={i * 176} y={145} textAnchor="middle" fontSize="12" fill="#797980">{m}</text>
-                ))}
-              </svg>
+              boxShadow: '0 0 4px 0 #4188ED',  boxSizing: 'border-box', marginBottom: 40, paddingBottom:26}}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <p style={{ ...F, marginLeft:29, marginTop:19,fontSize: 22, fontWeight: 700, lineHeight: "155%", color: '#0D0D0D' }}>유형별 정답률 월별 추세</p>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  {[
+                    { label: '유형1', color: '#4188ED' },
+                    { label: '유형2', color: '#27AE60' },
+                    { label: '유형3', color: '#F5A623' },
+                  ].map(item => (
+                    <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 20, height: 4,marginTop:19, background: item.color, borderRadius: 2 }} />
+                      <span style={{ ...F, fontSize: 22, fontWeight:400, marginTop:19, marginRight:30, color: '#0D0D0D' }}>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={294}>
+                <LineChart data={typeChartData} margin={{ top: 10, right: 30, left: 18, bottom:12 }}>
+                  <CartesianGrid strokeDasharray="3 3" strokeWidth="0.5" vertical={false} fill="#F8F9FA" stroke="#4188ED" />
+                  <XAxis dataKey="month" width="51" axisLine={false} tickLine={false} interval="preserveEnd" tick={{ fontSize: 22, fill: '#0D0D0D', fontWeight: 400}} tickMargin={18}/>
+                  <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 16, fill: '#0D0D0D' }} ticks={[0,25,50,75,100]} tickFormatter={(v)=>{ if(v===50||v===100){ return `${v}%`} return "";}} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="유형1" stroke="#4188ED" strokeWidth={2.5} dot={true} />
+                  <Line type="monotone" dataKey="유형2" stroke="#27AE60" strokeWidth={2.5} dot={true} />
+                  <Line type="monotone" dataKey="유형3" stroke="#F5A623" strokeWidth={2.5} dot={true} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
 
             {/* n월 유형별 정답률 */}
