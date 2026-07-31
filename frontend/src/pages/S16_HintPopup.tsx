@@ -1,15 +1,15 @@
 interface HintPopupProps {
   isOpen?: boolean;
   onClose: () => void;
-  onGoToAnswer?: () => void;
   onPlayAudio?: () => void;
+  hintText?: string; 
 }
 
 export default function HintPopup({
   isOpen = true,
   onClose,
-  onGoToAnswer = () => {},
-  onPlayAudio
+  onPlayAudio,
+  hintText = "첫 번째 단계입니다. 문제를 다시 한번 천천히 읽어보세요."
 }: HintPopupProps) {
   if (!isOpen) return null;
 
@@ -68,7 +68,7 @@ export default function HintPopup({
           </button>
         </div>
 
-        {/* 힌트 내용 박스 */}
+      
         <div style={{
           width: '100%',
           borderRadius: '16px',
@@ -86,8 +86,8 @@ export default function HintPopup({
           <span style={{ fontSize: '22px', fontWeight: 700, color: '#0F66E2' }}>
             힌트
           </span>
-          <p style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#0D0D0D', lineHeight: '1.4' }}>
-            첫 번째 단계입니다. 문제를 다시 한번 천천히 읽어보세요.
+          <p style={{ margin: 0, fontSize: '24px', fontWeight:700, color: '#0D0D0D', lineHeight: '1.4' }}>
+            {hintText} 
           </p>
 
           {/* 힌트 듣기 버튼 */}
@@ -112,8 +112,9 @@ export default function HintPopup({
           </button>
         </div>
 
+        {/* 정답 입력하러 가기 */}
         <button
-          onClick={onGoToAnswer || onClose}
+          onClick={onClose}
           style={{
             width: '100%',
             height: '68px',
@@ -124,7 +125,7 @@ export default function HintPopup({
             fontWeight: 700,
             color: '#FFFFFF',
             cursor: 'pointer',
-            boxShadow: '0px 0px 4px 0px #4188ED;'
+            boxShadow: '0px 0px 4px 0px #4188ED'
           }}
         >
           정답 입력하러 가기

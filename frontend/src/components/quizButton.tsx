@@ -1,35 +1,41 @@
 import { useState, useRef, useEffect, type ChangeEvent } from 'react';
 
 interface QuizVoiceControllerProps {
-  onHintClick: () => void;
-  hintCount: number;         
+  onHintClick?: () => void;
+  onRetryClick?: () => void;
+  hintCount?: number;         
   placeholder: string;   
   onSuccessSubmit?: (duration: string) => void; 
-  resultTitle: string;       
-  resultDescription: string;
+  showHintButton?: boolean; 
 }
 
 export default function QuizVoiceController({ 
   onHintClick, 
-  hintCount, 
+  onRetryClick,
   placeholder, 
   onSuccessSubmit,
-  resultTitle,       
-  resultDescription
+  showHintButton = true 
 }: QuizVoiceControllerProps) {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [myAnswer, setMyAnswer] = useState<string>('');
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  const [duration, setDuration] = useState<string>('0.0');
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false); // 제출 상태 (Lock/Unlock)
+  
   const startTimeRef = useRef<number>(Date.now());
   const recognitionRef = useRef<any>(null);
 
-  // 컴포넌트가 열릴 때 시작 시간 기록
   useEffect(() => {
     startTimeRef.current = Date.now();
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
   }, []);
 
   const handleMicrophoneClick = () => {
+    // 🔒 제출 완료 상태이면 마이크 작동 차단
+    if (isSubmitted) return;
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
@@ -38,15 +44,12 @@ export default function QuizVoiceController({
     }
 
     if (isRecording) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop(); 
-      }
+      if (recognitionRef.current) recognitionRef.current.stop(); 
       setIsRecording(false);
     } else {
       try {
         const recognition = new SpeechRecognition();
         recognitionRef.current = recognition;
-
         recognition.lang = 'ko-KR'; 
         recognition.continuous = true; 
         recognition.interimResults = true; 
@@ -59,7 +62,6 @@ export default function QuizVoiceController({
         recognition.onresult = (event: any) => {
           let interimTranscript = '';
           let finalTranscript = '';
-
           for (let i = event.resultIndex; i < event.results.length; ++i) {
             if (event.results[i].isFinal) {
               finalTranscript += event.results[i][0].transcript;
@@ -67,31 +69,18 @@ export default function QuizVoiceController({
               interimTranscript += event.results[i][0].transcript;
             }
           }
-
           const currentText = finalTranscript || interimTranscript;
-          if (currentText.trim()) {
-            setMyAnswer(currentText); 
-          }
+          if (currentText.trim()) setMyAnswer(currentText); 
         };
 
-        recognition.onerror = (event: any) => {
-          console.error('STT 인식 에러:', event.error);
-          if (event.error === 'not-allowed') {
-            alert('마이크 접근 권한을 승인해 주세요!');
-          } else {
-            setMyAnswer('인식에 실패했습니다. 직접 입력해 주세요.');
-          }
+        recognition.onerror = () => {
+          setMyAnswer('인식에 실패했습니다.');
           setIsRecording(false);
         };
 
         recognition.onend = () => {
           setIsRecording(false);
-          setMyAnswer((prev) => {
-            if (prev === '음성 인식 중입니다...' || prev.trim() === '') {
-              return '';
-            }
-            return prev;
-          });
+          setMyAnswer((prev) => (prev === '음성 인식 중입니다...' || prev.trim() === '' ? '' : prev));
         };
 
         recognition.start();
@@ -102,19 +91,35 @@ export default function QuizVoiceController({
   };
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    // 🔒 제출 완료 상태이면 타이핑 입력 차단
+    if (isSubmitted) return;
     setMyAnswer(e.target.value);
   };
 
+  // 🎯 다시 입력하기 클릭 시 실행
   const handleResetAnswer = () => {
     setMyAnswer(''); 
-    setDuration('0.0');
-    setIsSubmitted(false);
+    setIsSubmitted(false); // 🔓 잠금 해제 (다시 입력 / 녹음 가능)
+
+    // 세션 스토리지 retryCount 안전하게 1 증가
+    const currentRetry = parseInt(sessionStorage.getItem('retryCount') || '0', 10);
+    const validRetry = isNaN(currentRetry) ? 0 : currentRetry;
+    sessionStorage.setItem('retryCount', String(validRetry + 1));
+
+    if (onRetryClick) {
+      onRetryClick();
+    }
   };
 
   const handleSubmit = async () => {
-    const elapsed = ((Date.now() - startTimeRef.current) / 1000).toFixed(1);
-    setDuration(elapsed);
+    if (isSubmitted) return; // 이미 제출된 상태면 반응 없음
 
+    if (isRecording && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    }
+
+    const elapsed = ((Date.now() - startTimeRef.current) / 1000).toFixed(1);
     const cleanAnswer = myAnswer.trim();
 
     if (!cleanAnswer || cleanAnswer === '음성 인식 중입니다...') {
@@ -122,12 +127,13 @@ export default function QuizVoiceController({
       return;
     }
 
+    // 🔒 제출 상태 적용 (입력 및 마이크 클릭 비활성화)
+    setIsSubmitted(true);
+
     try {
-      setIsSubmitted(true);
       if (onSuccessSubmit) onSuccessSubmit(elapsed);
     } catch (error) {
       console.error("퀴즈 제출 실패:", error);
-      alert("서버 전송에 실패했습니다.");
     }
   };
 
@@ -144,17 +150,16 @@ export default function QuizVoiceController({
           아래 마이크를 누르고 말씀하시거나, 아래 칸에 직접 입력해 주세요.
         </span>
 
-        <div
-          onClick={handleMicrophoneClick}
-          style={{
-            width: '120px', height: '120px', borderRadius: '50%',
-            background: 'linear-gradient(0deg, #0D0D0D, #0D0D0D)',
-            border: '2px solid #0F66E2',
-            boxShadow : '0px 0px 4px 20px #0F66E240, 0px 0px 4px 10px #0F66E280',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: '24px', cursor: 'pointer', transition: 'all 0.3s ease'
-          }}
-        >
+        <div onClick={handleMicrophoneClick} style={{
+          width: '120px', height: '120px', borderRadius: '50%',
+          background: 'linear-gradient(0deg, #0D0D0D, #0D0D0D)',
+          border: '2px solid #0F66E2',
+          boxShadow : '0px 0px 4px 20px #0F66E240, 0px 0px 4px 10px #0F66E280',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: '24px', 
+          cursor: isSubmitted ? 'default' : 'pointer',
+          transition: 'all 0.3s ease'
+        }}>
           <span style={{ fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '30px', color: '#FFFFFF', letterSpacing: '1px' }}>
             MIC
           </span>
@@ -175,7 +180,8 @@ export default function QuizVoiceController({
       
       <div style={{
         width: '648px', height: '79px', borderRadius: '10px',
-        border: '1px solid #4188ED', backgroundColor: '#4188ED0D', boxShadow: '0px 0px 4px 0px #4188ED',
+        border: '1px solid #4188ED', backgroundColor: '#4188ED0D', 
+        boxShadow: '0px 0px 4px 0px #4188ED',
         display: 'flex', alignItems: 'center', padding: '0 24px', boxSizing: 'border-box'
       }}>
         <input 
@@ -183,6 +189,7 @@ export default function QuizVoiceController({
           value={myAnswer}
           onChange={handleInputChange}
           placeholder={placeholder}
+          readOnly={isSubmitted} // 🔒 제출 상태에서는 수정/타이핑 불가능
           style={{
             width: '100%',
             fontSize: '20px',
@@ -192,32 +199,26 @@ export default function QuizVoiceController({
             border: 'none',
             outline: 'none',
             fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
+            cursor: isSubmitted ? 'default' : 'text'
           }}
         />
       </div>
 
+      {/* 버튼 영역 */}
       <div style={{ display: 'flex', gap: '16px', width: '648px', marginTop: '26px', marginBottom: '40px' }}>
-        <button onClick={handleResetAnswer} style={{ width: '171px', height: '46px', borderRadius: '10px', backgroundColor: '#F8F9FA', border: '1px solid #0D0D0D', boxShadow: '0px 0px 4px 0px #0F66E2', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '18px', color: '#0D0D0D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+        <button onClick={handleResetAnswer} style={{ width: showHintButton ? '171px' : '300px', height: '46px', borderRadius: '10px', backgroundColor: '#F8F9FA', border: '1px solid #0D0D0D', boxShadow: '0px 0px 4px 0px #0F66E2', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '18px', color: '#0D0D0D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
           ↻ 다시 입력하기 
         </button>
-        <button onClick={handleSubmit} style={{ width: '139px', height: '46px', borderRadius: '10px', backgroundColor: '#0F66E2', border: '1px solid #DFDF87', boxShadow: '0px 0px 4px 0px #4188ED', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '18px', color: '#FFFFFF', cursor: 'pointer' }}>
+        <button onClick={handleSubmit} style={{ width: showHintButton ? '139px' : '332px', height: '46px', borderRadius: '10px', backgroundColor: '#0F66E2', border: '1px solid #DFDF87', boxShadow: '0px 0px 4px 0px #4188ED', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '18px', color: '#FFFFFF', cursor: isSubmitted ? 'default' : 'pointer' }}>
           ✓ 제출하기
         </button>
-        <button onClick={onHintClick} style={{ width: '145px', height: '46px', borderRadius: '10px', backgroundColor: '#DFDF87', border: '1px solid #0F66E2', boxShadow: '0px 0px 4px 0px #4188ED', fontFamily:"'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '18px', color: '#0D0D0D', cursor: 'pointer' }}>
-          💡 힌트 보기
-        </button>
+        
+        {showHintButton && (
+          <button onClick={onHintClick} style={{ width: '145px', height: '46px', borderRadius: '10px', backgroundColor: '#DFDF87', border: '1px solid #0F66E2', boxShadow: '0px 0px 4px 0px #4188ED', fontFamily:"'Pretendard Variable', Pretendard, sans-serif", fontWeight:700, fontSize: '18px', color: '#0D0D0D', cursor: 'pointer' }}>
+            💡 힌트 보기
+          </button>
+        )}
       </div>
-
-      {isSubmitted && (
-        <div style={{ height: '170px', width: '648px', borderRadius: '10px', border: '1px solid #4188ED', boxShadow: '0px 0px 4px 0px #4188ED', background: 'linear-gradient(0deg, rgba(65, 136, 237, 0.05), rgba(65, 136, 237, 0.05)), linear-gradient(180deg, rgba(32, 115, 232, 0.2) 0%, rgba(223, 223, 135, 0.2) 100%)', boxSizing: 'border-box', padding: '24px 29px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginBottom: '50px' }}>
-          <h3 style={{ fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '30px', lineHeight: '140%', color: '#0D0D0D', margin: '0 0 6px 0' }}>{resultTitle}</h3>
-          <p style={{ fontWeight: 780, fontSize: '20px', lineHeight: '145%', color: '#0F66E2', margin: '0 0 12px 0' }}>{resultDescription}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', fontSize: '14px', fontWeight: 700, color: '#797980' }}>
-            <span>답변 소요 시간 : {duration}초</span>
-            <span>힌트 사용 : {hintCount}회</span>
-          </div>
-        </div>
-      )}
     </>
   );
 }
