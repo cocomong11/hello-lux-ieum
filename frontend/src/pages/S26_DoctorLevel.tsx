@@ -80,19 +80,26 @@ export default function S26_DoctorLevel() {
     setTimeout(() => setSavedMsg(false), 2000);
   };
 
-  // 토글 컴포넌트
+  // 토글 컴포넌트 (S06과 동일 스타일)
   const Toggle = ({ value, onChange }: { value: boolean; onChange: () => void }) => (
     <div onClick={onChange} style={{
-      width: 56, height: 30, borderRadius: 100, cursor: 'pointer',
-      background: value ? '#DFDF87' : '#DDDDE6',
-      position: 'relative', transition: 'background 0.2s',
-      display: 'inline-flex', alignItems: 'center',
+      position: 'relative',
+      width: 78, height: 41, borderRadius: 100, cursor: 'pointer',
+      background: value
+        ? 'linear-gradient(180deg, rgba(32,115,232,0.8) 0%, rgba(65,136,237,0.8) 100%)'
+        : '#f8f9fa',
+      border: value ? 'none' : '1px solid #8e8e98',
+      transition: 'background 0.2s',
+      flexShrink: 0,
     }}>
       <div style={{
-        width: 24, height: 24, borderRadius: '50%', background: '#fff',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-        position: 'absolute', top: 3, left: value ? 28 : 4,
-        transition: 'left 0.2s',
+        position: 'absolute',
+        width: 34, height: 34, borderRadius: '50%',
+        background: value ? '#DFDF87' : '#c6c6cc',
+        top: '50%', transform: 'translateY(-50%)',
+        left: value ? 40 : 4,
+        transition: 'left 0.2s, background 0.2s',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
       }} />
     </div>
   );
