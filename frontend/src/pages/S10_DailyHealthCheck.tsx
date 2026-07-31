@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/patientHeader';
 import loadingIcon from '../assets/loading.png';
@@ -22,26 +22,41 @@ export default function S10_DailyHealthCheck() {
   const [isMemoFocused, setIsMemoFocused] = useState<boolean>(false);
   const [memoText, setMemoText] = useState<string>('');
 
-  const toggleCognitive = (value: string) => {
-    if (cognitiveChanges.includes(value)) {
-      setCognitiveChanges(cognitiveChanges.filter((item) => item !== value));
-    } else {
+  
+  useEffect(() => {
+    sessionStorage.removeItem('todayHealthCondition');
+    sessionStorage.removeItem('conditionStatus');
+    sessionStorage.removeItem('sleepStatus');
+    sessionStorage.removeItem('moodStatus');
+  }, []);
+
+  
+  const addCognitive = (value: string) => {
+    if (!cognitiveChanges.includes(value)) {
       setCognitiveChanges([...cognitiveChanges, value]);
     }
+    if (btnStatus === 'MISSING') setBtnStatus('READY');
   };
 
   const handleSaveAndNext = () => {
-    if (!condition || !sleep || !meal || !pain || !mood) {
+    // 항목 누락 체크
+    if (!condition || !sleep || !meal || !pain || !mood || cognitiveChanges.length === 0) {
       setBtnStatus('MISSING');
       return;
     }
+    
+    
+    sessionStorage.setItem('todayHealthCondition', condition);
+    sessionStorage.setItem('conditionStatus', condition); 
+    sessionStorage.setItem('sleepStatus', sleep);           
+    sessionStorage.setItem('moodStatus', mood);            
     setBtnStatus('LOADING');
     setTimeout(() => {
       navigate('/patient-voicequiz');
     }, 1500);
   };
 
-  const sectionTitleStyle = {
+  const getSectionTitleStyle = () => ({
     fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
     fontWeight: 700,
     fontSize: '25px',
@@ -50,7 +65,7 @@ export default function S10_DailyHealthCheck() {
     margin: '0 0 16px 0',
     textAlign: 'left' as const,
     width: '100%',
-  };
+  });
 
   const baseBoxStyle = {
     backgroundColor: '#F8F9FA',
@@ -80,7 +95,7 @@ export default function S10_DailyHealthCheck() {
     ...baseBoxStyle,
     backgroundColor: '#0F66E2',
     border: '1px solid #DFDF87',
-    boxShadow: '0px 0px 4px 0px #2073E8',
+    boxShadow: '0px 0px 4px 0px #4188ED',
     color: '#FFFFFF',
     fontWeight: 700,
   };
@@ -121,8 +136,9 @@ export default function S10_DailyHealthCheck() {
           boxSizing: 'border-box',
         }}
       >
-       
-        <h2 style={sectionTitleStyle}>오늘의 컨디션</h2>
+        
+        {/* 오늘의 컨디션 */}
+        <h2 style={getSectionTitleStyle()}>오늘의 컨디션</h2>
         <div style={{ display: 'flex', gap: '14px', width: '100%', marginBottom: '70px' }}>
           {conditionOptions.map((item) => (
             <div
@@ -135,7 +151,10 @@ export default function S10_DailyHealthCheck() {
                 gap: '12px',
                 justifyContent: 'center',
               }}
-              onClick={() => setCondition(item.label)}
+              onClick={() => {
+                setCondition(item.label);
+                if (btnStatus === 'MISSING') setBtnStatus('READY');
+              }}
             >
               <img
                 src={item.img}
@@ -147,8 +166,8 @@ export default function S10_DailyHealthCheck() {
           ))}
         </div>
 
-        
-        <h2 style={sectionTitleStyle}>수면 상태</h2>
+        {/* 수면 상태 */}
+        <h2 style={getSectionTitleStyle()}>수면 상태</h2>
         <div style={{ display: 'flex', gap: '14px', width: '100%', marginBottom: '70px' }}>
           {sleepOptions.map((item) => (
             <div
@@ -161,7 +180,10 @@ export default function S10_DailyHealthCheck() {
                 gap: '12px',
                 justifyContent: 'center',
               }}
-              onClick={() => setSleep(item.label)}
+              onClick={() => {
+                setSleep(item.label);
+                if (btnStatus === 'MISSING') setBtnStatus('READY');
+              }}
             >
               <img
                 src={item.img}
@@ -173,47 +195,96 @@ export default function S10_DailyHealthCheck() {
           ))}
         </div>
 
-        
-        <h2 style={sectionTitleStyle}>식사 여부</h2>
+        {/* 식사 여부 */}
+        <h2 style={getSectionTitleStyle()}>식사 여부</h2>
         <div style={{ display: 'flex', gap: '16px', width: '100%', marginBottom: '70px' }}>
-          <div style={{ ...(meal === '식사함' ? activeBoxStyle : grayTextDefaultStyle), width: '100px', height: '46px' }} onClick={() => setMeal('식사함')}>식사함</div>
-          <div style={{ ...(meal === '식사 못 함' ? activeBoxStyle : grayTextDefaultStyle), width: '120px', height: '46px' }} onClick={() => setMeal('식사 못 함')}>식사 못 함</div>
+          <div 
+            style={{ ...(meal === '식사함' ? activeBoxStyle : grayTextDefaultStyle), width: '100px', height: '46px' }} 
+            onClick={() => { setMeal('식사함'); if (btnStatus === 'MISSING') setBtnStatus('READY'); }}
+          >
+            식사함
+          </div>
+          <div 
+            style={{ ...(meal === '식사 못 함' ? activeBoxStyle : grayTextDefaultStyle), width: '120px', height: '46px' }} 
+            onClick={() => { setMeal('식사 못 함'); if (btnStatus === 'MISSING') setBtnStatus('READY'); }}
+          >
+            식사 못 함
+          </div>
         </div>
 
-        
-        <h2 style={sectionTitleStyle}>통증 / 불편감</h2>
+        {/* 통증 / 불편감 */}
+        <h2 style={getSectionTitleStyle()}>통증 / 불편감</h2>
         <div style={{ display: 'flex', gap: '16px', width: '100%', marginBottom: '70px' }}>
           {['없음', '있음'].map((item) => (
-            <div key={item} style={{ ...(pain === item ? activeBoxStyle : grayTextDefaultStyle), width: '90px', height: '46px' }} onClick={() => setPain(item)}>{item}</div>
+            <div 
+              key={item} 
+              style={{ ...(pain === item ? activeBoxStyle : grayTextDefaultStyle), width: '90px', height: '46px' }} 
+              onClick={() => { setPain(item); if (btnStatus === 'MISSING') setBtnStatus('READY'); }}
+            >
+              {item}
+            </div>
           ))}
         </div>
 
-       
-        <h2 style={sectionTitleStyle}>오늘 기분 상태</h2>
+        {/* 오늘 기분 상태 */}
+        <h2 style={getSectionTitleStyle()}>오늘 기분 상태</h2>
         <div style={{ display: 'flex', gap: '12px', width: '100%', marginBottom: '70px', flexWrap: 'wrap' }}>
           {[
             { name: '안정적', w: '95px' }, { name: '불안', w: '80px' }, { name: '우울', w: '80px' }, { name: '화남', w: '80px' }, { name: '무기력', w: '95px' }
           ].map((item) => (
-            <div key={item.name} style={{ ...(mood === item.name ? activeBoxStyle : grayTextDefaultStyle), width: item.w, height: '46px' }} onClick={() => setMood(item.name)}>{item.name}</div>
+            <div 
+              key={item.name} 
+              style={{ ...(mood === item.name ? activeBoxStyle : grayTextDefaultStyle), width: item.w, height: '46px' }} 
+              onClick={() => { setMood(item.name); if (btnStatus === 'MISSING') setBtnStatus('READY'); }}
+            >
+              {item.name}
+            </div>
           ))}
         </div>
 
-        
-        <h2 style={sectionTitleStyle}>오늘 행동 및 인지 변화 (중복 선택 가능)</h2>
+        {/* 오늘 행동 및 인지 변화 */}
+        <h2 style={getSectionTitleStyle()}>
+          오늘 행동 및 인지 변화 (중복 선택 가능)
+        </h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', marginBottom: '70px' }}>
           <div style={{ display: 'flex', gap: '14px' }}>
-            <div style={{ ...(cognitiveChanges.includes('반복 발화') ? activeBoxStyle : grayTextDefaultStyle), width: '125px', height: '46px' }} onClick={() => toggleCognitive('반복 발화')}>반복 발화</div>
-            <div style={{ ...(cognitiveChanges.includes('망상 또는 불안') ? activeBoxStyle : grayTextDefaultStyle), width: '145px', height: '46px' }} onClick={() => toggleCognitive('망상 또는 불안')}>망상 또는 불안</div>
-            <div style={{ ...(cognitiveChanges.includes('분노/우울 반응') ? activeBoxStyle : grayTextDefaultStyle), width: '145px', height: '46px' }} onClick={() => toggleCognitive('분노/우울 반응')}>분노/우울 반응</div>
+            <div 
+              style={{ ...(cognitiveChanges.includes('반복 발화') ? activeBoxStyle : grayTextDefaultStyle), width: '125px', height: '46px' }} 
+              onClick={() => addCognitive('반복 발화')}
+            >
+              반복 발화
+            </div>
+            <div 
+              style={{ ...(cognitiveChanges.includes('망상 또는 불안') ? activeBoxStyle : grayTextDefaultStyle), width: '145px', height: '46px' }} 
+              onClick={() => addCognitive('망상 또는 불안')}
+            >
+              망상 또는 불안
+            </div>
+            <div 
+              style={{ ...(cognitiveChanges.includes('분노/우울 반응') ? activeBoxStyle : grayTextDefaultStyle), width: '145px', height: '46px' }} 
+              onClick={() => addCognitive('분노/우울 반응')}
+            >
+              분노/우울 반응
+            </div>
           </div>
           <div style={{ display: 'flex', gap: '14px' }}>
-            <div style={{ ...(cognitiveChanges.includes('배회 (길을 헤맴)') ? activeBoxStyle : grayTextDefaultStyle), width: '145px', height: '46px' }} onClick={() => toggleCognitive('배회 (길을 헤맴)')}>배회 (길을 헤맴)</div>
-            <div style={{ ...(cognitiveChanges.includes('기타') ? activeBoxStyle : grayTextDefaultStyle), width: '85px', height: '46px' }} onClick={() => toggleCognitive('기타')}>기타</div>
+            <div 
+              style={{ ...(cognitiveChanges.includes('배회 (길을 헤맴)') ? activeBoxStyle : grayTextDefaultStyle), width: '145px', height: '46px' }} 
+              onClick={() => addCognitive('배회 (길을 헤맴)')}
+            >
+              배회 (길을 헤맴)
+            </div>
+            <div 
+              style={{ ...(cognitiveChanges.includes('기타') ? activeBoxStyle : grayTextDefaultStyle), width: '85px', height: '46px' }} 
+              onClick={() => addCognitive('기타')}
+            >
+              기타
+            </div>
           </div>
         </div>
 
-        
-        <h2 style={sectionTitleStyle}>보호자 메모 (선택)</h2>
+        {/* 보호자 메모 (선택) */}
+        <h2 style={getSectionTitleStyle()}>보호자 메모 (선택)</h2>
         <textarea
           placeholder="ex. 보호자가 자유롭게 적어 주세요."
           value={memoText}
@@ -229,7 +300,7 @@ export default function S10_DailyHealthCheck() {
           }}
         />
 
-        
+        {/* 하단 버튼 영역 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '50px' }}>
           <button
             onClick={() => navigate('/patient-home')}
