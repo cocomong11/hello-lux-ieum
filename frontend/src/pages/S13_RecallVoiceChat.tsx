@@ -96,7 +96,7 @@ export default function S13_RecallVoiceChat() {
             boxSizing: 'border-box', marginBottom: '26px'
           }}>
             <span style={{ fontWeight: 700, fontSize: '22px', color: '#F8F9FA' }}>
-              회상형 음성 대화
+              객관식 퀴즈
             </span>
           </div>
 
