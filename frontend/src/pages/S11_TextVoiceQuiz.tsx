@@ -84,8 +84,8 @@ export default function S11_TextVoiceQuiz() {
       <Header />
 
       <div style={{ width: '648px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', transform: 'translateX(6px)', zIndex: 10 }}>
-        <div style={{ width: '184px', height: '42px', borderRadius: '50px', backgroundColor: '#4188ED', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 20px', boxSizing: 'border-box', gap: '10px', marginBottom: '26px', marginTop: '60px' }}>
-          <span style={{ fontWeight: 700, fontSize: '18px', color: '#F8F9FA' }}>주관식 음성 퀴즈</span>
+        <div style={{ width: '200px', height: '42px', borderRadius: '50px', backgroundColor: '#4188ED', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 20px', boxSizing: 'border-box', gap: '10px', marginBottom: '26px', marginTop: '60px' }}>
+          <span style={{ fontWeight: 700, fontSize: '18px', color: '#F8F9FA' }}>문장 기반 주관식 퀴즈</span>
         </div>
 
         <h1 style={{ width: '458px', fontWeight: 700, fontSize: '28px', lineHeight: '140%', color: '#0D0D0D', margin: '0 0 26px 0' }}>
