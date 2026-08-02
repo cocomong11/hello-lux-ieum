@@ -2,10 +2,32 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/common/PageLayout';
 
+const formatPhone = (raw: string) => {
+  const d = raw.replace(/\D/g, '').slice(0, 11);
+  if (d.length < 4) return d;
+  if (d.length < 8) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
+};
+
+const isValidBirth = (raw: string) => {
+  if (!/^\d{8}$/.test(raw)) return false;
+  const y = Number(raw.slice(0, 4));
+  const m = Number(raw.slice(4, 6));
+  const d = Number(raw.slice(6, 8));
+  const now = new Date().getFullYear();
+  if (y < 1900 || y > now) return false;
+  if (m < 1 || m > 12) return false;
+  const last = new Date(y, m, 0).getDate();
+  return d >= 1 && d <= last;
+};
+
 export default function S03_Register() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
+  const [userId, setUserId] = useState('');
+  const [idChecked, setIdChecked] = useState(false);
+  const [name, setName] = useState('');
+  const [birth, setBirth] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -13,9 +35,42 @@ export default function S03_Register() {
 
   const [errorMessage, setErrorMessage] = useState('');
 
+  const handleCheckId = () => {
+    if (!userId) {
+      setErrorMessage('* 아이디를 입력해 주세요.');
+      return;
+    }
+    if (!/^[A-Za-z0-9]{4,20}$/.test(userId)) {
+      setErrorMessage('* 아이디는 영문·숫자 4~20자로 입력해 주세요.');
+      return;
+    }
+    // TODO: 서버 연동 시 중복 확인 API 호출 (GET /users/check-id?userId=)
+    setIdChecked(true);
+    setErrorMessage('');
+    alert('사용할 수 있는 아이디입니다.');
+  };
+
   const handleRegister = () => {
-    if (!email || !code || !password || !passwordConfirm) {
+    if (!userId || !name || !birth || !phone || !password || !passwordConfirm) {
       setErrorMessage('* 모든 정보를 입력해 주세요.');
+      return;
+    }
+    if (!idChecked) {
+      setErrorMessage('* 아이디 중복 확인을 해주세요.');
+      return;
+    }
+    if (!isValidBirth(birth)) {
+      setErrorMessage(
+        '* 생년월일을 8자리로 정확히 입력해 주세요. (예: 19900101)',
+      );
+      return;
+    }
+    if (phone.replace(/\D/g, '').length < 10) {
+      setErrorMessage('* 전화번호를 정확히 입력해 주세요.');
+      return;
+    }
+    if (password.length < 8) {
+      setErrorMessage('* 비밀번호는 8자 이상으로 입력해 주세요.');
       return;
     }
     if (password !== passwordConfirm) {
@@ -27,15 +82,29 @@ export default function S03_Register() {
     navigate('/role-select');
   };
 
-  const inputBox = (
-    placeholder: string,
-    value: string,
-    onChange: (v: string) => void,
-    type: 'text' | 'password' = 'text',
+  type InputBoxProps = {
+    placeholder: string;
+    value: string;
+    onChange: (v: string) => void;
+    type?: 'text' | 'password' | 'tel';
+    inputMode?: 'text' | 'numeric' | 'tel';
+    maxLength?: number;
+    showToggle?: boolean;
+    show?: boolean;
+    onToggle?: () => void;
+  };
+
+  const inputBox = ({
+    placeholder,
+    value,
+    onChange,
+    type = 'text',
+    inputMode,
+    maxLength,
     showToggle = false,
     show = false,
-    onToggle?: () => void,
-  ) => (
+    onToggle,
+  }: InputBoxProps) => (
     <div
       style={{
         width: '100%',
@@ -55,6 +124,8 @@ export default function S03_Register() {
       <input
         type={showToggle ? (show ? 'text' : 'password') : type}
         value={value}
+        inputMode={inputMode}
+        maxLength={maxLength}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         style={{
@@ -175,10 +246,13 @@ export default function S03_Register() {
               }}
             >
               <input
-                type='email'
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder='이메일을 입력하세요'
+                type='text'
+                value={userId}
+                onChange={(e) => {
+                  setUserId(e.target.value);
+                  setIdChecked(false);
+                }}
+                placeholder='아이디를 입력하세요 (영문·숫자 4자 이상)'
                 style={{
                   flex: 1,
                   border: 'none',
@@ -193,11 +267,11 @@ export default function S03_Register() {
               />
             </div>
             <button
-              onClick={() => alert('인증 코드가 발송되었습니다.')}
+              onClick={handleCheckId}
               style={{
                 width: 172,
                 height: 81,
-                background: '#0f66e2',
+                background: idChecked ? '#8e8e98' : '#0f66e2',
                 borderRadius: 50,
                 border: 'none',
                 boxShadow: '0 0 2px #4188ed',
@@ -217,32 +291,50 @@ export default function S03_Register() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                인증 요청
+                {idChecked ? '확인 완료' : '중복 확인'}
               </span>
             </button>
           </div>
 
-          {inputBox('인증 코드를 입력하세요 (6자리)', code, setCode)}
-          {inputBox(
-            '비밀번호를 입력하세요 (8자 이상)',
-            password,
-            setPassword,
-            'password',
-            true,
-            showPw,
-            () => setShowPw((v) => !v),
-          )}
-          {inputBox(
-            '비밀번호를 다시 입력하세요',
-            passwordConfirm,
-            setPasswordConfirm,
-            'password',
-            true,
-            showPwConfirm,
-            () => setShowPwConfirm((v) => !v),
-          )}
+          {inputBox({
+            placeholder: '이름을 입력하세요',
+            value: name,
+            onChange: setName,
+          })}
+          {inputBox({
+            placeholder: '생년월일 8자리를 입력하세요 (예: 19900101)',
+            value: birth,
+            onChange: (v) => setBirth(v.replace(/\D/g, '').slice(0, 8)),
+            inputMode: 'numeric',
+            maxLength: 8,
+          })}
+          {inputBox({
+            placeholder: '전화번호를 입력하세요 (예: 010-1234-5678)',
+            value: phone,
+            onChange: (v) => setPhone(formatPhone(v)),
+            type: 'tel',
+            inputMode: 'tel',
+            maxLength: 13,
+          })}
+          {inputBox({
+            placeholder: '비밀번호를 입력하세요 (8자 이상)',
+            value: password,
+            onChange: setPassword,
+            type: 'password',
+            showToggle: true,
+            show: showPw,
+            onToggle: () => setShowPw((v) => !v),
+          })}
+          {inputBox({
+            placeholder: '비밀번호를 다시 입력하세요',
+            value: passwordConfirm,
+            onChange: setPasswordConfirm,
+            type: 'password',
+            showToggle: true,
+            show: showPwConfirm,
+            onToggle: () => setShowPwConfirm((v) => !v),
+          })}
 
-          {}
           {errorMessage && (
             <p
               style={{
