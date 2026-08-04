@@ -2,6 +2,7 @@ interface QuizResultCardProps {
   duration: string;
   hintCount?: number;
   resultDescription: string;
+  feedback?: string;
   showHintCount?: boolean; 
 }
 
@@ -9,6 +10,7 @@ export default function QuizResultCard({
   duration, 
   hintCount = 0, 
   resultDescription, 
+  feedback, 
   showHintCount = true 
 }: QuizResultCardProps) {
   return (
@@ -19,16 +21,30 @@ export default function QuizResultCard({
       boxSizing: 'border-box', padding: '24px 29px', display: 'flex', 
       flexDirection: 'column', alignItems: 'flex-start', marginBottom: '50px' 
     }}>
-      <h3 style={{ fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '30px', lineHeight: '140%', color: '#0D0D0D', margin: '0 0 6px 0' }}>
-        수고하셨습니다!
+      
+      <h3 style={{ 
+        fontFamily: "'Pretendard Variable', Pretendard, sans-serif", 
+        fontWeight: 700, 
+        fontSize: '30px', 
+        lineHeight: '140%', 
+        color: '#0D0D0D', 
+        margin: '0 0 6px 0' 
+      }}>
+        {feedback || '수고하셨습니다!'}
       </h3>
-      <p style={{ fontWeight: 780, fontSize: '20px', lineHeight: '145%', color: '#0F66E2', margin: '0 0 12px 0' }}>
+
+      <p style={{ 
+        fontWeight: 780, 
+        fontSize: '20px', 
+        lineHeight: '145%', 
+        color: '#0F66E2', 
+        margin: '0 0 12px 0' 
+      }}>
         {resultDescription}
       </p>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: '15px', fontSize: '14px', fontWeight: 700, color: '#797980' }}>
         <span>답변 소요 시간 : {duration}초</span>
-        
-       
         {showHintCount && <span>힌트 사용 : {hintCount}회</span>}
       </div>
     </div>

@@ -32,7 +32,25 @@ function CelebrationIcon() {
 export default function S17_ActivityReport() {
   const navigate = useNavigate();
 
- 
+  // 오늘 날짜 구하기 (YYYY-MM-DD)
+  const todayStr = new Date().toISOString().split('T')[0];
+  const pCode = sessionStorage.getItem('pCode') || '1001'; // 실제 환자 코드 또는 기본값
+
+  // 통계 수치 상태 관리
+  const [completedCount, setCompletedCount] = useState(0); // total_count
+  const [correctCount, setCorrectCount] = useState(0);     // correct_count (회상 성공)
+  const [hintCount, setHintCount] = useState(0);           // hint
+  const [retryCount, setRetryCount] = useState(0);         // 다시 말하기 (세션 유지)
+
+  // 건강 상태 요약
+  const [conditionStatus, setConditionStatus] = useState('좋음');
+  const [sleepStatus, setSleepStatus] = useState('잘 잤음');
+  const [moodStatus, setMoodStatus] = useState('편안함');
+
+  // 피드백 텍스트
+  const [feedbackText, setFeedbackText] = useState('오늘도 집중해서 활동을 잘 완료하셨습니다!');
+
+  // 뒤로 가기 방지
   useEffect(() => {
     const preventGoBack = () => {
       window.history.pushState(null, '', window.location.href);
@@ -46,37 +64,51 @@ export default function S17_ActivityReport() {
     };
   }, []);
 
-  
-  const [completedCount, setCompletedCount] = useState(0);
-  const [hintCount, setHintCount] = useState(0);
-  const [retryCount, setRetryCount] = useState(0);
-
-  
-  const [conditionStatus, setConditionStatus] = useState('좋음');
-  const [sleepStatus, setSleepStatus] = useState('보통');
-  const [moodStatus, setMoodStatus] = useState('안정적');
-
- 
+  // API 및 데이터 로드
   useEffect(() => {
+    // 1. 퀴즈 결과 조회 GET /api/patients/{p_code}/results/{date}
+    fetch(`/api/patients/${pCode}/results/${todayStr}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data) => {
+        if (data) {
+          setCompletedCount(data.total_count ?? 0);
+          setCorrectCount(data.correct_count ?? 0);
+          setHintCount(data.hint ?? 0);
+        }
+      })
+      .catch((err) => console.error('결과 조회 실패:', err));
+
+    // 2. 환자 일일 상태 조회 GET /api/patient/{pCode}/daily-status?date={todayStr}
+    fetch(`/api/patient/${pCode}/daily-status?date=${todayStr}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data) => {
+        if (data) {
+          if (data.health_condition) setConditionStatus(data.health_condition);
+          if (data.sleep_status) setSleepStatus(data.sleep_status);
+          if (data.mood_status) setMoodStatus(data.mood_status);
+        }
+      })
+      .catch((err) => console.error('건강 상태 조회 실패:', err));
+
+    // 3. 퀴즈 피드백 조회 GET /api/patients/{p_code}/quizSet/1/feedback
+    fetch(`/api/patients/${pCode}/quizSet/1/feedback`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setFeedbackText(data[0].feedback_content || '오늘도 끝까지 잘 해주셨어요!');
+        }
+      })
+      .catch((err) => console.error('피드백 조회 실패:', err));
+
+    // 다시 말하기(retryCount)는 세션에서 읽어옴
     const parseValue = (key: string) => {
       const val = sessionStorage.getItem(key);
       if (!val) return 0;
       const parsed = parseInt(val, 10);
       return isNaN(parsed) ? 0 : parsed;
     };
-
-    setCompletedCount(parseValue('completedActivityCount'));
-    setHintCount(parseValue('totalHintCount'));
-    setRetryCount(parseValue('retryCount'));
-
-    const savedCondition = sessionStorage.getItem('conditionStatus') || sessionStorage.getItem('todayHealthCondition');
-    const savedSleep = sessionStorage.getItem('sleepStatus');
-    const savedMood = sessionStorage.getItem('moodStatus');
-
-    if (savedCondition) setConditionStatus(savedCondition);
-    if (savedSleep) setSleepStatus(savedSleep);
-    if (savedMood) setMoodStatus(savedMood);
-  }, []);
+    setRetryCount(parseValue('retryCount') || parseValue('speakRetryCount'));
+  }, [pCode, todayStr]);
 
   const summaryBoxStyle = {
     width: '193px',
@@ -89,7 +121,7 @@ export default function S17_ActivityReport() {
     boxSizing: 'border-box' as const,
     display: 'flex',
     flexDirection: 'column' as const,
-    justifyContent: 'space-between',
+    justify: 'space-between',
     textAlign: 'left' as const
   };
 
@@ -124,7 +156,7 @@ export default function S17_ActivityReport() {
       <Header />
       <div style={{ width: '805px', display: 'flex', flexDirection: 'column', alignItems: 'center', transform: 'translateX(6px)' }}>
 
-       
+        {/* 축하 아이콘 */}
         <div style={{
           width: '120px',
           height: '120px',
@@ -146,7 +178,7 @@ export default function S17_ActivityReport() {
 
         {/* 메인 타이틀 */}
         <h1 style={{
-          width: '402px',
+          width: '500px',
           fontSize: '36px',
           fontWeight: 700,
           color: '#0D0D0D',
@@ -157,7 +189,7 @@ export default function S17_ActivityReport() {
           오늘도 끝까지 잘해주셨어요!
         </h1>
 
-        {/* 피드백 문구 */}
+        {/* 피드백 문구 (API 조회 응답 연결) */}
         <p style={{
           width: '800px',
           fontSize: '22px',
@@ -167,7 +199,7 @@ export default function S17_ActivityReport() {
           textAlign: 'center',
           margin: '0 0 23px 0'
         }}>
-          “끝까지 집중해서 활동을 잘 마쳤어요. 질문에 대한 회상 답변도 안정적이었습니다.”
+          “{feedbackText}”
         </p>
 
         {/* 결과 듣기 버튼 */}
@@ -207,7 +239,7 @@ export default function S17_ActivityReport() {
           </div>
           <div style={summaryBoxStyle}>
             <span style={{ fontSize: '16px', fontWeight: 500, color: '#797980' }}>회상 성공</span>
-            <p style={{ fontSize: '28px', fontWeight: 700, color: '#0D0D0D', margin: 0 }}>0회</p>
+            <p style={{ fontSize: '28px', fontWeight: 700, color: '#0D0D0D', margin: 0 }}>{correctCount}회</p>
           </div>
           <div style={summaryBoxStyle}>
             <span style={{ fontSize: '16px', fontWeight: 500, color: '#797980' }}>힌트 사용</span>
@@ -215,7 +247,7 @@ export default function S17_ActivityReport() {
           </div>
           <div style={summaryBoxStyle}>
             <span style={{ fontSize: '16px', fontWeight: 500, color: '#797980' }}>다시 말하기</span>
-            <p style={{ fontSize: '28px', fontWeight: 700, color: '#0D0D0D', margin: 0 }}>{retryCount}회</p>
+            <p style={{ fontSize: '28px', fontWeight:700, color: '#0D0D0D', margin: 0 }}>{retryCount}회</p>
           </div>
         </div>
 
@@ -282,10 +314,7 @@ export default function S17_ActivityReport() {
         {/* 홈으로 돌아가기 버튼 */}
         <button 
           onClick={() => {
-           
             sessionStorage.setItem('todayActivityCompleted', 'true');
-
-            
             navigate('/patient-home');
           }}
           style={{
