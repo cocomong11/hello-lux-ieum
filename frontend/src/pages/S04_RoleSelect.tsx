@@ -5,7 +5,7 @@ import PageLayout from '../components/common/PageLayout';
 import { saveRole } from '../utils/role';
 import type { UserRole } from '../utils/role';
 import { setToken } from '../utils/auth';
-import { register, login } from '../api/auth';
+import { register, login, updateRole } from '../api/auth';
 import { ApiError } from '../api/client';
 import { getPendingSignup, clearPendingSignup } from '../utils/pendingSignup';
 
@@ -86,23 +86,30 @@ export default function S04_RoleSelect() {
     setLoading(true);
 
     try {
-      const res = await register({ ...pending, role: selected });
+      // 1. 회원가입 (role 없이) — RegisterRequest에는 role 필드가 없음
+      await register(pending);
 
-      // 명세상 회원가입 응답에는 token이 없습니다.
-      // 없으면 방금 만든 계정으로 곧바로 로그인해 토큰을 받아옵니다.
-      // (백엔드가 나중에 token을 내려주면 그걸 그대로 씁니다)
-      let token = res.token;
-      if (!token) {
-        const loginRes = await login({
-          user_id: pending.user_id,
-          user_pw: pending.user_pw,
-        });
-        token = loginRes.token;
-      }
+      // 2. 로그인해서 토큰을 받아옴 (가입 응답에는 token이 없음).
+      //    이 시점 토큰은 role 클레임이 비어있지만, 인증된 상태로
+      //    PATCH /auth/role을 호출하기엔 충분합니다.
+      const firstLogin = await login({
+        user_id: pending.user_id,
+        user_pw: pending.user_pw,
+      });
+      setToken(firstLogin.token, false);
+
+      // 3. 역할 설정
+      await updateRole({ role: selected });
+
+      // 4. role 클레임이 반영된 새 토큰을 받기 위해 다시 로그인
+      const finalLogin = await login({
+        user_id: pending.user_id,
+        user_pw: pending.user_pw,
+      });
 
       clearPendingSignup();
-      setToken(token, false);
-      saveRole(res.role ?? selected);
+      setToken(finalLogin.token, false);
+      saveRole(finalLogin.role ?? selected);
       navigate(role.next);
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {

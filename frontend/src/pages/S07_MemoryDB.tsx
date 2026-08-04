@@ -1,3 +1,6 @@
+// TODO: 백엔드 API 대기 (사진 업로드, family 배열)
+// 사진 업로드 엔드포인트와 가족 구성원 배열 구조 모두 백엔드에 없습니다.
+// 지어내지 않고 로컬 상태로만 두었습니다. 백엔드 API가 생기면 연동하세요.
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import imgUpload from '../assets/up-loading.png';

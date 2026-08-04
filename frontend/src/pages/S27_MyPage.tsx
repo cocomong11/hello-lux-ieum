@@ -1,7 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/common/PageLayout';
 import imgProfile from '../assets/pprofile.png'; // 배경용 그라데이션 원 이미지
+import { getMe, updateProfile, withdraw } from '../api/auth';
+import type { MeResponse } from '../api/auth';
+import { ApiError } from '../api/client';
+import { clearToken } from '../utils/auth';
+import { clearRole } from '../utils/role';
+
+const ROLE_LABEL: Record<string, string> = {
+  patient: '환자',
+  guardian: '보호자',
+  doctor: '의료진',
+};
 
 const F: React.CSSProperties = {
   fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
@@ -55,7 +66,69 @@ export default function S27_MyPage() {
   const [ttsOn, setTtsOn] = useState(true);
   const [micOn, setMicOn] = useState(true);
 
-  const userName = '홍길동';
+  const [me, setMe] = useState<MeResponse | null>(null);
+  const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    getMe()
+      .then(setMe)
+      .catch((err) => {
+        setLoadError(
+          err instanceof ApiError
+            ? err.message
+            : '내 정보를 불러오지 못했습니다.',
+        );
+      });
+  }, []);
+
+  const userName = me?.name ?? '';
+  const roleLabel = me?.role ? (ROLE_LABEL[me.role] ?? me.role) : '';
+
+  const handleCopyCode = () => {
+    if (!me?.p_code) return;
+    navigator.clipboard?.writeText(me.p_code).catch(() => {});
+  };
+
+  const handleChangePassword = async () => {
+    const currentPw = window.prompt('현재 비밀번호를 입력해 주세요');
+    if (!currentPw) return;
+    const newPw = window.prompt(
+      '새 비밀번호를 입력해 주세요 (변경하지 않으려면 취소)',
+    );
+    try {
+      await updateProfile({
+        current_pw: currentPw,
+        user_pw: newPw || undefined,
+      });
+      window.alert('비밀번호가 변경되었습니다.');
+    } catch (err) {
+      window.alert(
+        err instanceof ApiError ? err.message : '비밀번호 변경에 실패했습니다.',
+      );
+    }
+  };
+
+  const handleLogout = () => {
+    clearToken();
+    clearRole();
+    navigate('/');
+  };
+
+  const handleWithdraw = async () => {
+    if (!window.confirm('정말로 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+      return;
+    }
+    try {
+      await withdraw();
+      clearToken();
+      clearRole();
+      navigate('/');
+    } catch (err) {
+      window.alert(
+        err instanceof ApiError ? err.message : '회원 탈퇴에 실패했습니다.',
+      );
+    }
+  };
 
   // Voice Setting의 버튼 스타일과 완벽 통일
   const pillBtnStyle: React.CSSProperties = {
@@ -162,53 +235,64 @@ export default function S27_MyPage() {
                     borderRadius: 20,
                   }}
                 >
-                  환자
+                  {roleLabel}
                 </span>
               </div>
               <p style={{ fontSize: 20, color: '#797980', margin: 0 }}>
-                [ honggildong@email.com ]
+                [ {me?.user_id ?? ''} ]
               </p>
             </div>
           </section>
 
-          {/* 2. 내 코드 섹션 */}
-          <section
-            style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
-          >
-            <p style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
-              내 코드 (보호자 · 의사 연동용)
+          {loadError && (
+            <p style={{ ...F, color: '#F5383B', fontSize: 18, margin: 0 }}>
+              {loadError}
             </p>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                border: '1px solid #4188ed',
-                borderRadius: 10,
-                background: 'rgba(65,136,237,0.05)',
-                padding: '0 29px',
-                height: 81,
-              }}
+          )}
+
+          {/* 2. 내 코드 섹션 (환자로 등록된 경우에만 p_code가 있음) */}
+          {me?.p_code && (
+            <section
+              style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
             >
-              <span style={{ fontSize: 28, fontWeight: 700, letterSpacing: 6 }}>
-                AB37X2
-              </span>
-              <button
+              <p style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
+                내 코드 (보호자 · 의사 연동용)
+              </p>
+              <div
                 style={{
-                  ...F,
-                  padding: '8px 22px',
-                  borderRadius: 8,
-                  border: '1px solid #8e8e98',
-                  background: 'white',
-                  fontSize: 20,
-                  fontWeight: 600,
-                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  border: '1px solid #4188ed',
+                  borderRadius: 10,
+                  background: 'rgba(65,136,237,0.05)',
+                  padding: '0 29px',
+                  height: 81,
                 }}
               >
-                복사
-              </button>
-            </div>
-          </section>
+                <span
+                  style={{ fontSize: 28, fontWeight: 700, letterSpacing: 6 }}
+                >
+                  {me.p_code}
+                </span>
+                <button
+                  onClick={handleCopyCode}
+                  style={{
+                    ...F,
+                    padding: '8px 22px',
+                    borderRadius: 8,
+                    border: '1px solid #8e8e98',
+                    background: 'white',
+                    fontSize: 20,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  복사
+                </button>
+              </div>
+            </section>
+          )}
 
           {/* 3. 권한 상태 섹션 */}
           <section
@@ -237,14 +321,19 @@ export default function S27_MyPage() {
             >
               음성 안내 설정 ⚙️
             </button>
-            <button style={{ ...pillBtnStyle }}>비밀번호 변경</button>
+            <button onClick={handleChangePassword} style={{ ...pillBtnStyle }}>
+              비밀번호 변경
+            </button>
             <button
-              onClick={() => navigate('/')}
+              onClick={handleLogout}
               style={{ ...pillBtnStyle, color: '#797980' }}
             >
               로그아웃
             </button>
-            <button style={{ ...pillBtnStyle, color: '#F5383B' }}>
+            <button
+              onClick={handleWithdraw}
+              style={{ ...pillBtnStyle, color: '#F5383B' }}
+            >
               회원 탈퇴
             </button>
           </section>

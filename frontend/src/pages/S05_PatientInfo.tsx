@@ -1,3 +1,8 @@
+// TODO: 백엔드 필드 추가 대기
+// 백엔드 PatientRegisterRequest(domain/patient/dto)에는 diagnosis/personality/
+// speech_style/gender만 있고, 이 화면의 "인지 지원 수준"·"보호자 동행 여부"에
+// 대응하는 필드가 없습니다. 지어내지 않고 API 연동 없이 로컬 상태로만 둡니다.
+// 백엔드에 필드가 추가되면 이 화면을 연동하세요.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/common/PageLayout';

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/common/PageLayout';
+import { loadVoiceSettings, saveVoiceSettings } from '../utils/voiceSettings';
 
 const F: React.CSSProperties = {
   fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
@@ -8,15 +9,33 @@ const F: React.CSSProperties = {
 
 export default function S06_VoiceSetting() {
   const navigate = useNavigate();
-  const [formal, setFormal] = useState(true);
-  const [autoPlay, setAutoPlay] = useState(true);
-  const [repeat, setRepeat] = useState(true);
-  const [lowStress, setLowStress] = useState(false);
-  const [positiveFeedback, setPositiveFeedback] = useState(true);
-  const [speed, setSpeed] = useState<'느리게' | '보통' | '빠르게'>('느리게');
+  const initial = loadVoiceSettings();
+  const [formal, setFormal] = useState(initial.formal);
+  const [autoPlay, setAutoPlay] = useState(initial.autoPlay);
+  const [repeat, setRepeat] = useState(initial.repeat);
+  const [lowStress, setLowStress] = useState(initial.lowStress);
+  const [positiveFeedback, setPositiveFeedback] = useState(
+    initial.positiveFeedback,
+  );
+  const [speed, setSpeed] = useState<'느리게' | '보통' | '빠르게'>(
+    initial.speed,
+  );
   const [sentenceLen, setSentenceLen] = useState<
     '짧음 (권장)' | '보통' | '길음'
-  >('짧음 (권장)');
+  >(initial.sentenceLen);
+
+  // 값이 바뀔 때마다 localStorage에 저장 (백엔드 API 생기면 이 부분만 교체)
+  useEffect(() => {
+    saveVoiceSettings({
+      formal,
+      autoPlay,
+      repeat,
+      lowStress,
+      positiveFeedback,
+      speed,
+      sentenceLen,
+    });
+  }, [formal, autoPlay, repeat, lowStress, positiveFeedback, speed, sentenceLen]);
 
   const SectionTitle = ({ children }: { children: string }) => (
     <p

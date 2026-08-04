@@ -54,20 +54,12 @@ export default function S03_Register() {
         setErrorMessage('* 이미 사용 중인 아이디입니다.');
       }
     } catch (err) {
-      // 중복확인 엔드포인트가 아직 백엔드에 없습니다(404).
-      // 추가될 때까지는 형식 검사만 통과하면 진행할 수 있게 둡니다.
-      // 백엔드에 /auth/check-id가 생기면 이 분기는 지우세요.
-      if (err instanceof ApiError && err.status === 404) {
-        setIdChecked(true);
-        setErrorMessage('');
-      } else {
-        setIdChecked(false);
-        setErrorMessage(
-          err instanceof ApiError
-            ? `* ${err.message}`
-            : '* 아이디 확인에 실패했습니다.',
-        );
-      }
+      setIdChecked(false);
+      setErrorMessage(
+        err instanceof ApiError
+          ? `* ${err.message}`
+          : '* 아이디 확인에 실패했습니다.',
+      );
     } finally {
       setIdChecking(false);
     }
@@ -104,6 +96,9 @@ export default function S03_Register() {
       user_pw: password,
       name,
       birth_date: `${birth.slice(0, 4)}-${birth.slice(4, 6)}-${birth.slice(6, 8)}`,
+      // TODO: 화면에 전화번호 입력란이 없어 임시 더미 값을 사용합니다.
+      // 백엔드 RegisterRequest.phone은 필수(숫자만 10~11자리)입니다.
+      phone: '01000000000',
     });
 
     navigate('/role-select');

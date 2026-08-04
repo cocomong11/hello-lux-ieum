@@ -27,8 +27,13 @@ export default function S02_Login() {
     try {
       const res = await login({ user_id: userId, user_pw: password });
       setToken(res.token, autoLogin);
-      saveRole(res.role);
-      navigate(roleHome[res.role]);
+      if (res.role) {
+        saveRole(res.role);
+        navigate(roleHome[res.role]);
+      } else {
+        // 가입은 했지만 아직 역할을 고르지 않은 계정
+        navigate('/role-select');
+      }
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setErrorMessage('* 아이디 또는 비밀번호가 올바르지 않습니다.');
