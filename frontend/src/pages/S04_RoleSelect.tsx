@@ -4,6 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/common/PageLayout';
 import { saveRole } from '../utils/role';
 import type { UserRole } from '../utils/role';
+import { setToken } from '../utils/auth';
+import { register, login, updateRole } from '../api/auth';
+import { ApiError } from '../api/client';
+import { getPendingSignup, clearPendingSignup } from '../utils/pendingSignup';
 
 import imgIconPatient from '../assets/patient.png';
 import imgIconCaregiver from '../assets/caregiver.png';
@@ -62,12 +66,64 @@ const ROLES: {
 export default function S04_RoleSelect() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<Role>('patient');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleNext = () => {
-    saveRole(selected);
+  const handleNext = async () => {
     const role = ROLES.find((r) => r.id === selected);
     if (!role) return;
-    navigate(role.next);
+
+    const pending = getPendingSignup();
+
+    // 회원가입 폼 데이터가 없으면 = 가입 흐름이 아니라 역할만 다시 고르는 경우
+    if (!pending) {
+      saveRole(selected);
+      navigate(role.next);
+      return;
+    }
+
+    setErrorMessage('');
+    setLoading(true);
+
+    try {
+      // 1. 회원가입 (role 없이) — RegisterRequest에는 role 필드가 없음
+      await register(pending);
+
+      // 2. 로그인해서 토큰을 받아옴 (가입 응답에는 token이 없음).
+      //    이 시점 토큰은 role 클레임이 비어있지만, 인증된 상태로
+      //    PATCH /auth/role을 호출하기엔 충분합니다.
+      const firstLogin = await login({
+        user_id: pending.user_id,
+        user_pw: pending.user_pw,
+      });
+      setToken(firstLogin.token, false);
+
+      // 3. 역할 설정
+      await updateRole({ role: selected });
+
+      // 4. role 클레임이 반영된 새 토큰을 받기 위해 다시 로그인
+      const finalLogin = await login({
+        user_id: pending.user_id,
+        user_pw: pending.user_pw,
+      });
+
+      clearPendingSignup();
+      setToken(finalLogin.token, false);
+      saveRole(finalLogin.role ?? selected);
+      navigate(role.next);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setErrorMessage('* 이미 가입된 아이디입니다. 다시 확인해 주세요.');
+      } else if (err instanceof ApiError) {
+        setErrorMessage(`* ${err.message}`);
+      } else {
+        setErrorMessage(
+          '* 회원가입에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -219,17 +275,33 @@ export default function S04_RoleSelect() {
           })}
         </div>
 
+        {errorMessage && (
+          <p
+            style={{
+              ...F,
+              color: '#ff4d4f',
+              fontSize: 20,
+              fontWeight: 500,
+              margin: '0 0 16px 0',
+              textAlign: 'center',
+            }}
+          >
+            {errorMessage}
+          </p>
+        )}
+
         <button
           onClick={handleNext}
+          disabled={loading}
           style={{
             ...F,
             width: 648,
             height: 81,
-            background: '#0f66e2',
+            background: loading ? '#8e8e98' : '#0f66e2',
             borderRadius: 50,
             border: 'none',
             boxShadow: '0 0 4px #4188ed',
-            cursor: 'pointer',
+            cursor: loading ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -245,7 +317,7 @@ export default function S04_RoleSelect() {
               color: '#f8f9fa',
             }}
           >
-            다음
+            {loading ? '가입 중...' : '다음'}
           </span>
         </button>
       </div>

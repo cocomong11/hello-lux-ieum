@@ -1,13 +1,10 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRole } from '../utils/role';
+import { getRole, roleHome } from '../utils/role';
+import { linkGuardian, linkDoctor } from '../api/link';
+import { ApiError } from '../api/client';
 import PageLayout from '../components/common/PageLayout';
 import imgLinkIcon from '../assets/link.png';
-const DUMMY_PATIENT = {
-  name: '홍길동',
-  age: 80,
-  level: '보통',
-};
 
 const F: React.CSSProperties = {
   fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
@@ -18,7 +15,9 @@ export default function S08_CodeLink() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [code, setCode] = useState('');
-  const [patient, setPatient] = useState<typeof DUMMY_PATIENT | null>(null);
+  const [patientName, setPatientName] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const isComplete = code.length === 6;
 
@@ -29,25 +28,38 @@ export default function S08_CodeLink() {
       .slice(0, 6);
 
     setCode(next);
-
-    if (next.length === 6) {
-      setPatient(DUMMY_PATIENT);
-    } else {
-      setPatient(null);
-    }
+    // 코드를 다시 고치면 이전 연동 결과 표시를 지웁니다
+    setPatientName(null);
+    setErrorMessage('');
   };
 
-  const handleConfirm = () => {
-    if (!isComplete) return;
+  const handleConfirm = async () => {
+    if (!isComplete || loading) return;
 
     const role = getRole();
+    setErrorMessage('');
+    setLoading(true);
 
-    if (role === 'guardian') {
-      navigate('/caregiver-home');
-    } else if (role === 'doctor') {
-      navigate('/doctor-home');
-    } else {
-      navigate('/patient-home');
+    try {
+      const res =
+        role === 'doctor' ? await linkDoctor(code) : await linkGuardian(code);
+
+      setPatientName(res.patient_name ?? null);
+
+      // 연동 성공 즉시 다음 화면으로 넘어갑니다.
+      // 환자 이름을 잠깐 보여주고 싶으면 아래 navigate를 지연시키거나
+      // 버튼을 한 번 더 눌러 이동하도록 바꿀 수 있습니다.
+      navigate(role ? roleHome[role] : '/role-select');
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        setErrorMessage('* 존재하지 않는 코드입니다. 다시 확인해 주세요.');
+      } else if (err instanceof ApiError) {
+        setErrorMessage(`* ${err.message}`);
+      } else {
+        setErrorMessage('* 연동에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -176,7 +188,22 @@ export default function S08_CodeLink() {
             ))}
           </div>
 
-          {patient && (
+          {errorMessage && (
+            <p
+              style={{
+                ...F,
+                color: '#ff4d4f',
+                fontSize: 20,
+                fontWeight: 500,
+                margin: '20px 0 0',
+                textAlign: 'center',
+              }}
+            >
+              {errorMessage}
+            </p>
+          )}
+
+          {patientName && (
             <div
               style={{
                 width: '100%',
@@ -199,7 +226,7 @@ export default function S08_CodeLink() {
                   color: '#0f66e2',
                 }}
               >
-                환자 정보 확인
+                연동 완료
               </p>
               <p
                 style={{
@@ -210,26 +237,24 @@ export default function S08_CodeLink() {
                   color: '#0d0d0d',
                 }}
               >
-                이름 : <b>{patient.name}</b> &nbsp;|&nbsp; 나이 :{' '}
-                <b>{patient.age}세</b> &nbsp;|&nbsp; 지원 수준 :{' '}
-                <b>{patient.level}</b>
+                환자 : <b>{patientName}</b>
               </p>
             </div>
           )}
 
           <button
             onClick={handleConfirm}
-            disabled={!isComplete}
+            disabled={!isComplete || loading}
             style={{
               width: '100%',
               height: 81,
               marginTop: 50,
               marginBottom: 40,
-              background: isComplete ? '#0f66e2' : '#dddde6',
+              background: isComplete && !loading ? '#0f66e2' : '#dddde6',
               borderRadius: 50,
               border: 'none',
-              boxShadow: isComplete ? '0 0 2px #4188ed' : 'none',
-              cursor: isComplete ? 'pointer' : 'not-allowed',
+              boxShadow: isComplete && !loading ? '0 0 2px #4188ed' : 'none',
+              cursor: isComplete && !loading ? 'pointer' : 'not-allowed',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -241,11 +266,11 @@ export default function S08_CodeLink() {
                 fontSize: 22,
                 fontWeight: 700,
                 lineHeight: '1.55',
-                color: isComplete ? '#f8f9fa' : '#8e8e98',
+                color: isComplete && !loading ? '#f8f9fa' : '#8e8e98',
                 fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
               }}
             >
-              연동 확인
+              {loading ? '연동 중...' : '연동 확인'}
             </span>
           </button>
         </div>

@@ -6,6 +6,6 @@ export const clearRole = () => localStorage.removeItem('ieum_role')
 
 export const roleHome: Record<UserRole, string> = {
   patient:  '/patient-home',
-  guardian: '/guardian-home',
+  guardian: '/caregiver-home',
   doctor:   '/doctor-home',
 }
