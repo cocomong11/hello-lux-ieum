@@ -242,7 +242,7 @@ export default function S07_MemoryDB() {
             }}
           >
             <button
-              onClick={() => navigate('/cargiver-home')}
+              onClick={() => navigate('/caregiver-home')}
               style={{
                 ...F,
                 fontSize: 16,

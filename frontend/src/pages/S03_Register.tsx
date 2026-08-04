@@ -1,13 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/common/PageLayout';
-
-const formatPhone = (raw: string) => {
-  const d = raw.replace(/\D/g, '').slice(0, 11);
-  if (d.length < 4) return d;
-  if (d.length < 8) return `${d.slice(0, 3)}-${d.slice(3)}`;
-  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
-};
+import { checkUserId } from '../api/auth';
+import { ApiError } from '../api/client';
+import { savePendingSignup } from '../utils/pendingSignup';
 
 const isValidBirth = (raw: string) => {
   if (!/^\d{8}$/.test(raw)) return false;
@@ -25,9 +21,9 @@ export default function S03_Register() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState('');
   const [idChecked, setIdChecked] = useState(false);
+  const [idChecking, setIdChecking] = useState(false);
   const [name, setName] = useState('');
   const [birth, setBirth] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -35,7 +31,7 @@ export default function S03_Register() {
 
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleCheckId = () => {
+  const handleCheckId = async () => {
     if (!userId) {
       setErrorMessage('* 아이디를 입력해 주세요.');
       return;
@@ -44,14 +40,41 @@ export default function S03_Register() {
       setErrorMessage('* 아이디는 영문·숫자 4~20자로 입력해 주세요.');
       return;
     }
-    // TODO: 서버 연동 시 중복 확인 API 호출 (GET /users/check-id?userId=)
-    setIdChecked(true);
+
     setErrorMessage('');
-    alert('사용할 수 있는 아이디입니다.');
+    setIdChecking(true);
+
+    try {
+      const res = await checkUserId(userId);
+      if (res.available) {
+        setIdChecked(true);
+        setErrorMessage('');
+      } else {
+        setIdChecked(false);
+        setErrorMessage('* 이미 사용 중인 아이디입니다.');
+      }
+    } catch (err) {
+      // 중복확인 엔드포인트가 아직 백엔드에 없습니다(404).
+      // 추가될 때까지는 형식 검사만 통과하면 진행할 수 있게 둡니다.
+      // 백엔드에 /auth/check-id가 생기면 이 분기는 지우세요.
+      if (err instanceof ApiError && err.status === 404) {
+        setIdChecked(true);
+        setErrorMessage('');
+      } else {
+        setIdChecked(false);
+        setErrorMessage(
+          err instanceof ApiError
+            ? `* ${err.message}`
+            : '* 아이디 확인에 실패했습니다.',
+        );
+      }
+    } finally {
+      setIdChecking(false);
+    }
   };
 
   const handleRegister = () => {
-    if (!userId || !name || !birth || !phone || !password || !passwordConfirm) {
+    if (!userId || !name || !birth || !password || !passwordConfirm) {
       setErrorMessage('* 모든 정보를 입력해 주세요.');
       return;
     }
@@ -65,10 +88,6 @@ export default function S03_Register() {
       );
       return;
     }
-    if (phone.replace(/\D/g, '').length < 10) {
-      setErrorMessage('* 전화번호를 정확히 입력해 주세요.');
-      return;
-    }
     if (password.length < 8) {
       setErrorMessage('* 비밀번호는 8자 이상으로 입력해 주세요.');
       return;
@@ -79,6 +98,14 @@ export default function S03_Register() {
     }
 
     setErrorMessage('');
+
+    savePendingSignup({
+      user_id: userId,
+      user_pw: password,
+      name,
+      birth_date: `${birth.slice(0, 4)}-${birth.slice(4, 6)}-${birth.slice(6, 8)}`,
+    });
+
     navigate('/role-select');
   };
 
@@ -268,6 +295,7 @@ export default function S03_Register() {
             </div>
             <button
               onClick={handleCheckId}
+              disabled={idChecking}
               style={{
                 width: 172,
                 height: 81,
@@ -275,7 +303,7 @@ export default function S03_Register() {
                 borderRadius: 50,
                 border: 'none',
                 boxShadow: '0 0 2px #4188ed',
-                cursor: 'pointer',
+                cursor: idChecking ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -291,7 +319,11 @@ export default function S03_Register() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {idChecked ? '확인 완료' : '중복 확인'}
+                {idChecking
+                  ? '확인 중...'
+                  : idChecked
+                    ? '확인 완료'
+                    : '중복 확인'}
               </span>
             </button>
           </div>
@@ -307,14 +339,6 @@ export default function S03_Register() {
             onChange: (v) => setBirth(v.replace(/\D/g, '').slice(0, 8)),
             inputMode: 'numeric',
             maxLength: 8,
-          })}
-          {inputBox({
-            placeholder: '전화번호를 입력하세요 (예: 010-1234-5678)',
-            value: phone,
-            onChange: (v) => setPhone(formatPhone(v)),
-            type: 'tel',
-            inputMode: 'tel',
-            maxLength: 13,
           })}
           {inputBox({
             placeholder: '비밀번호를 입력하세요 (8자 이상)',
@@ -376,7 +400,7 @@ export default function S03_Register() {
                 fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
               }}
             >
-              회원가입 완료
+              다음
             </span>
           </button>
 
