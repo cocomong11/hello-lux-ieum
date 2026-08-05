@@ -23,6 +23,67 @@ export const getPatient = (p_code: number) =>
   api.get<PatientInfo>(`/patient/${p_code}`);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 환자 기본 정보 등록
+// POST /api/patient/register
+// 사용처: S05 환자기본정보
+//
+// 주의: 여기서 쓰는 pCode는 6자리 연동 코드(String)가 아니라
+// PatientRegisterResponse.internal_code (Integer) 입니다. utils/pcode.ts 에 저장.
+// speechStyle 은 백엔드에 @JsonProperty가 없어 "speech_style"이 아니라
+// "speechStyle" 그대로 보내야 합니다.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+export interface PatientRegisterRequest {
+  diagnosis: string;
+  gender: string;
+  cognitive_support_level?: string;
+  guardian_companion?: boolean;
+  personality?: string;
+  speechStyle?: string;
+}
+
+export interface PatientRegisterResponse {
+  internal_code: number;
+  p_code: string;
+  message: string;
+}
+
+export const registerPatient = (data: PatientRegisterRequest) =>
+  api.post<PatientRegisterResponse>('/patient/register', data);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 음성 설정 저장
+// PUT /api/patient/{pCode}/voice-setting
+// 사용처: S06 음성설정
+//
+// dto/VoiceSettingRequestDto 기준(camelCase, JsonProperty 없음).
+// 조회(GET) API는 없어서 응답값을 그대로 최신 상태로 씁니다.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+export interface VoiceSettingRequest {
+  ttsSpeed?: number;
+  sentenceLength?: string;
+  isHonorific?: boolean;
+  isAutoPlay?: boolean;
+  isRepeatGuide?: boolean;
+  isLowPressure?: boolean;
+  isPositiveFeedback?: boolean;
+  speechStyle?: string;
+}
+
+export interface VoiceSettingResponse {
+  ttsSpeed: number;
+  sentenceLength: string;
+  isHonorific: boolean;
+  isAutoPlay: boolean;
+  isRepeatGuide: boolean;
+  isLowPressure: boolean;
+  isPositiveFeedback: boolean;
+  speechStyle: string | null;
+}
+
+export const saveVoiceSetting = (pCode: number, data: VoiceSettingRequest) =>
+  api.put<VoiceSettingResponse>(`/patient/${pCode}/voice-setting`, data);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 퀴즈 기록 전체 조회
 // GET /api/patients/{p_code}/quiz-results?from=...&to=...
 // 사용처: S24 의사 대시보드 (일일 리포트, 달력 점수)

@@ -1,6 +1,8 @@
-// TODO: 백엔드 API 대기 (사진 업로드, family 배열)
-// 사진 업로드 엔드포인트와 가족 구성원 배열 구조 모두 백엔드에 없습니다.
-// 지어내지 않고 로컬 상태로만 두었습니다. 백엔드 API가 생기면 연동하세요.
+// 백엔드 LifeDbController/LifeDbRequestDto 기준으로 연동.
+// family는 문자열 하나라서 가족 구성원 리스트를 "이름(나이, 호칭)" 형태로
+// 이어붙여 저장합니다 (serializeFamilyMembers, 사용자 확인 완료).
+// TODO: 업로드 API 대기 - 사진 첨부(가족/지인/장소)는 멀티파트 업로드 엔드포인트가
+// 백엔드에 없어서 연동하지 않았습니다.
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import imgUpload from '../assets/up-loading.png';
@@ -8,6 +10,9 @@ import imgPolygon from '../assets/Polygon 2.svg';
 import MemoryDBSidebar, {
   type MemoryCategory,
 } from '../components/MemoryDBSidebar';
+import { createLifeDb, serializeFamilyMembers } from '../api/memory';
+import { getPCode } from '../utils/pcode';
+import { ApiError } from '../api/client';
 
 const CANVAS_H = 1660;
 const DESIGN_W = 1920;
@@ -15,6 +20,164 @@ const SIDEBAR_W = 348;
 const F: React.CSSProperties = {
   fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
 };
+
+// 컴포넌트 함수 안에서 정의하면 렌더될 때마다 새로 생성되어 매 키 입력마다
+// input이 remount되고(포커스·한글 조합 상태 소실) 커서가 밖으로 튕겨나갑니다.
+// 그래서 전부 바깥(모듈 스코프)으로 뺐습니다. 스타일 객체는 그대로입니다.
+const InputBox = ({
+  left,
+  top,
+  width,
+  placeholder,
+  value,
+  onChange,
+  filled = false,
+}: {
+  left: number;
+  top: number;
+  width: number;
+  placeholder: string;
+  value: string;
+  onChange?: (v: string) => void;
+  filled?: boolean;
+}) => (
+  <div
+    style={{
+      position: 'absolute',
+      left,
+      top,
+      width,
+      height: 81,
+      boxSizing: 'border-box',
+      border: '1px solid #8e8e98',
+      borderRadius: 10,
+      background: filled ? 'rgba(65,136,237,0.05)' : '#f8f9fa',
+      filter: 'drop-shadow(0 0 2px #4188ed)',
+      display: 'flex',
+      alignItems: 'center',
+      paddingLeft: 29,
+      paddingRight: 29,
+    }}
+  >
+    {onChange ? (
+      <input
+        type='text'
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={{
+          ...F,
+          flex: 1,
+          border: 'none',
+          outline: 'none',
+          background: 'transparent',
+          fontSize: 22,
+          fontWeight: 400,
+          lineHeight: '1.55',
+          color: value ? '#0d0d0d' : '#797980',
+        }}
+      />
+    ) : (
+      <p
+        style={{
+          ...F,
+          margin: 0,
+          fontSize: 22,
+          fontWeight: 400,
+          lineHeight: '1.55',
+          color: '#0d0d0d',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {value}
+      </p>
+    )}
+  </div>
+);
+
+const ColLabel = ({
+  left,
+  top,
+  children,
+}: {
+  left: number;
+  top: number;
+  children: string;
+}) => (
+  <p
+    style={{
+      ...F,
+      position: 'absolute',
+      left,
+      top,
+      margin: 0,
+      fontSize: 22,
+      fontWeight: 400,
+      lineHeight: '1.55',
+      color: '#0d0d0d',
+    }}
+  >
+    {children}
+  </p>
+);
+
+const PhotoBox = ({
+  left,
+  top,
+  label,
+}: {
+  left: number;
+  top: number;
+  label: string;
+}) => (
+  <div
+    style={{
+      position: 'absolute',
+      left,
+      top,
+      width: 296,
+      height: 168,
+      border: '1px solid #8e8e98',
+      borderRadius: 10,
+      background: 'rgba(217,217,217,0.2)',
+      boxShadow: '0 0 4px #4188ed',
+      cursor: 'pointer',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      paddingTop: 21,
+      boxSizing: 'border-box',
+    }}
+  >
+    <p
+      style={{
+        ...F,
+        margin: 0,
+        fontSize: 22,
+        fontWeight: 400,
+        lineHeight: '1.55',
+        color: '#797980',
+        textAlign: 'center',
+      }}
+    >
+      {label}
+      <br />
+      (JPG/PNG 최대 5MB)
+    </p>
+    <img
+      src={imgUpload}
+      alt=''
+      style={{
+        position: 'absolute',
+        bottom: 20,
+        width: 40,
+        height: 40,
+        opacity: 0.5,
+        objectFit: 'contain',
+      }}
+    />
+  </div>
+);
 
 export default function S07_MemoryDB() {
   const navigate = useNavigate();
@@ -26,6 +189,36 @@ export default function S07_MemoryDB() {
     { name: '김순자', age: '78세', relation: '아내, 여보' },
     { name: '', age: '', relation: '' },
   ]);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleComplete = async () => {
+    const pCode = getPCode();
+    if (!pCode) {
+      setErrorMessage('* 환자 기본 정보를 먼저 등록해 주세요.');
+      return;
+    }
+
+    setErrorMessage('');
+    setLoading(true);
+
+    try {
+      await createLifeDb(pCode, {
+        title: '가족 정보',
+        category: '가족',
+        family: serializeFamilyMembers(members),
+      });
+      navigate('/patient-home');
+    } catch (err) {
+      setErrorMessage(
+        err instanceof ApiError
+          ? `* ${err.message}`
+          : '* 기억 DB 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
@@ -47,161 +240,6 @@ export default function S07_MemoryDB() {
   const addMember = () => {
     setMembers((prev) => [...prev, { name: '', age: '', relation: '' }]);
   };
-
-  const InputBox = ({
-    left,
-    top,
-    width,
-    placeholder,
-    value,
-    onChange,
-    filled = false,
-  }: {
-    left: number;
-    top: number;
-    width: number;
-    placeholder: string;
-    value: string;
-    onChange?: (v: string) => void;
-    filled?: boolean;
-  }) => (
-    <div
-      style={{
-        position: 'absolute',
-        left,
-        top,
-        width,
-        height: 81,
-        boxSizing: 'border-box',
-        border: '1px solid #8e8e98',
-        borderRadius: 10,
-        background: filled ? 'rgba(65,136,237,0.05)' : '#f8f9fa',
-        filter: 'drop-shadow(0 0 2px #4188ed)',
-        display: 'flex',
-        alignItems: 'center',
-        paddingLeft: 29,
-        paddingRight: 29,
-      }}
-    >
-      {onChange ? (
-        <input
-          type='text'
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          style={{
-            ...F,
-            flex: 1,
-            border: 'none',
-            outline: 'none',
-            background: 'transparent',
-            fontSize: 22,
-            fontWeight: 400,
-            lineHeight: '1.55',
-            color: value ? '#0d0d0d' : '#797980',
-          }}
-        />
-      ) : (
-        <p
-          style={{
-            ...F,
-            margin: 0,
-            fontSize: 22,
-            fontWeight: 400,
-            lineHeight: '1.55',
-            color: '#0d0d0d',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {value}
-        </p>
-      )}
-    </div>
-  );
-
-  const ColLabel = ({
-    left,
-    top,
-    children,
-  }: {
-    left: number;
-    top: number;
-    children: string;
-  }) => (
-    <p
-      style={{
-        ...F,
-        position: 'absolute',
-        left,
-        top,
-        margin: 0,
-        fontSize: 22,
-        fontWeight: 400,
-        lineHeight: '1.55',
-        color: '#0d0d0d',
-      }}
-    >
-      {children}
-    </p>
-  );
-
-  const PhotoBox = ({
-    left,
-    top,
-    label,
-  }: {
-    left: number;
-    top: number;
-    label: string;
-  }) => (
-    <div
-      style={{
-        position: 'absolute',
-        left,
-        top,
-        width: 296,
-        height: 168,
-        border: '1px solid #8e8e98',
-        borderRadius: 10,
-        background: 'rgba(217,217,217,0.2)',
-        boxShadow: '0 0 4px #4188ed',
-        cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        paddingTop: 21,
-        boxSizing: 'border-box',
-      }}
-    >
-      <p
-        style={{
-          ...F,
-          margin: 0,
-          fontSize: 22,
-          fontWeight: 400,
-          lineHeight: '1.55',
-          color: '#797980',
-          textAlign: 'center',
-        }}
-      >
-        {label}
-        <br />
-        (JPG/PNG 최대 5MB)
-      </p>
-      <img
-        src={imgUpload}
-        alt=''
-        style={{
-          position: 'absolute',
-          bottom: 20,
-          width: 40,
-          height: 40,
-          opacity: 0.5,
-          objectFit: 'contain',
-        }}
-      />
-    </div>
-  );
 
   const PREVIEW_QUESTIONS = [
     { text: '배우자 분 성함이 어떻게 되세요?', width: 338 },
@@ -612,9 +650,28 @@ export default function S07_MemoryDB() {
           </span>
         </button>
 
+        {errorMessage && (
+          <p
+            style={{
+              ...F,
+              position: 'absolute',
+              left: 636,
+              top: 1428,
+              margin: 0,
+              color: '#ff4d4f',
+              fontSize: 20,
+              fontWeight: 500,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {errorMessage}
+          </p>
+        )}
+
         {/* 완료 → */}
         <button
-          onClick={() => navigate('/patient-home')}
+          onClick={handleComplete}
+          disabled={loading}
           style={{
             ...F,
             position: 'absolute',
@@ -623,11 +680,11 @@ export default function S07_MemoryDB() {
             height: 59,
             paddingLeft: 24,
             paddingRight: 24,
-            background: '#4188ed',
+            background: loading ? '#8e8e98' : '#4188ed',
             borderRadius: 50,
             border: 'none',
             filter: 'drop-shadow(0 0 2px #4188ed)',
-            cursor: 'pointer',
+            cursor: loading ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
           }}
@@ -640,7 +697,7 @@ export default function S07_MemoryDB() {
               whiteSpace: 'nowrap',
             }}
           >
-            완료 →
+            {loading ? '저장 중...' : '완료 →'}
           </span>
         </button>
       </div>
