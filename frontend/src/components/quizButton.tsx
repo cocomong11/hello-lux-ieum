@@ -5,7 +5,7 @@ interface QuizVoiceControllerProps {
   onRetryClick?: () => void;
   hintCount?: number;         
   placeholder: string;   
-  onSuccessSubmit?: (duration: string) => void; 
+  onSuccessSubmit?: (duration: string, answer: string) => void; 
   showHintButton?: boolean; 
 }
 
@@ -18,13 +18,19 @@ export default function QuizVoiceController({
 }: QuizVoiceControllerProps) {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [myAnswer, setMyAnswer] = useState<string>('');
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false); // 제출 상태 (Lock/Unlock)
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false); 
   
   const startTimeRef = useRef<number>(Date.now());
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     startTimeRef.current = Date.now();
+
+   
+    if (sessionStorage.getItem('retryCount') === null) {
+      sessionStorage.setItem('retryCount', '0');
+    }
+
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
@@ -33,7 +39,6 @@ export default function QuizVoiceController({
   }, []);
 
   const handleMicrophoneClick = () => {
-    // 🔒 제출 완료 상태이면 마이크 작동 차단
     if (isSubmitted) return;
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -91,17 +96,16 @@ export default function QuizVoiceController({
   };
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    // 🔒 제출 완료 상태이면 타이핑 입력 차단
     if (isSubmitted) return;
     setMyAnswer(e.target.value);
   };
 
-  // 🎯 다시 입력하기 클릭 시 실행
+ 
   const handleResetAnswer = () => {
     setMyAnswer(''); 
-    setIsSubmitted(false); // 🔓 잠금 해제 (다시 입력 / 녹음 가능)
+    setIsSubmitted(false);
 
-    // 세션 스토리지 retryCount 안전하게 1 증가
+   
     const currentRetry = parseInt(sessionStorage.getItem('retryCount') || '0', 10);
     const validRetry = isNaN(currentRetry) ? 0 : currentRetry;
     sessionStorage.setItem('retryCount', String(validRetry + 1));
@@ -112,7 +116,7 @@ export default function QuizVoiceController({
   };
 
   const handleSubmit = async () => {
-    if (isSubmitted) return; // 이미 제출된 상태면 반응 없음
+    if (isSubmitted) return;
 
     if (isRecording && recognitionRef.current) {
       recognitionRef.current.stop();
@@ -127,11 +131,10 @@ export default function QuizVoiceController({
       return;
     }
 
-    // 🔒 제출 상태 적용 (입력 및 마이크 클릭 비활성화)
     setIsSubmitted(true);
 
     try {
-      if (onSuccessSubmit) onSuccessSubmit(elapsed);
+      if (onSuccessSubmit) onSuccessSubmit(elapsed, cleanAnswer);
     } catch (error) {
       console.error("퀴즈 제출 실패:", error);
     }
@@ -189,7 +192,7 @@ export default function QuizVoiceController({
           value={myAnswer}
           onChange={handleInputChange}
           placeholder={placeholder}
-          readOnly={isSubmitted} // 🔒 제출 상태에서는 수정/타이핑 불가능
+          readOnly={isSubmitted}
           style={{
             width: '100%',
             fontSize: '20px',
@@ -204,7 +207,6 @@ export default function QuizVoiceController({
         />
       </div>
 
-      {/* 버튼 영역 */}
       <div style={{ display: 'flex', gap: '16px', width: '648px', marginTop: '26px', marginBottom: '40px' }}>
         <button onClick={handleResetAnswer} style={{ width: showHintButton ? '171px' : '300px', height: '46px', borderRadius: '10px', backgroundColor: '#F8F9FA', border: '1px solid #0D0D0D', boxShadow: '0px 0px 4px 0px #0F66E2', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", fontWeight: 700, fontSize: '18px', color: '#0D0D0D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
           ↻ 다시 입력하기 
