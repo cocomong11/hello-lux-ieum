@@ -2,6 +2,21 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/common/PageLayout';
 import { loadVoiceSettings, saveVoiceSettings } from '../utils/voiceSettings';
+import { saveVoiceSetting } from '../api/patient';
+import { getPCode } from '../utils/pcode';
+import { ApiError } from '../api/client';
+
+// UI 라벨 ↔ 백엔드 필드값 매핑 (VoiceSettingRequestDto 기준)
+const TTS_SPEED_MAP: Record<'느리게' | '보통' | '빠르게', number> = {
+  느리게: 0.8,
+  보통: 1.0,
+  빠르게: 1.2,
+};
+const SENTENCE_LENGTH_MAP: Record<'짧음 (권장)' | '보통' | '길음', string> = {
+  '짧음 (권장)': '짧게',
+  보통: '보통',
+  길음: '길게',
+};
 
 const F: React.CSSProperties = {
   fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
@@ -23,8 +38,12 @@ export default function S06_VoiceSetting() {
   const [sentenceLen, setSentenceLen] = useState<
     '짧음 (권장)' | '보통' | '길음'
   >(initial.sentenceLen);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // 값이 바뀔 때마다 localStorage에 저장 (백엔드 API 생기면 이 부분만 교체)
+  // 값이 바뀔 때마다 localStorage에 즉시 저장 (오프라인/새로고침 대비 캐시).
+  // 백엔드에는 GET(조회) API가 없어서, 실제 서버 저장은 "다음" 버튼 클릭 시
+  // PUT /api/patient/{pCode}/voice-setting 한 번으로 처리합니다.
   useEffect(() => {
     saveVoiceSettings({
       formal,
@@ -36,6 +55,38 @@ export default function S06_VoiceSetting() {
       sentenceLen,
     });
   }, [formal, autoPlay, repeat, lowStress, positiveFeedback, speed, sentenceLen]);
+
+  const handleNext = async () => {
+    const pCode = getPCode();
+    if (!pCode) {
+      setErrorMessage('* 환자 기본 정보를 먼저 등록해 주세요.');
+      return;
+    }
+
+    setErrorMessage('');
+    setLoading(true);
+
+    try {
+      await saveVoiceSetting(pCode, {
+        ttsSpeed: TTS_SPEED_MAP[speed],
+        sentenceLength: SENTENCE_LENGTH_MAP[sentenceLen],
+        isHonorific: formal,
+        isAutoPlay: autoPlay,
+        isRepeatGuide: repeat,
+        isLowPressure: lowStress,
+        isPositiveFeedback: positiveFeedback,
+      });
+      navigate('/memory-db');
+    } catch (err) {
+      setErrorMessage(
+        err instanceof ApiError
+          ? `* ${err.message}`
+          : '* 음성 설정 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const SectionTitle = ({ children }: { children: string }) => (
     <p
@@ -314,6 +365,21 @@ export default function S06_VoiceSetting() {
             </button>
           </div>
 
+          {errorMessage && (
+            <p
+              style={{
+                ...F,
+                color: '#ff4d4f',
+                fontSize: 20,
+                fontWeight: 500,
+                margin: '-20px 0 0 0',
+                textAlign: 'left',
+              }}
+            >
+              {errorMessage}
+            </p>
+          )}
+
           <div
             style={{
               display: 'flex',
@@ -341,22 +407,23 @@ export default function S06_VoiceSetting() {
               </span>
             </button>
             <button
-              onClick={() => navigate('/memory-db')}
+              onClick={handleNext}
+              disabled={loading}
               style={{
                 ...F,
                 height: 59,
                 padding: '0 24px',
-                background: '#4188ed',
+                background: loading ? '#8e8e98' : '#4188ed',
                 borderRadius: 50,
                 border: 'none',
                 filter: 'drop-shadow(0 0 2px #4188ed)',
-                cursor: 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
               }}
             >
               <span style={{ fontSize: 22, fontWeight: 700, color: '#f8f9fa' }}>
-                다음 →
+                {loading ? '저장 중...' : '다음 →'}
               </span>
             </button>
           </div>

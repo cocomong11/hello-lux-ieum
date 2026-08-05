@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/DoctorSidebar';
+import { updatePatientStatus, updateDoctorLevel } from '../api/doctor';
+import { getPCode } from '../utils/pcode';
+import { ApiError } from '../api/client';
 
 const DESIGN_W = 1920;
 const DESIGN_H = 1773;
@@ -68,7 +71,21 @@ export default function S26_DoctorLevel() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // 서버에 난이도 변경 요청
+    const targetPCode = getPCode() || pCode;
+    if (targetPCode) {
+      try {
+        const levelLabel = LEVELS[selectedLevel - 1]?.label || '';
+        await updatePatientStatus(targetPCode, levelLabel);
+        await updateDoctorLevel(targetPCode, { quiz_type: 'multiple', level: selectedLevel });
+      } catch (err) {
+        if (err instanceof ApiError) {
+          console.error('난이도 변경 실패:', err.message);
+        }
+      }
+    }
+
     const today = new Date();
     const dateStr = `${today.getFullYear()}. ${String(today.getMonth() + 1).padStart(2, '0')}. ${String(today.getDate()).padStart(2, '0')}`;
     const newEntry = {
@@ -80,26 +97,18 @@ export default function S26_DoctorLevel() {
     setTimeout(() => setSavedMsg(false), 2000);
   };
 
-  // 토글 컴포넌트 (S06과 동일 스타일)
+  // 토글 컴포넌트 (S06과 동일)
   const Toggle = ({ value, onChange }: { value: boolean; onChange: () => void }) => (
     <div onClick={onChange} style={{
-      position: 'relative',
       width: 78, height: 41, borderRadius: 100, cursor: 'pointer',
-      background: value
-        ? 'linear-gradient(180deg, rgba(32,115,232,0.8) 0%, rgba(65,136,237,0.8) 100%)'
-        : '#f8f9fa',
-      border: value ? 'none' : '1px solid #8e8e98',
-      transition: 'background 0.2s',
-      flexShrink: 0,
+      background: value ? '#DFDF87' : '#DDDDE6',
+      position: 'relative', transition: 'background 0.2s',
     }}>
       <div style={{
-        position: 'absolute',
-        width: 34, height: 34, borderRadius: '50%',
-        background: value ? '#DFDF87' : '#c6c6cc',
-        top: '50%', transform: 'translateY(-50%)',
-        left: value ? 40 : 4,
-        transition: 'left 0.2s, background 0.2s',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+        width: 33, height: 33, borderRadius: '50%', background: '#fff',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+        position: 'absolute', top: 4, left: value ? 41 : 4,
+        transition: 'left 0.2s',
       }} />
     </div>
   );

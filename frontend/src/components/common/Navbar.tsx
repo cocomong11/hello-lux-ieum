@@ -1,16 +1,21 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import logoSrc from '../../assets/logo.png';
+import { isLoggedIn } from '../../utils/auth';
+import { getRole, roleHome } from '../../utils/role';
 
 const HEADER_HEIGHT = 68;
-
-// 이 경로들에서만 '로그인'을 표시, 그 외 모든 페이지는 '마이페이지'를 표시
-const AUTH_PATHS = ['/', '/login', '/register'];
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const showLogin = AUTH_PATHS.includes(location.pathname);
+  const loggedIn = isLoggedIn();
+  const showLogin = !loggedIn;
+
+  const handleHomeClick = () => {
+    const role = loggedIn ? getRole() : null;
+    navigate(role ? roleHome[role] : '/');
+  };
 
   const linkStyle = (active: boolean): React.CSSProperties => ({
     background: 'transparent',
@@ -52,7 +57,7 @@ export default function Navbar() {
         <button
           type='button'
           aria-label='홈으로 이동'
-          onClick={() => navigate('/')}
+          onClick={handleHomeClick}
           style={{
             width: 72,
             height: 29,
@@ -86,7 +91,7 @@ export default function Navbar() {
         >
           <button
             type='button'
-            onClick={() => navigate('/')}
+            onClick={handleHomeClick}
             style={linkStyle(location.pathname === '/')}
           >
             홈

@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import CaregiverSidebar from '../components/CaregiverSidebar';
+import { getMemory, patchMemory, getPatient, uploadPatientImage, type LifeDbResponse } from '../api/patient';
+import { getPCode } from '../utils/pcode';
+import { ApiError } from '../api/client';
 
 const DESIGN_W = 1920;
 const DESIGN_H = 1747;
@@ -74,7 +77,7 @@ export default function S21_CargiverUpdate() {
   const [searchParams] = useSearchParams();
   const category = searchParams.get('category') || '가족';
   const [scale, setScale] = useState(1);
-  const patient = DUMMY_PATIENT;
+  const [patient, setPatient] = useState(DUMMY_PATIENT);
 
   const [members, setMembers] = useState<Record<string, MemberEntry[]>>(INITIAL_MEMBERS);
   const [savedMsg, setSavedMsg] = useState(false);
@@ -84,6 +87,50 @@ export default function S21_CargiverUpdate() {
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
+  }, []);
+
+  // API: 환자 정보 + 삶의 DB 로드
+  useEffect(() => {
+    const pCode = getPCode();
+    if (!pCode) return;
+    getPatient(pCode)
+      .then(data => setPatient({ name: data.name, birth_date: '', dignosis: data.diagnosis }))
+      .catch(() => {});
+    getMemory(pCode, 1) // TODO: memory_id 관리
+      .then((data: LifeDbResponse) => {
+        // family 필드 → 가족 카테고리로 파싱
+        if (data.family) {
+          const parsed = data.family.split(';;').map(row => {
+            const [name = '', age = '', alias = '', keyword = ''] = row.split('|');
+            return { name, age, alias, keyword, isEditing: false };
+          });
+          if (parsed.length > 0) {
+            setMembers(prev => ({ ...prev, '가족': parsed }));
+          }
+        }
+        if (data.place) {
+          const parsed = data.place.split(';;').map(row => {
+            const [name = '', age = '', alias = '', keyword = ''] = row.split('|');
+            return { name, age, alias, keyword, isEditing: false };
+          });
+          if (parsed.length > 0) {
+            setMembers(prev => ({ ...prev, '장소': parsed }));
+          }
+        }
+        if (data.like) {
+          const parsed = data.like.split(';;').map(row => {
+            const [name = '', age = '', alias = '', keyword = ''] = row.split('|');
+            return { name, age, alias, keyword, isEditing: false };
+          });
+          if (parsed.length > 0) {
+            setMembers(prev => ({ ...prev, '음식': parsed }));
+          }
+        }
+      })
+      .catch(err => {
+        // API 실패 시 더미 데이터 유지
+        console.log('API 미연결, 더미 데이터 사용:', err instanceof ApiError ? err.message : err);
+      });
   }, []);
 
   const currentMembers = members[category] || [];
@@ -120,8 +167,42 @@ export default function S21_CargiverUpdate() {
     }));
   };
 
-  const handleSave = (idx: number) => {
+  const handleSave = async (idx: number) => {
     toggleEdit(idx);
+
+    // 서버 연동: 카테고리 → LifeDb 필드 매핑
+    const pCode = getPCode();
+    if (pCode) {
+      const currentData = members[category];
+      const serialized = currentData
+        .map(m => `${m.name}|${m.age}|${m.alias}|${m.keyword}`)
+        .join(';;');
+
+      // 카테고리별로 어떤 필드에 저장할지 매핑
+      const fieldMap: Record<string, string> = {
+        '가족': 'family',
+        '지인': 'family', // 지인도 family 필드에 저장 (구분자로 구분)
+        '장소': 'place',
+        '음식': 'like',
+        '노래': 'like',
+        '인생 사건': 'hometown', // 임시 매핑 - 백엔드와 협의 필요
+      };
+
+      const field = fieldMap[category];
+      if (field) {
+        try {
+          await patchMemory(pCode, {
+            memory_id: 1, // TODO: 실제 memory_id 관리 필요
+            [field]: serialized,
+          });
+        } catch (err) {
+          if (err instanceof ApiError) {
+            console.error('저장 실패:', err.message);
+          }
+        }
+      }
+    }
+
     setSavedMsg(true);
     setTimeout(() => setSavedMsg(false), 2000);
   };
@@ -198,14 +279,29 @@ export default function S21_CargiverUpdate() {
                       type="file"
                       accept="image/*"
                       style={{ display: 'none' }}
-                      onChange={e => {
+                      onChange={async e => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          // 로컬 미리보기
                           const url = URL.createObjectURL(file);
                           setMembers(prev => ({
                             ...prev,
                             [category]: prev[category].map((m, i) => i === idx ? { ...m, photo: url } : m),
                           }));
+                          // 서버 업로드
+                          const pCode = getPCode();
+                          if (pCode) {
+                            try {
+                              const res = await uploadPatientImage(pCode, file);
+                              // 서버 URL로 교체
+                              setMembers(prev => ({
+                                ...prev,
+                                [category]: prev[category].map((m, i) => i === idx ? { ...m, photo: res.photo_url } : m),
+                              }));
+                            } catch (err) {
+                              console.log('이미지 업로드 실패:', err);
+                            }
+                          }
                         }
                       }}
                     />
