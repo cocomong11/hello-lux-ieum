@@ -466,7 +466,40 @@ export default function S20_CargiverMemo() {
               )}
 
               {/* 수정 */}
-              <button style={{
+              <button
+                onClick={async () => {
+                  if (selectedMemoIdx === null) {
+                    alert('수정할 이전 메모를 먼저 선택해주세요.');
+                    return;
+                  }
+                  const pCode = getPCode();
+                  const memoId = prevMemos[selectedMemoIdx]?.memoId;
+                  if (!pCode || !memoId) return;
+                  try {
+                    await updateGuardianMemo(pCode, memoId, {
+                      record_date: `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`,
+                      health_status: health,
+                      sleep_status: sleep,
+                      meal_status: meal,
+                      pain_status: pain,
+                      mood_status: mood,
+                      behaviors: Array.from(behaviors),
+                      need_referral: needReferral,
+                      content: memo,
+                    });
+                    // UI에도 반영
+                    setPrevMemos(prev => prev.map((m, i) =>
+                      i === selectedMemoIdx
+                        ? { ...m, desc: `${health} · ${sleep} · ${mood}`, data: { year, month, day, health, sleep, meal, pain, mood, behaviors: new Set(behaviors), needReferral, memo } }
+                        : m
+                    ));
+                    setSavedMsg(true);
+                    setTimeout(() => setSavedMsg(false), 2000);
+                  } catch (err) {
+                    console.log('수정 실패:', err instanceof ApiError ? err.message : err);
+                  }
+                }}
+                style={{
                 ...F, display: 'inline-flex', padding: '12px 22px', justifyContent: 'center', alignItems: 'center', gap: 10,
                 borderRadius: 50, background: '#F8F9FA', border: 'none',
                 boxShadow: '0 0 4px 0 #0D0D0D', cursor: 'pointer',
