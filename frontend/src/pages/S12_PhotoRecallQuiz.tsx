@@ -216,9 +216,9 @@ export default function S12_PhotoRecallQuiz() {
       try {
         const res = await submitQuizAnswer(payloadData);
 
-        console.log('📩 [다음 활동 - 스킵/미제출 응답 수신]', res);
-        console.log('✅ 정답 여부 (isCorrect):', res?.isCorrect);
-        console.log('💬 피드백 메시지 (feedback):', res?.feedback);
+        console.log('[다음 활동 - 스킵/미제출 응답 수신]', res);
+        console.log(' 정답 여부 (isCorrect):', res?.isCorrect);
+        console.log(' 피드백 메시지 (feedback):', res?.feedback);
 
         const isCurrentCorrect = Boolean(res?.isCorrect);
 
@@ -232,7 +232,7 @@ export default function S12_PhotoRecallQuiz() {
         sessionStorage.setItem('correctQuizCount', String(latestCorrectCount));
         setThisQuizIsCorrect(isCurrentCorrect);
       } catch (error) {
-        console.error('❌ 사진 퀴즈 스킵 제출 실패:', error);
+        console.error(' 사진 퀴즈 스킵 제출 실패:', error);
       }
     }
 
@@ -260,12 +260,12 @@ export default function S12_PhotoRecallQuiz() {
           feedbackContent: `총 ${validSolvedCount}문제 중 ${finalCorrectCount}문제를 맞추셨습니다. 오늘도 수고하셨습니다!`
         };
 
-        console.log('🚀 [전체 퀴즈 결과 최종 제출 Payload 전송]', finalPayload);
+        console.log(' [전체 퀴즈 결과 최종 제출 Payload 전송]', finalPayload);
 
         const resultResponse = await submitQuizResult(finalPayload);
-        console.log('✅ [전체 퀴즈 결과 제출 완료 응답]', resultResponse);
+        console.log(' [전체 퀴즈 결과 제출 완료 응답]', resultResponse);
       } catch (err) {
-        console.error('❌ 전체 퀴즈 결과 제출 실패:', err);
+        console.error(' 전체 퀴즈 결과 제출 실패:', err);
       }
 
       sessionStorage.setItem('todayActivityCompleted', 'true');

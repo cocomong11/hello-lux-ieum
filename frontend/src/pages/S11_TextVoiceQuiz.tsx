@@ -215,7 +215,7 @@ export default function S11_TextVoiceQuiz() {
 
         if (thisQuizIsCorrect !== true && isCurrentCorrect) {
           latestCorrectCount = correctCount + 1;
-        } else if (thisQuizIsCorrect === true && !isCurrentCorrect) { // ✅ 오타 수정 부분 (isCorrectCorrect -> isCurrentCorrect)
+        } else if (thisQuizIsCorrect === true && !isCurrentCorrect) { 
           latestCorrectCount = Math.max(0, correctCount - 1);
         }
 

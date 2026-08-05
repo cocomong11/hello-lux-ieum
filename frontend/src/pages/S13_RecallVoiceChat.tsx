@@ -34,7 +34,7 @@ export default function S13_RecallVoiceChat() {
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  const isSubmittedRef = useRef<boolean>(false); // 💡 비동기 상태 참조 문제 해결용 Ref 추가
+  const isSubmittedRef = useRef<boolean>(false); 
 
   const [elapsedTime, setElapsedTime] = useState<string>('0.0');
   const [feedbackMessage, setFeedbackMessage] = useState<string>('잘 하셨어요!');
@@ -67,7 +67,7 @@ export default function S13_RecallVoiceChat() {
   useEffect(() => {
     setSelectedOption(null);
     setIsSubmitted(false);
-    isSubmittedRef.current = false; // 💡 퀴즈 번호 변경 시 초기화
+    isSubmittedRef.current = false; 
     setElapsedTime('0.0');
     setFeedbackMessage('잘 하셨어요!');
 
@@ -84,7 +84,7 @@ export default function S13_RecallVoiceChat() {
       return;
     }
 
-    if (isSubmittedRef.current) return; // 💡 중복 제출 완전 방지
+    if (isSubmittedRef.current) return; 
 
     // 제출 처리 즉시 플래그 세팅
     setIsSubmitted(true);
@@ -112,22 +112,22 @@ export default function S13_RecallVoiceChat() {
     try {
       const res = await submitQuizAnswer(payloadData);
 
-      console.log('📩 [S13 제출 응답 수신]', res);
+      console.log(' [S13 제출 응답 수신]', res);
 
       if (res?.feedback) {
         setFeedbackMessage(res.feedback);
       }
 
-      // 💡 제출 성공 시에만 정답 카운트 세션 등록
+      
       if (res?.isCorrect === true) {
         const currentCorrect = parseInt(sessionStorage.getItem('correctQuizCount') || '0', 10);
         sessionStorage.setItem('correctQuizCount', String(currentCorrect + 1));
       }
     } catch (error) {
-      console.error('❌ 객관식 답안 제출 API 오류:', error);
+      console.error(' 객관식 답안 제출 API 오류:', error);
     }
 
-    // 완료된 문제 수 증가
+
     const nextSolvedCount = totalSolvedCount + 1;
     setTotalSolvedCount(nextSolvedCount);
     sessionStorage.setItem('completedActivityCount', String(nextSolvedCount));
@@ -136,7 +136,7 @@ export default function S13_RecallVoiceChat() {
   const handleNextPage = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 
-    // 💡 이미 정답 제출을 마친 경우(isSubmittedRef.current === true) 스킵 API를 절대 호출하지 않음
+   
     if (!isSubmittedRef.current) {
       const pCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || 'AB37X2');
       const setId = Number(currentQuiz.set_id || 1);
@@ -149,18 +149,18 @@ export default function S13_RecallVoiceChat() {
         userAnswer: '',
       };
 
-      console.log('⏭️ [제출 없이 다음 활동] 스킵 답안 Payload 전송:', payloadData);
+      console.log('⏭ [제출 없이 다음 활동] 스킵 답안 Payload 전송:', payloadData);
 
       try {
         const res = await submitQuizAnswer(payloadData);
-        console.log('📩 [스킵 답안 제출 응답 수신]', res);
+        console.log(' [스킵 답안 제출 응답 수신]', res);
 
         if (res?.isCorrect === true) {
           const currentCorrect = parseInt(sessionStorage.getItem('correctQuizCount') || '0', 10);
           sessionStorage.setItem('correctQuizCount', String(currentCorrect + 1));
         }
       } catch (error) {
-        console.error('❌ 스킵 답안 제출 API 오류:', error);
+        console.error(' 스킵 답안 제출 API 오류:', error);
       }
     }
 
@@ -187,12 +187,12 @@ export default function S13_RecallVoiceChat() {
           feedbackContent: "오늘도 퀴즈를 잘 마쳤습니다!"
         };
 
-        console.log('🚀 [전체 퀴즈 결과 최종 제출 Payload 전송]', finalPayload);
+        console.log('[전체 퀴즈 결과 최종 제출 Payload 전송]', finalPayload);
 
         const resultResponse = await submitQuizResult(finalPayload);
-        console.log('✅ [전체 퀴즈 결과 제출 완료 응답]', resultResponse);
+        console.log('[전체 퀴즈 결과 제출 완료 응답]', resultResponse);
       } catch (err) {
-        console.error('❌ 전체 퀴즈 결과 제출 실패:', err);
+        console.error('전체 퀴즈 결과 제출 실패:', err);
       }
 
       sessionStorage.setItem('todayActivityCompleted', 'true');

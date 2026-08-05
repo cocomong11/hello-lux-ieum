@@ -2,11 +2,31 @@ import { useState, useEffect, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/patientHeader';
-import { getToken } from '../utils/auth'; // 공통 인증 유틸 임포트
+import { api } from '../api/client';
 
 const F: CSSProperties = {
   fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
+
+interface UserInfoResponse {
+  name?: string;
+  patientCode?: string;
+  p_code?: string;
+  user_email?: string;
+  role?: string;
+}
+
+interface DailyStatusResponse {
+  status_id?: number;
+  p_code?: string;
+  record_date?: string;
+  health_condition?: string;
+  sleep_status?: string;
+  meal_status?: string;
+  pain_status?: string;
+  mood_status?: string;
+  cognitive_changes?: string[];
+}
 
 function todayStr() {
   return new Date().toLocaleDateString('ko-KR', {
@@ -17,14 +37,27 @@ function todayStr() {
   });
 }
 
+
+function getTodayIsoString() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 const formatHealthStatus = (status: string | null) => {
   if (!status || status === '-') return '-';
   switch (status) {
     case 'good':
+    case '좋음':
       return '좋음';
     case 'normal':
+    case '보통':
       return '보통';
     case 'bad':
+    case '나쁨':
+    case '좋지 않음':
       return '나쁨';
     default:
       return status;
@@ -39,16 +72,15 @@ export default function S09_PatientHome() {
   const [isCodeClicked, setIsCodeClicked] = useState(false);
   const [healthStatusValue, setHealthStatusValue] = useState<string>('-');
 
-  // 기본값은 세션 스토리지에서 먼저 가져오기
   const [patientName, setPatientName] = useState<string>(() => {
     return sessionStorage.getItem('name') || sessionStorage.getItem('patientName') || '환자';
   });
-  
+
+  // p_code는 String 타입으로 관리
   const [pairCode, setPairCode] = useState<string>(() => {
     return sessionStorage.getItem('p_code') || '-------';
   });
 
-  // 세션 스토리지에서 상태를 동기화하는 로직
   const syncStorageState = useCallback(() => {
     const savedHealth = sessionStorage.getItem('todayHealthCondition');
     setHealthStatusValue(formatHealthStatus(savedHealth));
@@ -61,36 +93,39 @@ export default function S09_PatientHome() {
     setIsCompleted(isDone === 'true');
   }, []);
 
-  // 컴포넌트 마운트 시 세션 동기화 및 GET /api/auth/me 호출
   useEffect(() => {
     syncStorageState();
 
-    // /api/auth/me를 호출하여 최신 사용자 이름과 연동 코드 가져오기
-    const fetchUserInfo = async () => {
+    const fetchInitialData = async () => {
       try {
-        // 공통 유틸 함수(getToken)를 통해 토큰 가져오기 (localStorage/sessionStorage 자동 대응)
-        const token = getToken();
-        const response = await fetch('/api/auth/me', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
+        const userData = await api.get<UserInfoResponse>('/auth/me');
 
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data.name) {
-            setPatientName(data.name);
-            sessionStorage.setItem('name', data.name);
-          }
-          
-          // 백엔드 응답 키값에 맞춰 p_code 또는 patientCode 반영
-          const code = data.patientCode || data.p_code;
-          if (code) {
-            setPairCode(code);
-            sessionStorage.setItem('p_code', code);
+        if (userData.name) {
+          setPatientName(userData.name);
+          sessionStorage.setItem('name', userData.name);
+        }
+
+        const code = userData.patientCode || userData.p_code;
+        if (code) {
+          const stringCode = String(code);
+          setPairCode(stringCode);
+          sessionStorage.setItem('p_code', stringCode);
+
+         
+          try {
+            const today = getTodayIsoString();
+            const dailyData = await api.get<DailyStatusResponse>(
+              `/patient/${stringCode}/daily-status?date=${today}`
+            );
+
+            if (dailyData && dailyData.health_condition) {
+              const formatted = formatHealthStatus(dailyData.health_condition);
+              setHealthStatusValue(formatted);
+              sessionStorage.setItem('todayHealthCondition', dailyData.health_condition);
+            }
+          } catch (err) {
+            
+            console.log('오늘 작성된 건강 상태가 없습니다.');
           }
         }
       } catch (e) {
@@ -98,15 +133,13 @@ export default function S09_PatientHome() {
       }
     };
 
-    fetchUserInfo();
+    fetchInitialData();
   }, [syncStorageState]);
 
-  // 활동 시작하기 버튼
   const handleStartActivity = () => {
     const savedHealth = sessionStorage.getItem('todayHealthCondition');
     const quizListStr = sessionStorage.getItem('quizList');
 
-    // 1. 이미 진행 중이던 퀴즈가 있는 경우
     if (savedHealth && quizListStr) {
       try {
         const quizList = JSON.parse(quizListStr);
@@ -129,7 +162,6 @@ export default function S09_PatientHome() {
       }
     }
 
-    // 2. 처음 시작하는 경우 세션 초기화
     const keysToRemove = [
       'totalHintCount',
       'completedActivityCount',
@@ -145,7 +177,6 @@ export default function S09_PatientHome() {
     navigate('/patient-check');
   };
 
-  // 오늘 기록 초기화 버튼
   const handleReset = () => {
     const keysToRemove = [
       'todayActivityCompleted',

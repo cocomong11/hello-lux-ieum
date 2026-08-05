@@ -9,8 +9,8 @@ import faceBad from '../assets/poorface.png';
 import faceSleep from '../assets/sleepyface.png';
 import faceTired from '../assets/tired.png';
 
-// API 모듈 함수 및 타입 임포트
-import { getTodayQuizzes, type QuizItem } from '../api/patientApi';
+// patientApi에서 postDailyStatus import
+import { getTodayQuizzes, postDailyStatus, type QuizItem } from '../api/patientApi';
 
 type ButtonStatus = 'READY' | 'LOADING' | 'MISSING' | 'FAIL';
 
@@ -47,13 +47,9 @@ export default function S10_DailyHealthCheck() {
 
     try {
       const rawPCode = sessionStorage.getItem('p_code');
-      // p_code가 비어있거나 null/undefined면 임시 기본 테스트 코드 지정
-      const pCode = (rawPCode && rawPCode !== 'undefined' && rawPCode !== 'null') ? rawPCode : 'AB37X2';
+      // 영문+숫자 혼합 문자열 p_code 처리
+      const pCode: string = (rawPCode && rawPCode !== 'undefined' && rawPCode !== 'null') ? String(rawPCode) : 'AB37X2';
 
-      // -----------------------------------------------------------------
-      // 🚨 [임시 주석 처리] 백엔드의 pCode 타입 불일치(Integer vs String) 에러를 피하기 위해
-      // 백엔드 일일 상태 저장 API 호출을 건너뜁니다.
-      /*
       const statusPayload = {
         health_condition: condition || '좋음',
         sleep_status: sleep || '잘 잤음',
@@ -63,26 +59,30 @@ export default function S10_DailyHealthCheck() {
         cognitive_changes: cognitiveChanges.length > 0 ? cognitiveChanges : ['없음'],
         memo: memoText,
       };
-      const postResponse = await postDailyStatus(pCode, statusPayload);
-      console.log('✅ 일일 상태 저장 성공 응답:', postResponse);
-      */
-      // -----------------------------------------------------------------
 
-      // 1. 선택한 상태 또는 기본값을 세션 스토리지에 세팅
+      // 일일 상태 저장 API 호출 (/api/patient/{pCode}/daily-status)
+      let postResponse;
+      try {
+        postResponse = await postDailyStatus(pCode, statusPayload as any);
+      } catch (err) {
+        postResponse = await (postDailyStatus as any)({ p_code: pCode, ...statusPayload });
+      }
+      console.log('✅ 일일 상태 저장 성공 응답:', postResponse);
+
+      // 세션 스토리지 세팅
       sessionStorage.setItem('todayHealthCondition', condition || '좋음');
       sessionStorage.setItem('conditionStatus', condition || '좋음');
       sessionStorage.setItem('sleepStatus', sleep || '잘 잤음');
       sessionStorage.setItem('moodStatus', mood || '안정적');
 
-      // 2. 오늘의 퀴즈 데이터 불러오기
+      // 오늘의 퀴즈 조회 (/api/quiz/{pCode}/today)
       let quizzes: QuizItem[] = [];
       try {
         quizzes = await getTodayQuizzes(pCode);
       } catch (e) {
-        console.warn('⚠️ 백엔드 퀴즈 조회 실패, 임시 퀴즈 데이터로 대체합니다.', e);
+        console.warn('⚠️ 백엔드 퀴즈 조회 실패, 기본 임시 퀴즈 데이터로 대체합니다.', e);
       }
 
-      // 만약 백엔드에서 퀴즈를 못 가져오더라도 테스트용 Mock 퀴즈를 세팅하여 LLM 진행
       if (!quizzes || quizzes.length === 0) {
         quizzes = [
           {
@@ -94,7 +94,6 @@ export default function S10_DailyHealthCheck() {
         ];
       }
 
-      // 3. 세션에 퀴즈 관련 초기 정보 세팅
       sessionStorage.setItem('quizList', JSON.stringify(quizzes));
       sessionStorage.setItem('currentQuizIndex', '0');
       sessionStorage.setItem('completedActivityCount', '0');
@@ -103,7 +102,6 @@ export default function S10_DailyHealthCheck() {
       const firstQuiz = quizzes[0];
       const category = (firstQuiz?.quiz_category || 'choice').toLowerCase().trim();
 
-      // 4. 첫 번째 퀴즈 카테고리에 따라 해당 페이지로 이동 (LLM 음성 채팅 등)
       if (category === 'choice') {
         navigate('/patient-voicechat');
       } else if (category === 'photo') {
@@ -115,7 +113,7 @@ export default function S10_DailyHealthCheck() {
       }
     } catch (error) {
       console.error('❌ 이동 중 에러 발생, 강제로 음성채팅 화면으로 이동합니다:', error);
-      // 에러가 나더라도 무조건 다음 LLM 화면으로 통과
+      setBtnStatus('FAIL');
       navigate('/patient-voicechat');
     }
   };
@@ -216,7 +214,7 @@ export default function S10_DailyHealthCheck() {
               }}
               onClick={() => {
                 setCondition(item.label);
-                if (btnStatus === 'MISSING') setBtnStatus('READY');
+                if (btnStatus === 'MISSING' || btnStatus === 'FAIL') setBtnStatus('READY');
               }}
             >
               <img
@@ -245,7 +243,7 @@ export default function S10_DailyHealthCheck() {
               }}
               onClick={() => {
                 setSleep(item.label);
-                if (btnStatus === 'MISSING') setBtnStatus('READY');
+                if (btnStatus === 'MISSING' || btnStatus === 'FAIL') setBtnStatus('READY');
               }}
             >
               <img
@@ -269,7 +267,7 @@ export default function S10_DailyHealthCheck() {
             }}
             onClick={() => {
               setMeal('식사함');
-              if (btnStatus === 'MISSING') setBtnStatus('READY');
+              if (btnStatus === 'MISSING' || btnStatus === 'FAIL') setBtnStatus('READY');
             }}
           >
             식사함
@@ -282,7 +280,7 @@ export default function S10_DailyHealthCheck() {
             }}
             onClick={() => {
               setMeal('식사 못 함');
-              if (btnStatus === 'MISSING') setBtnStatus('READY');
+              if (btnStatus === 'MISSING' || btnStatus === 'FAIL') setBtnStatus('READY');
             }}
           >
             식사 못 함
@@ -302,7 +300,7 @@ export default function S10_DailyHealthCheck() {
               }}
               onClick={() => {
                 setPain(item);
-                if (btnStatus === 'MISSING') setBtnStatus('READY');
+                if (btnStatus === 'MISSING' || btnStatus === 'FAIL') setBtnStatus('READY');
               }}
             >
               {item}
@@ -337,7 +335,7 @@ export default function S10_DailyHealthCheck() {
               }}
               onClick={() => {
                 setMood(item.name);
-                if (btnStatus === 'MISSING') setBtnStatus('READY');
+                if (btnStatus === 'MISSING' || btnStatus === 'FAIL') setBtnStatus('READY');
               }}
             >
               {item.name}

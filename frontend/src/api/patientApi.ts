@@ -1,10 +1,7 @@
 import { api } from './client'; 
 
-const USE_MOCK = false; // 백엔드 실제 통신 시 false 유지
+const USE_MOCK = false; 
 
-// ---------------------------------------------------------------------------
-// Interfaces
-// ---------------------------------------------------------------------------
 
 export interface PatientInfo {
   p_code: string;
@@ -53,8 +50,7 @@ export interface QuizResultPayload {
 }
 
 export interface QuizResultResponse {
-  result_id?: number;
-  message?: string;
+  message: string;
   [key: string]: any;
 }
 
@@ -95,34 +91,25 @@ export interface DailyStatusResponse {
   cognitive_changes: string[];
 }
 
-// ---------------------------------------------------------------------------
-// API Functions (백엔드 QuizController 매핑 반영)
-// ---------------------------------------------------------------------------
 
-/**
- * 환자 코드 조회 (필요 시 유지)
- */
 export const getPatientCode = async (pCode: string): Promise<PatientCodeResponse> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ p_code: pCode });
-      }, 200);
+      setTimeout(() => resolve({ p_code: pCode }), 200);
     });
   }
   return api.get<PatientCodeResponse>(`/patient/${pCode}/code`);
 };
 
-/**
- * 환자 정보 조회
- */
+
+ 
 export const getPatientInfo = async (pCode: string): Promise<PatientInfo> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
           p_code: pCode,
-          name: "이지혜",
+          name: "홍길동",
           diagnosis: "경도인지장애",
           personality: "온화함"
         });
@@ -132,10 +119,8 @@ export const getPatientInfo = async (pCode: string): Promise<PatientInfo> => {
   return api.get<PatientInfo>(`/patient/${pCode}`);
 };
 
-/**
- * 오늘의 퀴즈 조회
- * 백엔드: GET /api/quiz/{p_code}/today
- */
+
+ 
 export const getTodayQuizzes = async (pCode: string): Promise<QuizItem[]> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
@@ -160,10 +145,7 @@ export const getTodayQuizzes = async (pCode: string): Promise<QuizItem[]> => {
   return api.get<QuizItem[]>(`/quiz/${pCode}/today`);
 };
 
-/**
- * 퀴즈 문항별 정답 제출
- * 백엔드: POST /api/quiz/{p_code}/{set_id}/{quiz_num}/answer
- */
+
 export const submitQuizAnswer = async ({
   pCode,
   setId,
@@ -184,15 +166,14 @@ export const submitQuizAnswer = async ({
   return api.post<QuizAnswerResponse>(
     `/quiz/${pCode}/${setId}/${quizNum}/answer`,
     {
+      quiz_num: quizNum,
       answer: userAnswer,
     }
   );
 };
 
-/**
- * 퀴즈 결과 최종 제출
- * 백엔드: POST /api/quiz/result/submit
- */
+
+ 
 export const submitQuizResult = async (
   payload: QuizResultPayload
 ): Promise<QuizResultResponse> => {
@@ -200,30 +181,26 @@ export const submitQuizResult = async (
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
-          result_id: 1,
-          message: "성공적으로 저장되었습니다."
+          message: "퀴즈 결과가 성공적으로 저장되었습니다."
         });
       }, 300);
     });
   }
 
-  return api.post<QuizResultResponse>('/quiz/result/submit', payload);
+  return api.post<QuizResultResponse>('/quiz/result', payload);
 };
 
-/**
- * 퀴즈 결과 상세 조회
- * 백엔드: GET /api/patients/{p_code}/results/{date} 또는 /api/patients/{p_code}/results
- */
+
+ 
 export const getQuizResults = async (
   pCode: string,
-  date: string,
-  queryDate?: string
+  date: string
 ): Promise<QuizResultDetailResponse> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
-          date: queryDate || date,
+          date: date,
           total_count: 5,
           correct_count: 4,
           hint: 1,
@@ -233,40 +210,11 @@ export const getQuizResults = async (
     });
   }
 
-  const query = queryDate ? `?date=${encodeURIComponent(queryDate)}` : '';
-  return api.get<QuizResultDetailResponse>(`/patients/${pCode}/results/${date}${query}`);
+  return api.get<QuizResultDetailResponse>(`/patients/${pCode}/results/${date}`);
 };
 
-/**
- * 퀴즈 피드백 조회
- * 백엔드: GET /api/patients/{p_code}/quizSet/{set_id}/feedbacks
- */
-export const getQuizFeedbacks = async (
-  pCode: string,
-  setId: number,
-  _quizId?: number
-): Promise<QuizFeedbackItem[]> => {
-  if (USE_MOCK) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          {
-            feedback_id: 1,
-            set_id: setId,
-            feedback_content: "오늘도 잘 하셨어요!",
-            created_at: "2026-05-29"
-          }
-        ]);
-      }, 300);
-    });
-  }
 
-  return api.get<QuizFeedbackItem[]>(`/patients/${pCode}/quizSet/${setId}/feedbacks`);
-};
 
-/**
- * 환자 일일 상태 작성
- */
 export const postDailyStatus = async (
   pCode: string,
   payload: DailyStatusPayload
@@ -277,7 +225,7 @@ export const postDailyStatus = async (
         resolve({
           status_id: 5,
           p_code: pCode,
-          record_date: "2026-08-02",
+          record_date: new Date().toISOString().split('T')[0],
           health_condition: payload.health_condition,
           sleep_status: payload.sleep_status,
           meal_status: payload.meal_status,

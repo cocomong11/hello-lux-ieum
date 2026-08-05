@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/patientHeader';
+import { api } from '../api/client';
 
 function CelebrationIcon() {
   return (
@@ -29,28 +30,40 @@ function CelebrationIcon() {
   );
 }
 
+
+interface QuizResult {
+  total_count?: number;
+  correct_count?: number;
+  hint?: number;
+}
+
+interface DailyStatus {
+  health_condition?: string;
+  sleep_status?: string;
+  mood_status?: string;
+}
+
+interface Feedback {
+  feedback_content?: string;
+}
+
 export default function S17_ActivityReport() {
   const navigate = useNavigate();
 
-  // 오늘 날짜 구하기 (YYYY-MM-DD)
   const todayStr = new Date().toISOString().split('T')[0];
-  const pCode = sessionStorage.getItem('pCode') || '1001'; // 실제 환자 코드 또는 기본값
+  const pCode = sessionStorage.getItem('pCode') || '1001';
 
-  // 통계 수치 상태 관리
-  const [completedCount, setCompletedCount] = useState(0); // total_count
-  const [correctCount, setCorrectCount] = useState(0);     // correct_count (회상 성공)
-  const [hintCount, setHintCount] = useState(0);           // hint
-  const [retryCount, setRetryCount] = useState(0);         // 다시 말하기 (세션 유지)
+  const [completedCount, setCompletedCount] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [hintCount, setHintCount] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
 
-  // 건강 상태 요약
   const [conditionStatus, setConditionStatus] = useState('좋음');
   const [sleepStatus, setSleepStatus] = useState('잘 잤음');
   const [moodStatus, setMoodStatus] = useState('편안함');
 
-  // 피드백 텍스트
   const [feedbackText, setFeedbackText] = useState('오늘도 집중해서 활동을 잘 완료하셨습니다!');
 
-  // 뒤로 가기 방지
   useEffect(() => {
     const preventGoBack = () => {
       window.history.pushState(null, '', window.location.href);
@@ -64,43 +77,46 @@ export default function S17_ActivityReport() {
     };
   }, []);
 
-  // API 및 데이터 로드
   useEffect(() => {
-    // 1. 퀴즈 결과 조회 GET /api/patients/{p_code}/results/{date}
-    fetch(`/api/patients/${pCode}/results/${todayStr}`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-      .then((data) => {
+    const fetchData = async () => {
+      
+      try {
+        const data = await api.get<QuizResult>(`/patients/${pCode}/results/${todayStr}`);
         if (data) {
           setCompletedCount(data.total_count ?? 0);
           setCorrectCount(data.correct_count ?? 0);
           setHintCount(data.hint ?? 0);
         }
-      })
-      .catch((err) => console.error('결과 조회 실패:', err));
+      } catch (err) {
+        console.error('결과 조회 실패:', err);
+      }
 
-    // 2. 환자 일일 상태 조회 GET /api/patient/{pCode}/daily-status?date={todayStr}
-    fetch(`/api/patient/${pCode}/daily-status?date=${todayStr}`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-      .then((data) => {
+      
+      try {
+        const data = await api.get<DailyStatus>(`/patient/${pCode}/daily-status?date=${todayStr}`);
         if (data) {
           if (data.health_condition) setConditionStatus(data.health_condition);
           if (data.sleep_status) setSleepStatus(data.sleep_status);
           if (data.mood_status) setMoodStatus(data.mood_status);
         }
-      })
-      .catch((err) => console.error('건강 상태 조회 실패:', err));
+      } catch (err) {
+        console.error('건강 상태 조회 실패:', err);
+      }
 
-    // 3. 퀴즈 피드백 조회 GET /api/patients/{p_code}/quizSet/1/feedback
-    fetch(`/api/patients/${pCode}/quizSet/1/feedback`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-      .then((data) => {
+     
+      try {
+        const data = await api.get<Feedback[]>(`/patients/${pCode}/quizSet/1/feedbacks`);
         if (Array.isArray(data) && data.length > 0) {
           setFeedbackText(data[0].feedback_content || '오늘도 끝까지 잘 해주셨어요!');
         }
-      })
-      .catch((err) => console.error('피드백 조회 실패:', err));
+      } catch (err) {
+        console.error('피드백 조회 실패:', err);
+      }
+    };
 
-    // 다시 말하기(retryCount)는 세션에서 읽어옴
+    fetchData();
+
+    
     const parseValue = (key: string) => {
       const val = sessionStorage.getItem(key);
       if (!val) return 0;
@@ -121,7 +137,7 @@ export default function S17_ActivityReport() {
     boxSizing: 'border-box' as const,
     display: 'flex',
     flexDirection: 'column' as const,
-    justify: 'space-between',
+    justifyContent: 'space-between',
     textAlign: 'left' as const
   };
 
@@ -247,7 +263,7 @@ export default function S17_ActivityReport() {
           </div>
           <div style={summaryBoxStyle}>
             <span style={{ fontSize: '16px', fontWeight: 500, color: '#797980' }}>다시 말하기</span>
-            <p style={{ fontSize: '28px', fontWeight:700, color: '#0D0D0D', margin: 0 }}>{retryCount}회</p>
+            <p style={{ fontSize: '28px', fontWeight: 700, color: '#0D0D0D', margin: 0 }}>{retryCount}회</p>
           </div>
         </div>
 
@@ -293,7 +309,7 @@ export default function S17_ActivityReport() {
             alignItems: 'center',
             gap: '12px'
           }}>
-            <span style={{ fontSize: '18px', fontWeight: 700, color: '#0D0D0D' }}>조금 어려웠어요 💡</span>
+            <span style={{ fontSize: '18px', fontWeight:700, color: '#0D0D0D' }}>조금 어려웠어요 💡</span>
             <span style={{ fontSize: '16px', fontWeight: 700, color: '#E53134' }}>#장소 기억</span>
           </div>
         </div>
