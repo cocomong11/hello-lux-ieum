@@ -134,3 +134,34 @@ export const addMemoryEvent = (p_code: number, memory_id: number, data: LifeDbEv
   api.post<{ event_id: number; memory_id: number; message: string }>(
     `/patients/${p_code}/memories/${memory_id}`, data
   );
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 세분화 사건 이미지 등록
+// POST /api/patients/{p_code}/images
+// Content-Type: multipart/form-data
+// 사용처: S21 기억DB 수정 → 사진 업로드
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import { getToken } from '../utils/auth';
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
+
+export const uploadPatientImage = async (p_code: number, file: File): Promise<{ photo_url: string; message: string }> => {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE_URL}/patients/${p_code}/images`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    throw new Error('이미지 업로드 실패');
+  }
+
+  return res.json();
+};

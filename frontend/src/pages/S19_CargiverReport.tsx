@@ -7,6 +7,7 @@ import checkboxY from '../assets/checkboxY.svg';
 import checkemty from '../assets/checkemty.svg';
 import polygon from '../assets/Polygon 2.svg';
 import { getGuardianTrend } from '../api/guardian';
+import { getPatient, getQuizResults } from '../api/patient';
 import { getPCode } from '../utils/pcode';
 
 const DESIGN_W = 1920;
@@ -34,29 +35,21 @@ const DUMMY_PATIENT = {
 
 const INDICATORS = [
   { key: '답변 성공률', checkImg: checkboxB, color: '#4188ED' },
-  { key: '힌트 사용 여부', checkImg: checkboxG, color: '#27AE60' },
-  { key: '응답 시간',   checkImg: checkboxY, color: '#DFDF87' },
-  { key: '건강 상태',   checkImg: checkboxG, color: '#27AE60' },
-  { key: '수면 상태',   checkImg: checkboxB, color: '#4188ED' },
-  { key: '감정 상태',   checkImg: checkboxY, color: '#DFDF87' },
+  { key: '힌트 사용', checkImg: checkboxG, color: '#27AE60' },
+  { key: '응답 시간', checkImg: checkboxY, color: '#DFDF87' },
 ];
 
-const DATES = ['5/20', '5/21', '5/22', '5/23', '5/24', '5/25', '오늘'];
+const DATES_DEFAULT = ['5/20', '5/21', '5/22', '5/23', '5/24', '5/25', '오늘'];
 
-const LINE_DATA: Record<string, number[]> = {
+const LINE_DATA_DEFAULT: Record<string, number[]> = {
   '답변 성공률': [40, 55, 48, 62, 70, 65, 72],
-  '회상 성공률': [50, 45, 60, 55, 68, 75, 80],
-  '힌트 사용량': [20, 30, 25, 35, 28, 32, 20],
-  '다시 말하기': [15, 20, 18, 25, 22, 18, 15],
-  '응답 시간':   [60, 55, 58, 50, 52, 48, 45],
-  '건강 상태':   [60, 58, 55, 65, 62, 68, 64],
-  '수면 상태':   [70, 65, 72, 68, 75, 70, 72],
-  '감정 상태':   [55, 60, 58, 62, 65, 68, 70],
+  '힌트 사용': [20, 30, 25, 35, 28, 32, 20],
+  '응답 시간': [60, 55, 58, 50, 52, 48, 45],
 };
 
 const PERIOD_OPTIONS = ['최근 7일', '최근 30일', '직접 선택'];
 
-const STATS = [
+const STATS_DEFAULT = [
   { label: '7일 평균 성공률', value: '62%'  },
   { label: '평균 응답 시간',  value: '3.2초' },
   { label: '일평균 힌트 사용', value: '2.4회' },
@@ -71,7 +64,7 @@ function formatDate(daysAgo: number): string {
   return `${d.getMonth() + 1}월 ${d.getDate()}일${suffix}`;
 }
 
-const DAILY_SUMMARY = [
+const DAILY_SUMMARY_DEFAULT = [
   {
     date: formatDate(0),
     desc: '수면 보통 · 답변 성공률 60%',
@@ -102,11 +95,11 @@ const PLOT_Y = PAD;                        // rect 내 top 패딩
 const PLOT_W = RECT_W - PAD * 2;           // 라인 가로 범위
 const PLOT_H = RECT_H - PAD * 2;           // 라인 세로 범위
 
-function makeLine(values: number[]): string {
+function makeLine(values: number[], maxVal: number = 100): string {
   return values
     .map((v, i) => {
       const x = PLOT_X + PAD + (i / (values.length - 1)) * PLOT_W;
-      const y = PLOT_Y + PLOT_H * (1 - v / 100);
+      const y = PLOT_Y + PLOT_H * (1 - v / maxVal);
       return `${x},${y}`;
     })
     .join(' ');
@@ -115,13 +108,17 @@ function makeLine(values: number[]): string {
 export default function S19_CargiverReport() {
   const navigate = useNavigate();
   const [scale, setScale] = useState(1);
-  const patient = DUMMY_PATIENT;
+  const [patient, setPatient] = useState(DUMMY_PATIENT);
+  const [dates, setDates] = useState(DATES_DEFAULT);
+  const [lineData, setLineData] = useState(LINE_DATA_DEFAULT);
+  const [stats, setStats] = useState(STATS_DEFAULT);
+  const [dailySummary, setDailySummary] = useState(DAILY_SUMMARY_DEFAULT);
   const [period, setPeriod] = useState('최근 7일');
   const [showPeriodMenu, setShowPeriodMenu] = useState(false);
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [activeLines, setActiveLines] = useState<Set<string>>(
-    new Set(['답변 성공률', '회상 성공률', '건강 상태'])
+    new Set(['답변 성공률'])
   );
 
   useEffect(() => {
@@ -131,12 +128,58 @@ export default function S19_CargiverReport() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
+  // API: 환자 정보 로드
+  useEffect(() => {
+    const pCode = getPCode();
+    if (!pCode) return;
+    getPatient(pCode)
+      .then(data => setPatient({ name: data.name, birth_date: '', dignosis: data.diagnosis }))
+      .catch(() => {});
+
+    // 변화 추이 API 호출
+    getGuardianTrend(pCode, period === '최근 7일' ? 'week' : period === '최근 30일' ? 'month' : 'week')
+      .then(data => {
+        if (data.labels.length > 0) {
+          setDates(data.labels);
+          setLineData(prev => ({ ...prev, '답변 성공률': data.scores }));
+        }
+      })
+      .catch(() => {});
+
+    // 퀴즈 결과 → STATS + 날짜별 상세 요약
+    const today = new Date();
+    const from = new Date(today);
+    from.setDate(today.getDate() - 7);
+    const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    getQuizResults(pCode, fmt(from), fmt(today))
+      .then(results => {
+        if (results.length > 0) {
+          // 평균 계산
+          const avgScore = Math.round(results.reduce((sum, r) => sum + (r.correct_count / r.total_count) * 100, 0) / results.length);
+          const avgHint = (results.reduce((sum, r) => sum + r.hint, 0) / results.length).toFixed(1);
+          setStats([
+            { label: '7일 평균 성공률', value: `${avgScore}%` },
+            { label: '평균 응답 시간', value: '—' }, // API에 응답 시간 없음
+            { label: '일평균 힌트 사용', value: `${avgHint}회` },
+          ]);
+
+          // 최근 2건 → 날짜별 상세 요약
+          const recent = results.slice(-2).reverse();
+          setDailySummary(recent.map((r, i) => ({
+            date: r.date.replace(/-/g, '. ') + (i === 0 ? ' (오늘)' : ''),
+            desc: `답변 성공률 ${Math.round((r.correct_count / r.total_count) * 100)}% · 힌트 ${r.hint}회`,
+            isToday: i === 0,
+            tags: i === 0 ? [] : ['기록 있음'],
+          })));
+        }
+      })
+      .catch(() => {});
+  }, [period]);
+
+  // 체크박스: 한 개만 선택 가능
   const toggleLine = (key: string) => {
-    setActiveLines(prev => {
-      const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
+    setActiveLines(new Set([key]));
   };
 
   return (
@@ -312,23 +355,30 @@ export default function S19_CargiverReport() {
                 />
 
                 {/* Y축 라벨 + 가로 그리드 점선 */}
-                {[0, 25, 50, 75, 100].map(v => {
-                  const y = PAD + PLOT_H * (1 - v / 100);
-                  return (
-                    <g key={v}>
-                      <line
-                        x1={Y_LABEL_SPACE} y1={y} x2={Y_LABEL_SPACE + RECT_W} y2={y}
-                        stroke="#4188ED" strokeWidth="1"
-                        strokeDasharray="4 3"
-                        opacity="0.4"
-                      />
-                      <text
-                        x={Y_LABEL_SPACE - 8} y={y + 5}
-                        textAnchor="end" fontSize="14" fill="#797980"
-                      >{v}%</text>
-                    </g>
-                  );
-                })}
+                {(() => {
+                  const activeKey = Array.from(activeLines)[0] || '답변 성공률';
+                  const isPercent = activeKey === '답변 성공률';
+                  const unit = isPercent ? '%' : activeKey === '힌트 사용' ? '회' : '초';
+                  const maxVal = isPercent ? 100 : activeKey === '힌트 사용' ? 10 : 120;
+                  const ticks = isPercent ? [0, 25, 50, 75, 100] : activeKey === '힌트 사용' ? [0, 2, 4, 6, 8, 10] : [0, 30, 60, 90, 120];
+                  return ticks.map(v => {
+                    const y = PAD + PLOT_H * (1 - v / maxVal);
+                    return (
+                      <g key={v}>
+                        <line
+                          x1={Y_LABEL_SPACE} y1={y} x2={Y_LABEL_SPACE + RECT_W} y2={y}
+                          stroke="#4188ED" strokeWidth="1"
+                          strokeDasharray="4 3"
+                          opacity="0.4"
+                        />
+                        <text
+                          x={Y_LABEL_SPACE - 8} y={y + 5}
+                          textAnchor="end" fontSize="14" fill="#797980"
+                        >{v}{unit}</text>
+                      </g>
+                    );
+                  });
+                })()}
 
                 {/* Y축 선 */}
                 <line
@@ -345,21 +395,24 @@ export default function S19_CargiverReport() {
                 />
 
                 {/* 데이터 라인들 */}
-                {INDICATORS.filter(ind => activeLines.has(ind.key)).map(({ key, color }) => (
+                {INDICATORS.filter(ind => activeLines.has(ind.key)).map(({ key, color }) => {
+                  const maxVal = key === '답변 성공률' ? 100 : key === '힌트 사용' ? 10 : 120;
+                  return (
                   <polyline
                     key={key}
-                    points={makeLine(LINE_DATA[key])}
+                    points={makeLine(lineData[key], maxVal)}
                     fill="none"
                     stroke={color}
                     strokeWidth="2.5"
                     strokeLinejoin="round"
                     strokeLinecap="round"
                   />
-                ))}
+                  );
+                })}
 
                 {/* X축 날짜 (rect 아래) */}
-                {DATES.map((d, i) => {
-                  const x = Y_LABEL_SPACE + PAD + (i / (DATES.length - 1)) * PLOT_W;
+                {dates.map((d, i) => {
+                  const x = Y_LABEL_SPACE + PAD + (i / (dates.length - 1)) * PLOT_W;
                   return (
                     <text key={d} x={x} y={RECT_H + 22}
                       textAnchor="middle" fontSize="14" fill="#797980">{d}</text>
@@ -370,7 +423,7 @@ export default function S19_CargiverReport() {
           </div>
 
           {/* ── 통계 카드 3개 ── */}
-          {STATS.map((stat, i) => (
+          {stats.map((stat, i) => (
             <div key={stat.label}
               style={{
                 position: 'absolute',
@@ -395,7 +448,7 @@ export default function S19_CargiverReport() {
             날짜별 상세 요약
           </p>
 
-          {DAILY_SUMMARY.map((day, i) => (
+          {dailySummary.map((day, i) => (
             <div key={day.date}
               style={{
                 position: 'absolute',

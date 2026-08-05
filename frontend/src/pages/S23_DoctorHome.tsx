@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/doctorHeader';
 import pprofile from '../assets/pprofile.png';
 import { getDoctorPatients, type DoctorPatient } from '../api/doctor';
+import { getQuizResults } from '../api/patient';
 import { ApiError } from '../api/client';
 
 const DESIGN_W = 1920;
@@ -87,19 +88,35 @@ export default function S23_DoctorHome() {
   // API: 담당 환자 목록 로드
   useEffect(() => {
     getDoctorPatients()
-      .then((data: DoctorPatient[]) => {
+      .then(async (data: DoctorPatient[]) => {
         if (data.length > 0) {
-          // API 응답을 기존 형식에 맞게 매핑
-          const mapped = data.map(p => ({
-            p_code: p.p_code,
-            name: p.name,
-            birth_date: '',
-            dignosis: p.diagnosis,
-            recentKMMSE: '',
-            recentQuize: '',
-            rate: 0,
+          // 각 환자별 퀴즈 결과 병렬 호출
+          const enriched = await Promise.all(data.map(async p => {
+            try {
+              const results = await getQuizResults(p.p_code);
+              const last = results[results.length - 1];
+              return {
+                p_code: p.p_code,
+                name: p.name,
+                birth_date: '',
+                dignosis: p.diagnosis,
+                recentKMMSE: '',
+                recentQuize: last?.date || '',
+                rate: last ? Math.round((last.correct_count / last.total_count) * 100) : 0,
+              };
+            } catch {
+              return {
+                p_code: p.p_code,
+                name: p.name,
+                birth_date: '',
+                dignosis: p.diagnosis,
+                recentKMMSE: '',
+                recentQuize: '',
+                rate: 0,
+              };
+            }
           }));
-          setPatients(mapped);
+          setPatients(enriched);
         }
       })
       .catch(err => console.log('의사 환자 목록 API 미연결:', err instanceof ApiError ? err.message : err));

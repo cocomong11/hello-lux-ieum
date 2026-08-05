@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import CaregiverSidebar from '../components/CaregiverSidebar';
-import { getMemory, patchMemory, type LifeDbResponse } from '../api/patient';
+import { getMemory, patchMemory, getPatient, uploadPatientImage, type LifeDbResponse } from '../api/patient';
 import { getPCode } from '../utils/pcode';
 import { ApiError } from '../api/client';
 
@@ -77,7 +77,7 @@ export default function S21_CargiverUpdate() {
   const [searchParams] = useSearchParams();
   const category = searchParams.get('category') || '가족';
   const [scale, setScale] = useState(1);
-  const patient = DUMMY_PATIENT;
+  const [patient, setPatient] = useState(DUMMY_PATIENT);
 
   const [members, setMembers] = useState<Record<string, MemberEntry[]>>(INITIAL_MEMBERS);
   const [savedMsg, setSavedMsg] = useState(false);
@@ -89,10 +89,13 @@ export default function S21_CargiverUpdate() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  // API에서 삶의 DB 로드
+  // API: 환자 정보 + 삶의 DB 로드
   useEffect(() => {
     const pCode = getPCode();
     if (!pCode) return;
+    getPatient(pCode)
+      .then(data => setPatient({ name: data.name, birth_date: '', dignosis: data.diagnosis }))
+      .catch(() => {});
     getMemory(pCode, 1) // TODO: memory_id 관리
       .then((data: LifeDbResponse) => {
         // family 필드 → 가족 카테고리로 파싱
@@ -276,14 +279,29 @@ export default function S21_CargiverUpdate() {
                       type="file"
                       accept="image/*"
                       style={{ display: 'none' }}
-                      onChange={e => {
+                      onChange={async e => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          // 로컬 미리보기
                           const url = URL.createObjectURL(file);
                           setMembers(prev => ({
                             ...prev,
                             [category]: prev[category].map((m, i) => i === idx ? { ...m, photo: url } : m),
                           }));
+                          // 서버 업로드
+                          const pCode = getPCode();
+                          if (pCode) {
+                            try {
+                              const res = await uploadPatientImage(pCode, file);
+                              // 서버 URL로 교체
+                              setMembers(prev => ({
+                                ...prev,
+                                [category]: prev[category].map((m, i) => i === idx ? { ...m, photo: res.photo_url } : m),
+                              }));
+                            } catch (err) {
+                              console.log('이미지 업로드 실패:', err);
+                            }
+                          }
                         }
                       }}
                     />

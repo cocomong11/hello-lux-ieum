@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/DoctorSidebar';
-import { updatePatientStatus } from '../api/doctor';
+import { updatePatientStatus, updateDoctorLevel } from '../api/doctor';
 import { getPCode } from '../utils/pcode';
 import { ApiError } from '../api/client';
 
@@ -78,6 +78,7 @@ export default function S26_DoctorLevel() {
       try {
         const levelLabel = LEVELS[selectedLevel - 1]?.label || '';
         await updatePatientStatus(targetPCode, levelLabel);
+        await updateDoctorLevel(targetPCode, { quiz_type: 'multiple', level: selectedLevel });
       } catch (err) {
         if (err instanceof ApiError) {
           console.error('난이도 변경 실패:', err.message);

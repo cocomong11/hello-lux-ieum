@@ -122,6 +122,7 @@ export default function S24_DoctorDashboard() {
   const [comments, setComments] = useState<Record<number, string>>({});
   const [savedMsg, setSavedMsg] = useState(false);
   const [isEditingComment, setIsEditingComment] = useState(false);
+  const [dailyScores, setDailyScores] = useState<Record<number, number>>({});
   const [selectedPeriod, setSelectedPeriod] = useState('6개월');
   const [dailyPeriod, setDailyPeriod] = useState('3개월');
   const [selectedDay, setSelectedDay] = useState(26);
@@ -137,6 +138,11 @@ export default function S24_DoctorDashboard() {
 
   const patientData = PATIENTS_DB[pCode] || PATIENTS_DB[1001];
 
+  // 초기 dailyScores 설정 (더미)
+  useEffect(() => {
+    setDailyScores(patientData.dailyScores || {});
+  }, [pCode]);
+
   useEffect(() => {
     // 오늘 날짜에 기존 memo 넣기
     const today = new Date();
@@ -148,12 +154,21 @@ export default function S24_DoctorDashboard() {
     getDoctorReport(pCode)
       .then(data => {
         console.log('리포트 로드:', data);
+        // TODO: 월별 차트에 avg_score, trend 반영 가능
       })
       .catch(err => console.log('리포트 API 미연결:', err instanceof ApiError ? err.message : err));
 
     getQuizResults(pCode)
-      .then(data => {
-        console.log('퀴즈 결과 로드:', data.length, '건');
+      .then(results => {
+        if (results.length > 0) {
+          // 퀴즈 결과 → 달력 dailyScores에 반영
+          const scores: Record<number, number> = {};
+          results.forEach(r => {
+            const day = parseInt(r.date.split('-')[2]);
+            scores[day] = Math.round((r.correct_count / r.total_count) * 100);
+          });
+          setDailyScores(scores);
+        }
       })
       .catch(err => console.log('퀴즈 결과 API 미연결:', err instanceof ApiError ? err.message : err));
   }, [pCode]);
@@ -393,9 +408,9 @@ export default function S24_DoctorDashboard() {
               const today = new Date();
               const todayDate = (calYear === today.getFullYear() && calMonth === today.getMonth() + 1)
                 ? today.getDate() : daysInMonth;
-              const scores = Object.entries(patientData.dailyScores)
+              const scores = Object.entries(dailyScores)
                 .filter(([d]) => Number(d) <= todayDate)
-                .map(([, v]) => v);
+                .map(([, v]) => v as number);
               const recordDays = scores.length;
               const cautionDays = scores.filter(s => s <= 40).length;
               const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
@@ -487,7 +502,7 @@ export default function S24_DoctorDashboard() {
                 ))}
                 {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
                   // 마지막 기록일 이후는 날짜만 표시 (박스 없음)
-                  const maxRecordDay = Math.max(...Object.keys(patientData.dailyScores).map(Number), 0);
+                  const maxRecordDay = Math.max(...Object.keys(dailyScores).map(Number), 0);
                   const today = new Date();
                   const isCurrentMonth = calYear === today.getFullYear() && calMonth === today.getMonth() + 1;
                   const lastDay = isCurrentMonth ? today.getDate() : maxRecordDay;
@@ -504,7 +519,7 @@ export default function S24_DoctorDashboard() {
                     );
                   }
 
-                  const score = patientData.dailyScores[day];
+                  const score = dailyScores[day];
                   // 스타일 분기
                   let bg: string, border: string, boxShadow: string, percentColor: string, dateColor: string;
                   if (!score) {
@@ -593,14 +608,14 @@ export default function S24_DoctorDashboard() {
             </div>
 
             {/*선택일자 */}
-            {patientData.dailyScores[selectedDay] ? (
+            {dailyScores[selectedDay] ? (
               <div style={{
                 width: 936, height:203,paddingTop: '28px',paddingLeft: 29,borderRadius: 10,
                 border: '1px solid var(--Secondary-80, #DFDF87)', background: '#0F66E2',
                 boxShadow: '0 0 10px 0 #4188ED', marginBottom: 34,
               }}>
                 <p style={{ ...F, margin: 0, fontSize: 30, fontWeight: 700, color: 'var(--color-neutral-100)' }}>
-                  인지점수 {patientData.dailyScores[selectedDay]}%
+                  인지점수 {dailyScores[selectedDay]}%
                 </p>
                 <p style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-100)' }}>
                   활동 5/5 수행 · 힌트 2회 사용

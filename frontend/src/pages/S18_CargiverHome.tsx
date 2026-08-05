@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import CaregiverSidebar from '../components/CaregiverSidebar';
 import redEmark from '../assets/redEmark.svg';
 import { getGuardianDashboard, getGuardianTrend } from '../api/guardian';
+import { getQuizResults, getPatient, getDailyStatus } from '../api/patient';
 import { getPCode } from '../utils/pcode';
 import { ApiError } from '../api/client';
 
@@ -51,14 +52,15 @@ function getLast7Days(): { date: string; percent: number }[] {
 const BAR_DATA = getLast7Days();
 
 const MEMORY_TAGS  = ['장소 기억', '날짜/시간'];
-const EMOTION_TAGS = ['반복 발화 (5/25)', '불안 반응 (5/25)'];
+const EMOTION_TAGS_DEFAULT = ['반복 발화', '불안 반응'];
 
 export default function S18_CargiverHome() {
   const navigate = useNavigate();
   const [scale, setScale] = useState(1);
-  const [patient] = useState(DUMMY_PATIENT);
+  const [patient, setPatient] = useState(DUMMY_PATIENT);
   const [todayStats, setTodayStats] = useState(TODAY_STATS);
   const [barData, setBarData] = useState(BAR_DATA);
+  const [emotionTags, setEmotionTags] = useState(EMOTION_TAGS_DEFAULT);
 
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
@@ -72,14 +74,41 @@ export default function S18_CargiverHome() {
     const pCode = getPCode();
     if (!pCode) return;
 
-    // 대시보드 데이터
-    getGuardianDashboard(pCode)
+    // 환자 정보
+    getPatient(pCode)
       .then(data => {
+        setPatient({
+          name: data.name,
+          birth_date: '', // API에 birth_date 없으면 빈값
+          dignosis: data.diagnosis,
+        });
+      })
+      .catch(err => console.log('환자 정보 API 미연결:', err instanceof ApiError ? err.message : err));
+
+    // 대시보드 데이터 + 오늘 퀴즈 결과
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    // 오늘 일일 상태 → 감정·행동 특이 기록
+    getDailyStatus(pCode, todayStr)
+      .then(data => {
+        if (data.cognitive_changes && data.cognitive_changes.length > 0) {
+          setEmotionTags(data.cognitive_changes);
+        }
+      })
+      .catch(err => console.log('일일상태 API 미연결:', err instanceof ApiError ? err.message : err));
+
+    Promise.all([
+      getGuardianDashboard(pCode),
+      getQuizResults(pCode, todayStr, todayStr),
+    ])
+      .then(([dashboard, quizResults]) => {
+        const todayResult = quizResults?.[0];
         setTodayStats([
-          { label: '활동 완료 여부', value: data.last_quiz_date ? '완료 🎉' : '미완료' },
-          { label: '진행한 활동', value: '5 / 5' },
-          { label: '성공률', value: `${data.avg_score}%` },
-          { label: '힌트 사용', value: '2회' },
+          { label: '활동 완료 여부', value: todayResult ? '완료 🎉' : '미완료' },
+          { label: '진행한 활동', value: todayResult ? `${todayResult.correct_count} / ${todayResult.total_count}` : '0 / 0' },
+          { label: '성공률', value: `${dashboard.avg_score}%` },
+          { label: '힌트 사용', value: todayResult ? `${todayResult.hint}회` : '0회' },
         ]);
       })
       .catch(err => console.log('대시보드 API 미연결:', err instanceof ApiError ? err.message : err));
@@ -353,7 +382,7 @@ export default function S18_CargiverHome() {
               gap: 10,
             }}
           >
-            {EMOTION_TAGS.map((tag) => (
+            {emotionTags.map((tag) => (
               <div
                 key={tag}
                 style={{

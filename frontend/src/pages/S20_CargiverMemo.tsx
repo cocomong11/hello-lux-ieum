@@ -11,6 +11,7 @@ import {
   deleteGuardianMemo,
   type MemoItem,
 } from '../api/guardian';
+import { getPatient } from '../api/patient';
 import { getPCode } from '../utils/pcode';
 import { ApiError } from '../api/client';
 
@@ -51,8 +52,9 @@ function getDateParts(daysAgo: number) {
   return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() };
 }
 
-const PREV_MEMOS = [
+const PREV_MEMOS_DEFAULT = [
   {
+    memoId: 0,
     date: getDateLabel(1),
     desc: '수면 부족 · 반복 발화 기록 · 불안 반응',
     data: {
@@ -64,6 +66,7 @@ const PREV_MEMOS = [
     },
   },
   {
+    memoId: 0,
     date: getDateLabel(2),
     desc: '상태 양호 · 식사 잘 함 · 특이사항 없음',
     data: {
@@ -100,7 +103,7 @@ function tagStyle(selected: boolean): React.CSSProperties {
 export default function S20_CargiverMemo() {
   const navigate = useNavigate();
   const [scale, setScale] = useState(1);
-  const patient = DUMMY_PATIENT;
+  const [patient, setPatient] = useState(DUMMY_PATIENT);
 
   // 날짜 상태
   const today = new Date();
@@ -128,9 +131,10 @@ export default function S20_CargiverMemo() {
   const [memo, setMemo] = useState('아들 이름을 반복해서 부르며 왜 안오냐고 하심. 30분 정도 지속 후 안정됨.');
   const [savedMsg, setSavedMsg] = useState(false);
   const [selectedMemoIdx, setSelectedMemoIdx] = useState<number | null>(null);
+  const [prevMemos, setPrevMemos] = useState(PREV_MEMOS_DEFAULT);
 
   // 이전 메모 불러오기
-  const loadMemo = (data: typeof PREV_MEMOS[0]['data'], idx: number) => {
+  const loadMemo = (data: typeof PREV_MEMOS_DEFAULT[0]['data'], idx: number) => {
     setSelectedMemoIdx(idx);
     setYear(data.year);
     setMonth(data.month);
@@ -158,11 +162,35 @@ export default function S20_CargiverMemo() {
   useEffect(() => {
     const pCode = getPCode();
     if (!pCode) return;
+
+    // 환자 정보
+    getPatient(pCode)
+      .then(data => setPatient({ name: data.name, birth_date: '', dignosis: data.diagnosis }))
+      .catch(() => {});
+
     getGuardianMemos(pCode)
       .then(memos => {
         if (memos.length > 0) {
-          // API 응답을 이전 메모 형식으로 변환 — 최신 2개만
-          console.log('메모 목록 로드 성공:', memos.length, '건');
+          // API 응답 → 이전 메모 UI에 반영 (최신 2개)
+          const mapped = memos.slice(0, 2).map((m: MemoItem) => ({
+            memoId: m.memo_id,
+            date: m.record_date,
+            desc: `${m.health_status} · ${m.sleep_status} · ${m.mood_status}`,
+            data: {
+              year: parseInt(m.record_date.split('-')[0]),
+              month: parseInt(m.record_date.split('-')[1]),
+              day: parseInt(m.record_date.split('-')[2]),
+              health: m.health_status,
+              sleep: m.sleep_status,
+              meal: m.meal_status,
+              pain: m.pain_status,
+              mood: m.mood_status,
+              behaviors: new Set(m.behaviors),
+              needReferral: m.need_referral,
+              memo: m.content,
+            },
+          }));
+          setPrevMemos(mapped);
         }
       })
       .catch(err => console.log('메모 API 미연결:', err instanceof ApiError ? err.message : ''));
@@ -378,8 +406,7 @@ export default function S20_CargiverMemo() {
           <div style={{ position: 'absolute', left: CONTENT_LEFT, top: MEMO_LBL, display: 'flex', alignItems: 'baseline', gap: 12 }}>
             <p style={LABEL_STYLE}>특이 행동 메모 (선택)</p>
             <span style={{ ...F, fontSize: 22, fontWeight: 400, lineHeight: '155%', color: '#797980' }}>
-              *작성한 메모는 이로진 리포트에도 참고될 수 있습니다.
-            </span>
+              *작성한 메모는 의료진 리포트에도 참도될 수 있습니다.</span>
           </div>
           <textarea
             value={memo}
@@ -409,7 +436,22 @@ export default function S20_CargiverMemo() {
           <div style={{ position: 'absolute', left: CONTENT_LEFT, top: BTN_ROW, width: 934, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             {/* 삭제 */}
             <button
-              onClick={() => setMemo('')}
+              onClick={async () => {
+                // 선택된 이전 메모가 있으면 서버에서도 삭제
+                if (selectedMemoIdx !== null && prevMemos[selectedMemoIdx]?.memoId) {
+                  const pCode = getPCode();
+                  if (pCode) {
+                    try {
+                      await deleteGuardianMemo(pCode, prevMemos[selectedMemoIdx].memoId);
+                      setPrevMemos(prev => prev.filter((_, i) => i !== selectedMemoIdx));
+                      setSelectedMemoIdx(null);
+                    } catch (err) {
+                      console.log('삭제 실패:', err instanceof ApiError ? err.message : err);
+                    }
+                  }
+                }
+                setMemo('');
+              }}
               style={{
                 ...F, display: 'inline-flex', padding: '12px 22px', justifyContent: 'center', alignItems: 'center', gap: 10,
                 borderRadius: 50, background: '#F8F9FA', border: 'none',
@@ -471,7 +513,7 @@ export default function S20_CargiverMemo() {
             lineHeight: '140%', color: '#0D0D0D', margin: 0,
           }}>이전 메모</p>
 
-          {PREV_MEMOS.map((m, i) => {
+          {prevMemos.map((m, i) => {
             const isSelected = selectedMemoIdx === i;
             return (
             <div key={m.date}
