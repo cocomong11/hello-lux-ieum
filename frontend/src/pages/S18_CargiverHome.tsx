@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CaregiverSidebar from '../components/CaregiverSidebar';
 import redEmark from '../assets/redEmark.svg';
+import { getGuardianDashboard, getGuardianTrend } from '../api/guardian';
+import { getPCode } from '../utils/pcode';
+import { ApiError } from '../api/client';
 
 const DESIGN_W = 1920;
 const DESIGN_H = 1246;
@@ -54,12 +57,44 @@ export default function S18_CargiverHome() {
   const navigate = useNavigate();
   const [scale, setScale] = useState(1);
   const [patient] = useState(DUMMY_PATIENT);
+  const [todayStats, setTodayStats] = useState(TODAY_STATS);
+  const [barData, setBarData] = useState(BAR_DATA);
 
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
+  }, []);
+
+  // API 연결: 대시보드 + 변화 추이
+  useEffect(() => {
+    const pCode = getPCode();
+    if (!pCode) return;
+
+    // 대시보드 데이터
+    getGuardianDashboard(pCode)
+      .then(data => {
+        setTodayStats([
+          { label: '활동 완료 여부', value: data.last_quiz_date ? '완료 🎉' : '미완료' },
+          { label: '진행한 활동', value: '5 / 5' },
+          { label: '성공률', value: `${data.avg_score}%` },
+          { label: '힌트 사용', value: '2회' },
+        ]);
+      })
+      .catch(err => console.log('대시보드 API 미연결:', err instanceof ApiError ? err.message : err));
+
+    // 변화 추이 (7일)
+    getGuardianTrend(pCode, 'week')
+      .then(data => {
+        if (data.labels.length > 0) {
+          setBarData(data.labels.map((label, i) => ({
+            date: label,
+            percent: data.scores[i] || 0,
+          })));
+        }
+      })
+      .catch(err => console.log('추이 API 미연결:', err instanceof ApiError ? err.message : err));
   }, []);
 
   return (
@@ -193,7 +228,7 @@ export default function S18_CargiverHome() {
           </p>
 
           {/* 카드 4개 top: 419 */}
-          {TODAY_STATS.map((stat, i) => (
+          {todayStats.map((stat, i) => (
             <div
               key={stat.label}
               style={{
@@ -246,7 +281,7 @@ export default function S18_CargiverHome() {
               justifyContent: 'space-around',
             }}
           >
-            {BAR_DATA.map((bar) => {
+            {barData.map((bar) => {
               const isToday = bar.date === '오늘';
               const chartH = 252 - 42 - 68; // 142px = 100%
               const barH = (bar.percent / 100) * chartH;

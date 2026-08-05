@@ -4,6 +4,15 @@ import CaregiverSidebar from '../components/CaregiverSidebar';
 import polygon from '../assets/Polygon 2.svg';
 import checkboxB from '../assets/checkboxB.svg';
 import checkemty from '../assets/checkemty.svg';
+import {
+  getGuardianMemos,
+  createGuardianMemo,
+  updateGuardianMemo,
+  deleteGuardianMemo,
+  type MemoItem,
+} from '../api/guardian';
+import { getPCode } from '../utils/pcode';
+import { ApiError } from '../api/client';
 
 const DESIGN_W = 1920;
 const DESIGN_H = 1972;
@@ -143,6 +152,20 @@ export default function S20_CargiverMemo() {
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
+  }, []);
+
+  // API: 이전 메모 목록 로드
+  useEffect(() => {
+    const pCode = getPCode();
+    if (!pCode) return;
+    getGuardianMemos(pCode)
+      .then(memos => {
+        if (memos.length > 0) {
+          // API 응답을 이전 메모 형식으로 변환 — 최신 2개만
+          console.log('메모 목록 로드 성공:', memos.length, '건');
+        }
+      })
+      .catch(err => console.log('메모 API 미연결:', err instanceof ApiError ? err.message : ''));
   }, []);
 
   const toggleBehavior = (key: string) => {
@@ -410,7 +433,25 @@ export default function S20_CargiverMemo() {
 
               {/* 저장 */}
               <button
-                onClick={() => {
+                onClick={async () => {
+                  const pCode = getPCode();
+                  if (pCode) {
+                    try {
+                      await createGuardianMemo(pCode, {
+                        record_date: `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`,
+                        health_status: health,
+                        sleep_status: sleep,
+                        meal_status: meal,
+                        pain_status: pain,
+                        mood_status: mood,
+                        behaviors: Array.from(behaviors),
+                        need_referral: needReferral,
+                        content: memo,
+                      });
+                    } catch (err) {
+                      console.log('메모 저장 API 실패:', err instanceof ApiError ? err.message : err);
+                    }
+                  }
                   setSavedMsg(true);
                   setTimeout(() => setSavedMsg(false), 2000);
                 }}

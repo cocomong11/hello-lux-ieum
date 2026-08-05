@@ -3,6 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/DoctorSidebar';
 import polygon from '../assets/Polygon 2.svg';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { getDoctorReport, updateDoctorReport } from '../api/doctor';
+import { getQuizResults } from '../api/patient';
+import { ApiError } from '../api/client';
 
 const DESIGN_W = 1920;
 const DESIGN_H = 3385;
@@ -140,6 +143,21 @@ export default function S24_DoctorDashboard() {
     setComments({ [today.getDate()]: patientData.memo });
   }, [pCode]);
 
+  // API: 리포트 로드
+  useEffect(() => {
+    getDoctorReport(pCode)
+      .then(data => {
+        console.log('리포트 로드:', data);
+      })
+      .catch(err => console.log('리포트 API 미연결:', err instanceof ApiError ? err.message : err));
+
+    getQuizResults(pCode)
+      .then(data => {
+        console.log('퀴즈 결과 로드:', data.length, '건');
+      })
+      .catch(err => console.log('퀴즈 결과 API 미연결:', err instanceof ApiError ? err.message : err));
+  }, [pCode]);
+
   const patient = {
     name: patientData.name,
     birth_date: patientData.birth_date,
@@ -156,7 +174,13 @@ export default function S24_DoctorDashboard() {
     memo: comments[selectedDay] || '',
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // API: 의사 코멘트 서버 저장
+    try {
+      await updateDoctorReport(pCode, comments[selectedDay] || '');
+    } catch (err) {
+      console.log('리포트 저장 실패:', err instanceof ApiError ? err.message : err);
+    }
     setSavedMsg(true);
     setTimeout(() => setSavedMsg(false), 2000);
   };

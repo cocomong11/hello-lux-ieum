@@ -6,6 +6,8 @@ import checkboxG from '../assets/checkboxG.svg';
 import checkboxY from '../assets/checkboxY.svg';
 import checkemty from '../assets/checkemty.svg';
 import polygon from '../assets/Polygon 2.svg';
+import { getGuardianTrend } from '../api/guardian';
+import { getPCode } from '../utils/pcode';
 
 const DESIGN_W = 1920;
 const DESIGN_H = 1419;
