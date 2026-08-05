@@ -13,7 +13,6 @@ export default function S11_TextVoiceQuiz() {
   const [quizList, setQuizList] = useState<QuizItem[] | null>(null);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
 
- 
   useEffect(() => {
     try {
       const storedQuizzes = JSON.parse(sessionStorage.getItem('quizList') || '[]');
@@ -27,21 +26,17 @@ export default function S11_TextVoiceQuiz() {
     }
   }, []);
 
- 
   const [isListening, setIsListening] = useState<boolean>(false);
   const [isHintOpen, setIsHintOpen] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [elapsedTime, setElapsedTime] = useState<string>('0.0');
   const [feedbackMessage, setFeedbackMessage] = useState<string>('잘 하셨어요!');
 
-  
   const [thisQuizIsCorrect, setThisQuizIsCorrect] = useState<boolean | null>(null);
 
- 
   const startTimeRef = useRef<number>(Date.now());
   const initialAccumulatedTimeRef = useRef<number>(0); 
 
-  
   const [maxHintStepThisQuiz, setMaxHintStepThisQuiz] = useState<number>(0);
   const [isHintCountReflected, setIsHintCountReflected] = useState<boolean>(false);
 
@@ -49,17 +44,14 @@ export default function S11_TextVoiceQuiz() {
     return Number(sessionStorage.getItem('totalHintCount') || 0);
   });
 
-  
   const [totalSolvedCount, setTotalSolvedCount] = useState<number>(() => {
     return Number(sessionStorage.getItem('completedActivityCount') || 0);
   });
 
-  
   const [correctCount, setCorrectCount] = useState<number>(() => {
     return Number(sessionStorage.getItem('correctQuizCount') || 0);
   });
 
- 
   useEffect(() => {
     const preventGoBack = () => {
       window.history.pushState(null, '', window.location.href);
@@ -72,7 +64,6 @@ export default function S11_TextVoiceQuiz() {
     };
   }, []);
 
- 
   useEffect(() => {
     setIsSubmitted(false);
     setIsListening(false);
@@ -114,7 +105,15 @@ export default function S11_TextVoiceQuiz() {
     ? currentQuiz.hints 
     : ['힌트 정보가 없습니다.'];
 
-  
+  const getValidPCode = (): string => {
+    return (
+      currentQuiz?.p_code ||
+      sessionStorage.getItem('p_code') ||
+      sessionStorage.getItem('pCode') ||
+      'AB37X2'
+    );
+  };
+
   const handleHintClick = () => {
     setIsHintOpen(true); 
     if (maxHintStepThisQuiz === 0) {
@@ -128,7 +127,6 @@ export default function S11_TextVoiceQuiz() {
     }
   };
 
-  
   const handleSuccessSubmit = async (finalDuration: string, answerText?: string) => {
     const sessionSpent = (Date.now() - startTimeRef.current) / 1000;
     const totalSpentSeconds = (initialAccumulatedTimeRef.current + sessionSpent).toFixed(1);
@@ -151,7 +149,7 @@ export default function S11_TextVoiceQuiz() {
     }
 
     const payloadData = {
-      pCode: currentQuiz.p_code || Number(sessionStorage.getItem('p_code') || 1001),
+      pCode: getValidPCode(),
       setId: currentQuiz.set_id || 1,
       quizNum: currentQuiz.quiz_num || 1,
       userAnswer: userAnswer,
@@ -166,16 +164,12 @@ export default function S11_TextVoiceQuiz() {
 
       const isCurrentCorrect = Boolean(response?.isCorrect);
 
-      
       setCorrectCount((prev) => {
         let newCount = prev;
 
-       
         if (thisQuizIsCorrect !== true && isCurrentCorrect) {
           newCount = prev + 1;
-        } 
-       
-        else if (thisQuizIsCorrect === true && !isCurrentCorrect) {
+        } else if (thisQuizIsCorrect === true && !isCurrentCorrect) {
           newCount = Math.max(0, prev - 1);
         }
 
@@ -183,14 +177,12 @@ export default function S11_TextVoiceQuiz() {
         return newCount;
       });
 
-      
       setThisQuizIsCorrect(isCurrentCorrect);
 
     } catch (error) {
-      console.error('❌ 답안 제출 API 오류:', error);
+      console.error('답안 제출 API 오류:', error);
     }
 
-   
     if (!isSubmitted) {
       const updatedCount = totalSolvedCount + 1;
       setTotalSolvedCount(updatedCount);
@@ -199,15 +191,13 @@ export default function S11_TextVoiceQuiz() {
     }
   };
 
-  
   const handleNextPage = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 
     let latestCorrectCount = correctCount;
 
-   
     if (!isSubmitted) {
-      const pCode = currentQuiz.p_code || Number(sessionStorage.getItem('p_code') || 1001);
+      const pCode = getValidPCode();
       const setId = currentQuiz.set_id || 1;
       const quizNum = currentQuiz.quiz_num || 1;
 
@@ -225,7 +215,7 @@ export default function S11_TextVoiceQuiz() {
 
         if (thisQuizIsCorrect !== true && isCurrentCorrect) {
           latestCorrectCount = correctCount + 1;
-        } else if (thisQuizIsCorrect === true && !isCurrentCorrect) {
+        } else if (thisQuizIsCorrect === true && !isCurrentCorrect) { // ✅ 오타 수정 부분 (isCorrectCorrect -> isCurrentCorrect)
           latestCorrectCount = Math.max(0, correctCount - 1);
         }
 
@@ -233,7 +223,7 @@ export default function S11_TextVoiceQuiz() {
         sessionStorage.setItem('correctQuizCount', String(latestCorrectCount));
         setThisQuizIsCorrect(isCurrentCorrect);
       } catch (error) {
-        console.error('❌ 주관식 퀴즈 스킵 답안 제출 실패:', error);
+        console.error('주관식 퀴즈 스킵 답안 제출 실패:', error);
       }
     }
 
@@ -242,10 +232,9 @@ export default function S11_TextVoiceQuiz() {
 
     const nextIndex = currentIndex + 1;
 
-    
     if (nextIndex >= quizList.length) {
       try {
-        const finalPCode = currentQuiz.p_code || Number(sessionStorage.getItem('p_code') || 1001);
+        const finalPCode = getValidPCode();
         const finalSetId = currentQuiz.set_id || 1;
         
         const validSolvedCount = parseInt(sessionStorage.getItem('completedActivityCount') || '0', 10);
@@ -259,16 +248,13 @@ export default function S11_TextVoiceQuiz() {
           totalCount: validSolvedCount,
           correctCount: finalCorrectCount,
           hint: totalHint,
-          caculate: "0",
+          calculate: "0",
           feedbackContent: `총 ${validSolvedCount}문제 중 ${finalCorrectCount}문제를 맞추셨습니다. 오늘도 수고하셨습니다!`
         };
 
-        console.log('🚀 [전체 퀴즈 결과 최종 제출 Payload 전송]', finalPayload);
-
-        const resultResponse = await submitQuizResult(finalPayload);
-        console.log('✅ [전체 퀴즈 결과 제출 완료 응답]', resultResponse);
+        await submitQuizResult(finalPayload);
       } catch (err) {
-        console.error('❌ 전체 퀴즈 결과 제출 실패:', err);
+        console.error('전체 퀴즈 결과 제출 실패:', err);
       }
 
       sessionStorage.setItem('todayActivityCompleted', 'true');
@@ -293,7 +279,6 @@ export default function S11_TextVoiceQuiz() {
     }
   };
 
- 
   const handleQuit = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 

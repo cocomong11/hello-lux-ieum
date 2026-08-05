@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/patientHeader';
 import QuizResultCard from '../components/quizResultCard';
 
-
 import { submitQuizAnswer, submitQuizResult, type QuizItem } from '../api/patientApi';
 
 export default function S13_RecallVoiceChat() {
   const navigate = useNavigate();
 
-  
   const [quizList, setQuizList] = useState<QuizItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
 
@@ -26,22 +24,21 @@ export default function S13_RecallVoiceChat() {
     }
   }, []);
 
-  
   const currentQuiz = quizList[currentIndex] || {
-    p_code: 1,
+    p_code: 'AB37X2',
     set_id: 1,
     quiz_num: 1,
     quiz_comment: '고향에서 가장 기억에 남는 장소는 어디인가요?',
     options: ['슈퍼마켓', '집', '공원', '우물가'],
   };
 
- 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const isSubmittedRef = useRef<boolean>(false); // 💡 비동기 상태 참조 문제 해결용 Ref 추가
+
   const [elapsedTime, setElapsedTime] = useState<string>('0.0');
   const [feedbackMessage, setFeedbackMessage] = useState<string>('잘 하셨어요!');
 
-  
   const [totalSolvedCount, setTotalSolvedCount] = useState<number>(() => {
     const saved = sessionStorage.getItem('completedActivityCount');
     return saved ? parseInt(saved, 10) : 0;
@@ -52,11 +49,9 @@ export default function S13_RecallVoiceChat() {
     return savedHints ? parseInt(savedHints, 10) : 0;
   });
 
-  
   const startTimeRef = useRef<number>(Date.now());
   const initialAccumulatedTimeRef = useRef<number>(0);
 
- 
   useEffect(() => {
     const preventGoBack = () => {
       window.history.pushState(null, '', window.location.href);
@@ -69,10 +64,10 @@ export default function S13_RecallVoiceChat() {
     };
   }, []);
 
-  
   useEffect(() => {
     setSelectedOption(null);
     setIsSubmitted(false);
+    isSubmittedRef.current = false; // 💡 퀴즈 번호 변경 시 초기화
     setElapsedTime('0.0');
     setFeedbackMessage('잘 하셨어요!');
 
@@ -83,12 +78,17 @@ export default function S13_RecallVoiceChat() {
 
   const optionsList: string[] = currentQuiz.options || ['1번 옵션', '2번 옵션', '3번 옵션', '4번 옵션'];
 
-  
   const handleSubmit = async () => {
     if (selectedOption === null) {
       alert('정답을 선택해 주세요!');
       return;
     }
+
+    if (isSubmittedRef.current) return; // 💡 중복 제출 완전 방지
+
+    // 제출 처리 즉시 플래그 세팅
+    setIsSubmitted(true);
+    isSubmittedRef.current = true;
 
     const sessionSpent = (Date.now() - startTimeRef.current) / 1000;
     const totalSpentSeconds = (initialAccumulatedTimeRef.current + sessionSpent).toFixed(1);
@@ -97,7 +97,8 @@ export default function S13_RecallVoiceChat() {
     sessionStorage.removeItem('currentQuizElapsedTime');
 
     const selectedAnswerText = optionsList[selectedOption];
-    const pCode = Number(currentQuiz.p_code || sessionStorage.getItem('p_code') || 1);
+    
+    const pCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || 'AB37X2');
     const setId = Number(currentQuiz.set_id || 1);
     const quizNum = Number(currentQuiz.quiz_num || 1);
 
@@ -112,13 +113,12 @@ export default function S13_RecallVoiceChat() {
       const res = await submitQuizAnswer(payloadData);
 
       console.log('📩 [S13 제출 응답 수신]', res);
-      console.log('✅ 정답 여부 (isCorrect):', res?.isCorrect);
-      console.log('💬 피드백 메시지 (feedback):', res?.feedback);
 
       if (res?.feedback) {
         setFeedbackMessage(res.feedback);
       }
 
+      // 💡 제출 성공 시에만 정답 카운트 세션 등록
       if (res?.isCorrect === true) {
         const currentCorrect = parseInt(sessionStorage.getItem('correctQuizCount') || '0', 10);
         sessionStorage.setItem('correctQuizCount', String(currentCorrect + 1));
@@ -127,22 +127,18 @@ export default function S13_RecallVoiceChat() {
       console.error('❌ 객관식 답안 제출 API 오류:', error);
     }
 
-   
-    if (!isSubmitted) {
-      const nextSolvedCount = totalSolvedCount + 1;
-      setTotalSolvedCount(nextSolvedCount);
-      sessionStorage.setItem('completedActivityCount', String(nextSolvedCount));
-      setIsSubmitted(true);
-    }
+    // 완료된 문제 수 증가
+    const nextSolvedCount = totalSolvedCount + 1;
+    setTotalSolvedCount(nextSolvedCount);
+    sessionStorage.setItem('completedActivityCount', String(nextSolvedCount));
   };
 
- 
   const handleNextPage = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 
-    
-    if (!isSubmitted) {
-      const pCode = Number(currentQuiz.p_code || sessionStorage.getItem('p_code') || 1);
+    // 💡 이미 정답 제출을 마친 경우(isSubmittedRef.current === true) 스킵 API를 절대 호출하지 않음
+    if (!isSubmittedRef.current) {
+      const pCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || 'AB37X2');
       const setId = Number(currentQuiz.set_id || 1);
       const quizNum = Number(currentQuiz.quiz_num || 1);
 
@@ -172,12 +168,10 @@ export default function S13_RecallVoiceChat() {
 
     const nextIndex = currentIndex + 1;
 
-  
     if (nextIndex >= quizList.length) {
       try {
-        const finalPCode = Number(currentQuiz.p_code || sessionStorage.getItem('p_code') || 1);
+        const finalPCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || 'AB37X2');
         const finalSetId = Number(currentQuiz.set_id || 1);
-        
         
         const validSolvedCount = parseInt(sessionStorage.getItem('completedActivityCount') || '0', 10);
         const correctCount = parseInt(sessionStorage.getItem('correctQuizCount') || '0', 10);
@@ -186,10 +180,10 @@ export default function S13_RecallVoiceChat() {
         const finalPayload = {
           setId: finalSetId,
           pCode: finalPCode,
-          totalCount: validSolvedCount, // 👈 퀴즈 목록 수(quizList.length)가 아닌 실제 유효하게 푼 개수로 전달
+          totalCount: validSolvedCount,
           correctCount: correctCount,
           hint: totalHint,
-          caculate: "0",
+          calculate: "0",
           feedbackContent: "오늘도 퀴즈를 잘 마쳤습니다!"
         };
 
@@ -206,7 +200,6 @@ export default function S13_RecallVoiceChat() {
       return;
     }
 
- 
     sessionStorage.setItem('currentQuizIndex', String(nextIndex));
 
     const nextQuiz = quizList[nextIndex];
@@ -224,11 +217,10 @@ export default function S13_RecallVoiceChat() {
     }
   };
 
- 
   const handleQuit = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 
-    if (!isSubmitted) {
+    if (!isSubmittedRef.current) {
       const sessionSpent = (Date.now() - startTimeRef.current) / 1000;
       const totalAccumulated = initialAccumulatedTimeRef.current + sessionSpent;
       sessionStorage.setItem('currentQuizElapsedTime', String(totalAccumulated));
@@ -238,7 +230,7 @@ export default function S13_RecallVoiceChat() {
 
     sessionStorage.setItem('todayActivityQuit', 'true');
 
-    const targetIndex = isSubmitted ? currentIndex + 1 : currentIndex;
+    const targetIndex = isSubmittedRef.current ? currentIndex + 1 : currentIndex;
     sessionStorage.setItem('currentQuizIndex', String(targetIndex));
     sessionStorage.setItem('completedActivityCount', String(totalSolvedCount));
 
@@ -291,7 +283,6 @@ export default function S13_RecallVoiceChat() {
             </span>
           </div>
 
-         
           <h1
             style={{
               width: '100%',
@@ -319,7 +310,6 @@ export default function S13_RecallVoiceChat() {
             생각나시는 대로 편하게 선택해 주세요.
           </p>
 
-         
           <div key={currentIndex} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '18px' }}>
             {optionsList.map((optionText, idx) => {
               const isSelected = selectedOption === idx;
@@ -354,7 +344,6 @@ export default function S13_RecallVoiceChat() {
             })}
           </div>
 
-          
           <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: '60px', marginBottom: '20px' }}>
             <button
               onClick={handleSubmit}
@@ -380,7 +369,6 @@ export default function S13_RecallVoiceChat() {
             </button>
           </div>
 
-        
           {isSubmitted && (
             <div style={{ marginTop: '20px', marginBottom: '20px', width: '100%', display: 'flex', justifyContent: 'center' }}>
               <QuizResultCard
@@ -393,7 +381,6 @@ export default function S13_RecallVoiceChat() {
             </div>
           )}
 
-          
           <div style={{ display: 'flex', justifyContent: 'space-between', width: '648px', marginTop: '20px' }}>
             <button
               onClick={handleQuit}

@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/patientHeader';
-
-// API 모듈 함수
-import { getPatientInfo, getPatientCode } from '../api/patientApi';
+import { getToken } from '../utils/auth'; // 공통 인증 유틸 임포트
 
 const F: CSSProperties = {
   fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
@@ -19,7 +17,6 @@ function todayStr() {
   });
 }
 
-// 상태 표현용 헬퍼 함수
 const formatHealthStatus = (status: string | null) => {
   if (!status || status === '-') return '-';
   switch (status) {
@@ -42,33 +39,17 @@ export default function S09_PatientHome() {
   const [isCodeClicked, setIsCodeClicked] = useState(false);
   const [healthStatusValue, setHealthStatusValue] = useState<string>('-');
 
-  const [patientName, setPatientName] = useState<string>('환자');
-  const [pairCode, setPairCode] = useState<string>('-------');
-  const [pCode, setPCode] = useState<number | null>(null);
+  // 기본값은 세션 스토리지에서 먼저 가져오기
+  const [patientName, setPatientName] = useState<string>(() => {
+    return sessionStorage.getItem('name') || sessionStorage.getItem('patientName') || '환자';
+  });
+  
+  const [pairCode, setPairCode] = useState<string>(() => {
+    return sessionStorage.getItem('p_code') || '-------';
+  });
 
-  useEffect(() => {
-    const fetchPatientData = async () => {
-      try {
-        const currentPCode = Number(sessionStorage.getItem('p_code') || '1001');
-        setPCode(currentPCode);
-
-        const patientData = await getPatientInfo(currentPCode);
-        if (patientData && patientData.name) {
-          setPatientName(patientData.name);
-        }
-
-        const codeData = await getPatientCode(currentPCode);
-        if (codeData && codeData.p_code) {
-          setPairCode(String(codeData.p_code));
-        }
-      } catch (error) {
-        console.error('환자 정보 및 연동 코드 조회 실패:', error);
-      }
-    };
-
-    fetchPatientData();
-
-    // 저장된 건강 상태 및 완료 정보 불러오기
+  // 세션 스토리지에서 상태를 동기화하는 로직
+  const syncStorageState = useCallback(() => {
     const savedHealth = sessionStorage.getItem('todayHealthCondition');
     setHealthStatusValue(formatHealthStatus(savedHealth));
 
@@ -77,76 +58,114 @@ export default function S09_PatientHome() {
     const count = savedCount ? parseInt(savedCount, 10) : 0;
 
     setCompletedCount(count);
-
-    if (isDone === 'true') {
-      setIsCompleted(true);
-    } else {
-      setIsCompleted(false);
-    }
+    setIsCompleted(isDone === 'true');
   }, []);
+
+  // 컴포넌트 마운트 시 세션 동기화 및 GET /api/auth/me 호출
+  useEffect(() => {
+    syncStorageState();
+
+    // /api/auth/me를 호출하여 최신 사용자 이름과 연동 코드 가져오기
+    const fetchUserInfo = async () => {
+      try {
+        // 공통 유틸 함수(getToken)를 통해 토큰 가져오기 (localStorage/sessionStorage 자동 대응)
+        const token = getToken();
+        const response = await fetch('/api/auth/me', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.name) {
+            setPatientName(data.name);
+            sessionStorage.setItem('name', data.name);
+          }
+          
+          // 백엔드 응답 키값에 맞춰 p_code 또는 patientCode 반영
+          const code = data.patientCode || data.p_code;
+          if (code) {
+            setPairCode(code);
+            sessionStorage.setItem('p_code', code);
+          }
+        }
+      } catch (e) {
+        console.error('사용자 정보를 불러오는데 실패했습니다:', e);
+      }
+    };
+
+    fetchUserInfo();
+  }, [syncStorageState]);
 
   // 활동 시작하기 버튼
   const handleStartActivity = () => {
     const savedHealth = sessionStorage.getItem('todayHealthCondition');
     const quizListStr = sessionStorage.getItem('quizList');
 
-    // 1. 이미 진행 중이던 퀴즈가 있다면 이어서 하기
+    // 1. 이미 진행 중이던 퀴즈가 있는 경우
     if (savedHealth && quizListStr) {
       try {
         const quizList = JSON.parse(quizListStr);
-        const currentIndex = Number(sessionStorage.getItem('currentQuizIndex') || '0');
-        const currentQuiz = quizList[currentIndex] || quizList[0];
-        
-        const category = (currentQuiz?.quiz_category || 'choice').toLowerCase().trim();
+        if (Array.isArray(quizList) && quizList.length > 0) {
+          const currentIndex = Number(sessionStorage.getItem('currentQuizIndex') || '0');
+          const currentQuiz = quizList[currentIndex] || quizList[0];
+          const category = (currentQuiz?.quiz_category || 'choice').toLowerCase().trim();
 
-        if (category === 'choice') {
-          navigate('/patient-voicechat');
-        } else if (category === 'photo') {
-          navigate('/patient-photo');
-        } else if (category === 'text') {
-          navigate('/patient-voicequiz');
-        } else {
-          navigate('/patient-voicechat');
+          const routeMap: Record<string, string> = {
+            choice: '/patient-voicechat',
+            photo: '/patient-photo',
+            text: '/patient-voicequiz',
+          };
+
+          navigate(routeMap[category] || '/patient-voicechat');
+          return;
         }
-        return;
       } catch (e) {
-        console.error('퀴즈 이어서 하기 실패:', e);
+        console.error('퀴즈 데이터 파싱 실패. 초기화 후 새로 시작합니다:', e);
       }
     }
 
-    // 2. 처음 시작하는 경우에만 이전 활동 데이터 및 정답 카운트 싹 초기화
-    sessionStorage.removeItem('totalHintCount');
-    sessionStorage.removeItem('completedActivityCount');
-    sessionStorage.removeItem('currentQuizIndex');
-    sessionStorage.removeItem('retryCount');
-    sessionStorage.removeItem('speakRetryCount');
-    sessionStorage.removeItem('todayActivityCompleted');
-    sessionStorage.removeItem('todayActivityQuit');
-    sessionStorage.removeItem('correctQuizCount'); // 💡 정답 개수 초기화 추가!
+    // 2. 처음 시작하는 경우 세션 초기화
+    const keysToRemove = [
+      'totalHintCount',
+      'completedActivityCount',
+      'currentQuizIndex',
+      'retryCount',
+      'speakRetryCount',
+      'todayActivityCompleted',
+      'todayActivityQuit',
+      'correctQuizCount',
+    ];
+    keysToRemove.forEach((key) => sessionStorage.removeItem(key));
 
-    const currentPCode = pCode || Number(sessionStorage.getItem('p_code') || '1001');
-    sessionStorage.setItem('p_code', String(currentPCode));
     navigate('/patient-check');
   };
 
   // 오늘 기록 초기화 버튼
   const handleReset = () => {
-    sessionStorage.removeItem('todayActivityCompleted');
-    sessionStorage.removeItem('completedActivityCount');
-    sessionStorage.removeItem('todayHealthCondition');
-    sessionStorage.removeItem('conditionStatus');
-    sessionStorage.removeItem('sleepStatus');
-    sessionStorage.removeItem('moodStatus');
-    sessionStorage.removeItem('quizList');
-    sessionStorage.removeItem('recallScore');
-    sessionStorage.removeItem('musicScore');
-    sessionStorage.removeItem('drawingScore');
-    sessionStorage.removeItem('totalHintCount');
-    sessionStorage.removeItem('retryCount');
-    sessionStorage.removeItem('speakRetryCount');
-    sessionStorage.removeItem('currentQuizIndex');
-    sessionStorage.removeItem('correctQuizCount'); // 💡 [핵심] 초기화 시 정답 카운트도 삭제!
-    sessionStorage.removeItem('currentQuizElapsedTime');
+    const keysToRemove = [
+      'todayActivityCompleted',
+      'completedActivityCount',
+      'todayHealthCondition',
+      'conditionStatus',
+      'sleepStatus',
+      'moodStatus',
+      'quizList',
+      'recallScore',
+      'musicScore',
+      'drawingScore',
+      'totalHintCount',
+      'retryCount',
+      'speakRetryCount',
+      'currentQuizIndex',
+      'correctQuizCount',
+      'currentQuizElapsedTime',
+    ];
+    keysToRemove.forEach((key) => sessionStorage.removeItem(key));
 
     setIsCompleted(false);
     setCompletedCount(0);
@@ -155,10 +174,7 @@ export default function S09_PatientHome() {
     alert('오늘 활동 기록이 초기화되었습니다.');
   };
 
-  const successRate =
-    completedCount > 0
-      ? `${Math.round((completedCount / 7) * 100)}%`
-      : '-';
+  const successRate = completedCount > 0 ? `${Math.round((completedCount / 7) * 100)}%` : '-';
 
   return (
     <div

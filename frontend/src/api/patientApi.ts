@@ -1,20 +1,26 @@
-import axios from 'axios';
+import { api } from './client'; 
 
-const USE_MOCK = false; 
+const USE_MOCK = false; // 백엔드 실제 통신 시 false 유지
 
-const API_BASE_URL = 'http://localhost:8080';
+// ---------------------------------------------------------------------------
+// Interfaces
+// ---------------------------------------------------------------------------
 
 export interface PatientInfo {
-  p_code: number;
+  p_code: string;
   name: string;
   diagnosis: string;
   personality: string;
 }
 
+export interface PatientCodeResponse {
+  p_code: string;
+}
+
 export interface QuizItem {
   set_id: number;
   quiz_num: number;
-  p_code: number;
+  p_code: string;
   level: number;
   quiz_category: 'choice' | 'photo' | 'text';
   quiz_comment: string;
@@ -24,12 +30,8 @@ export interface QuizItem {
   hints: string[];
 }
 
-export interface PatientCodeResponse {
-  p_code: number;
-}
-
 export interface QuizAnswerPayload {
-  pCode: number;
+  pCode: string;
   setId: number;
   quizNum: number;
   userAnswer: string;
@@ -42,11 +44,11 @@ export interface QuizAnswerResponse {
 
 export interface QuizResultPayload {
   setId: number;
-  pCode: number;
+  pCode: string;
   totalCount: number;
   correctCount: number;
   hint: number;
-  caculate: string;
+  calculate: string;
   feedbackContent: string;
 }
 
@@ -56,7 +58,6 @@ export interface QuizResultResponse {
   [key: string]: any;
 }
 
-
 export interface QuizResultDetailResponse {
   date: string;
   total_count: number;
@@ -65,14 +66,12 @@ export interface QuizResultDetailResponse {
   calculate: string;
 }
 
-
 export interface QuizFeedbackItem {
   feedback_id: number;
   set_id: number;
   feedback_content: string;
   created_at: string;
 }
-
 
 export interface DailyStatusPayload {
   health_condition: string;
@@ -86,7 +85,7 @@ export interface DailyStatusPayload {
 
 export interface DailyStatusResponse {
   status_id: number;
-  p_code: number;
+  p_code: string;
   record_date: string;
   health_condition: string;
   sleep_status: string;
@@ -96,9 +95,28 @@ export interface DailyStatusResponse {
   cognitive_changes: string[];
 }
 
+// ---------------------------------------------------------------------------
+// API Functions (백엔드 QuizController 매핑 반영)
+// ---------------------------------------------------------------------------
 
+/**
+ * 환자 코드 조회 (필요 시 유지)
+ */
+export const getPatientCode = async (pCode: string): Promise<PatientCodeResponse> => {
+  if (USE_MOCK) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ p_code: pCode });
+      }, 200);
+    });
+  }
+  return api.get<PatientCodeResponse>(`/patient/${pCode}/code`);
+};
 
-export const getPatientInfo = async (pCode: number): Promise<PatientInfo> => {
+/**
+ * 환자 정보 조회
+ */
+export const getPatientInfo = async (pCode: string): Promise<PatientInfo> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -108,28 +126,17 @@ export const getPatientInfo = async (pCode: number): Promise<PatientInfo> => {
           diagnosis: "경도인지장애",
           personality: "온화함"
         });
-      }, 300); 
+      }, 300);
     });
   }
-  const response = await axios.get(`${API_BASE_URL}/api/patient/${pCode}`);
-  return response.data;
+  return api.get<PatientInfo>(`/patient/${pCode}`);
 };
 
-
-export const getPatientCode = async (pCode: number): Promise<PatientCodeResponse> => {
-  if (USE_MOCK) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ p_code: pCode });
-      }, 200);
-    });
-  }
-  const response = await axios.get(`${API_BASE_URL}/api/patient/${pCode}/codepatient`);
-  return response.data;
-};
-
-
-export const getTodayQuizzes = async (pCode: number): Promise<QuizItem[]> => {
+/**
+ * 오늘의 퀴즈 조회
+ * 백엔드: GET /api/quiz/{p_code}/today
+ */
+export const getTodayQuizzes = async (pCode: string): Promise<QuizItem[]> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -145,88 +152,18 @@ export const getTodayQuizzes = async (pCode: number): Promise<QuizItem[]> => {
             answer: "돈까스",
             options: ["돈까스", "김치찌개", "비빔밥", "국밥"],
             hints: []
-          },
-          {
-            set_id: 1,
-            quiz_num: 2,
-            p_code: pCode,
-            level: 2,
-            quiz_category: "photo",
-            quiz_comment: "사진 속 장소는 어디인가요?",
-            quiz_photo: "https://via.placeholder.com/300x200?text=Jeonju",
-            answer: "전주",
-            options: [],
-            hints: ["전라북도에 위치한 도시입니다."]
-          },
-          {
-            set_id: 1,
-            quiz_num: 3,
-            p_code: pCode,
-            level: 3,
-            quiz_category: "text",
-            quiz_comment: "첫 직장에서 몇 년 동안 근무하셨나요?",
-            quiz_photo: null,
-            answer: "15년",
-            options: [],
-            hints: ["30대에 가장 오래 다니신 회사입니다.", "10년 이상 근무하셨어요."]
-          },
-          {
-            set_id: 1,
-            quiz_num: 4,
-            p_code: pCode,
-            level: 1,
-            quiz_category: "choice",
-            quiz_comment: "어르신이 가장 싫어하시는 음식은 무엇인가요?",
-            quiz_photo: null,
-            answer: "피자",
-            options: ["국밥", "햄버거", "라면", "피자"],
-            hints: []
-          },
-          {
-            set_id: 1,
-            quiz_num: 5,
-            p_code: pCode,
-            level: 3,
-            quiz_category: "text",
-            quiz_comment: "햄버거 브랜드 중 어디를 가장 좋아하시나요?",
-            quiz_photo: null,
-            answer: "15년",
-            options: [],
-            hints: ["수제버거 브랜드입니다.", "앞 글자가 ㅍ으로 시작합니다."]
-          },
-          {
-            set_id: 1,
-            quiz_num: 6,
-            p_code: pCode,
-            level: 3,
-            quiz_category: "text",
-            quiz_comment: "가장 좋아하는 도시는 어디신가요?",
-            quiz_photo: null,
-            answer: "부산",
-            options: [],
-            hints: ["바닷가입니다.","경상남도에 위치한 도시입니다."]
-          },
-          {
-            set_id: 1,
-            quiz_num: 7,
-            p_code: pCode,
-            level: 2,
-            quiz_category: "photo",
-            quiz_comment: "사진 속 인물은 누구인가요?",
-            quiz_photo: "https://via.placeholder.com/300x200?text=Jeonju",
-            answer: "딸",
-            options: [],
-            hints: ["가족 구성원 중 여자입니다."]
-          },
+          }
         ]);
       }, 400);
     });
   }
-  const response = await axios.get(`${API_BASE_URL}/api/quiz/${pCode}/todaypatient`);
-  return response.data;
+  return api.get<QuizItem[]>(`/quiz/${pCode}/today`);
 };
 
-
+/**
+ * 퀴즈 문항별 정답 제출
+ * 백엔드: POST /api/quiz/{p_code}/{set_id}/{quiz_num}/answer
+ */
 export const submitQuizAnswer = async ({
   pCode,
   setId,
@@ -237,24 +174,25 @@ export const submitQuizAnswer = async ({
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
-          isCorrect: userAnswer.trim() !== '', 
-          feedback: `잘 하셨어요!`, 
+          isCorrect: userAnswer.trim() !== '',
+          feedback: `잘 하셨어요!`,
         });
       }, 200);
     });
   }
 
-  const response = await axios.post<QuizAnswerResponse>(
-    `${API_BASE_URL}/api/quiz/${pCode}/${setId}/${quizNum}/answer`,
+  return api.post<QuizAnswerResponse>(
+    `/quiz/${pCode}/${setId}/${quizNum}/answer`,
     {
-      quiz_num: quizNum,
-      answer: userAnswer, 
+      answer: userAnswer,
     }
   );
-  return response.data;
 };
 
-
+/**
+ * 퀴즈 결과 최종 제출
+ * 백엔드: POST /api/quiz/result/submit
+ */
 export const submitQuizResult = async (
   payload: QuizResultPayload
 ): Promise<QuizResultResponse> => {
@@ -269,16 +207,15 @@ export const submitQuizResult = async (
     });
   }
 
-  const response = await axios.post<QuizResultResponse>(
-    `${API_BASE_URL}/api/quiz/result`,
-    payload
-  );
-  return response.data;
+  return api.post<QuizResultResponse>('/quiz/result/submit', payload);
 };
 
-
+/**
+ * 퀴즈 결과 상세 조회
+ * 백엔드: GET /api/patients/{p_code}/results/{date} 또는 /api/patients/{p_code}/results
+ */
 export const getQuizResults = async (
-  pCode: number,
+  pCode: string,
   date: string,
   queryDate?: string
 ): Promise<QuizResultDetailResponse> => {
@@ -296,20 +233,18 @@ export const getQuizResults = async (
     });
   }
 
-  const response = await axios.get<QuizResultDetailResponse>(
-    `${API_BASE_URL}/api/patients/${pCode}/results/${date}`,
-    {
-      params: queryDate ? { date: queryDate } : undefined
-    }
-  );
-  return response.data;
+  const query = queryDate ? `?date=${encodeURIComponent(queryDate)}` : '';
+  return api.get<QuizResultDetailResponse>(`/patients/${pCode}/results/${date}${query}`);
 };
 
-
+/**
+ * 퀴즈 피드백 조회
+ * 백엔드: GET /api/patients/{p_code}/quizSet/{set_id}/feedbacks
+ */
 export const getQuizFeedbacks = async (
-  pCode: number,
+  pCode: string,
   setId: number,
-  quizId?: number
+  _quizId?: number
 ): Promise<QuizFeedbackItem[]> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
@@ -326,18 +261,14 @@ export const getQuizFeedbacks = async (
     });
   }
 
-  const response = await axios.get<QuizFeedbackItem[]>(
-    `${API_BASE_URL}/api/patients/${pCode}/quizSet/${setId}/feedbacks`,
-    {
-      params: quizId ? { quiz_id: quizId } : undefined
-    }
-  );
-  return response.data;
+  return api.get<QuizFeedbackItem[]>(`/patients/${pCode}/quizSet/${setId}/feedbacks`);
 };
 
-
+/**
+ * 환자 일일 상태 작성
+ */
 export const postDailyStatus = async (
-  pCode: number,
+  pCode: string,
   payload: DailyStatusPayload
 ): Promise<DailyStatusResponse> => {
   if (USE_MOCK) {
@@ -358,9 +289,8 @@ export const postDailyStatus = async (
     });
   }
 
-  const response = await axios.post<DailyStatusResponse>(
-    `${API_BASE_URL}/api/patient/${pCode}/daily-status`,
+  return api.post<DailyStatusResponse>(
+    `/patient/${pCode}/daily-status`,
     payload
   );
-  return response.data;
 };

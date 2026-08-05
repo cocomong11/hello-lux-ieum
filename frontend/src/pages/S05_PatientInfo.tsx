@@ -11,6 +11,205 @@ const F: React.CSSProperties = {
   fontFamily: 'Pretendard Variable, Pretendard, sans-serif',
 };
 
+// ==========================================
+// 💡 커서 튕김 방지를 위해 하위 컴포넌트들을 
+// 메인 컴포넌트(S05_PatientInfo) 바깥으로 이동했습니다!
+// ==========================================
+
+const SectionTitle = ({ children }: { children: string }) => (
+  <p
+    style={{
+      ...F,
+      margin: '0 0 24px 0',
+      fontSize: 30,
+      fontWeight: 700,
+      lineHeight: '1.4',
+      color: '#0d0d0d',
+    }}
+  >
+    {children}
+  </p>
+);
+
+const Label = ({
+  children,
+  required,
+}: {
+  children: string;
+  required?: boolean;
+}) => (
+  <p
+    style={{
+      ...F,
+      margin: '0 0 12px 0',
+      fontSize: 22,
+      fontWeight: 400,
+      lineHeight: '1.55',
+      color: '#0d0d0d',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+    }}
+  >
+    {children}
+    {required && (
+      <span
+        style={{
+          width: 10,
+          height: 10,
+          borderRadius: '50%',
+          background: '#4188ed',
+        }}
+      />
+    )}
+  </p>
+);
+
+const TextInput = ({
+  width = '100%',
+  placeholder,
+  value,
+  onChange,
+  id,
+  name,
+}: {
+  width?: number | string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  id?: string;
+  name?: string;
+}) => (
+  <div
+    style={{
+      width,
+      height: 81,
+      border: '1px solid #8e8e98',
+      borderRadius: 10,
+      background: '#f8f9fa',
+      boxShadow: '0 0 4px rgba(65,136,237,0.35)',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 29px',
+      boxSizing: 'border-box',
+    }}
+  >
+    <input
+      type='text'
+      id={id}
+      name={name}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      style={{
+        ...F,
+        flex: 1,
+        border: 'none',
+        outline: 'none',
+        background: 'transparent',
+        fontSize: 22,
+        fontWeight: 400,
+        lineHeight: '1.55',
+        color: value ? '#0d0d0d' : '#797980',
+      }}
+    />
+  </div>
+);
+
+const ChipBtn = ({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    style={{
+      ...F,
+      padding: '6px 19px',
+      border: selected ? '1px solid #dfdf87' : '1px solid #8e8e98',
+      borderRadius: 10,
+      background: selected ? '#0f66e2' : '#f8f9fa',
+      filter: selected
+        ? 'drop-shadow(0 0 2px #4188ed)'
+        : 'drop-shadow(0 0 2px #797980)',
+      cursor: 'pointer',
+      fontSize: 22,
+      fontWeight: selected ? 700 : 400,
+      lineHeight: '1.55',
+      color: selected ? '#f8f9fa' : '#797980',
+      whiteSpace: 'nowrap',
+    }}
+  >
+    {label}
+  </button>
+);
+
+const LevelCard = ({
+  value,
+  description,
+  selected,
+  onClick,
+}: {
+  value: '낮음' | '보통' | '높음';
+  description: string;
+  selected: boolean;
+  onClick: () => void;
+}) => {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        width: '100%',
+        height: 107,
+        border: selected ? '1px solid #dfdf87' : '1px solid #8e8e98',
+        borderRadius: 10,
+        background: selected ? '#0f66e2' : '#f8f9fa',
+        filter: selected
+          ? 'drop-shadow(0 0 2px #2073e8)'
+          : 'drop-shadow(0 0 2px #797980)',
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        paddingLeft: 29,
+        boxSizing: 'border-box',
+        marginBottom: 20,
+      }}
+    >
+      <p
+        style={{
+          ...F,
+          margin: 0,
+          fontSize: 22,
+          fontWeight: 700,
+          lineHeight: '1.55',
+          color: selected ? '#f8f9fa' : '#0d0d0d',
+        }}
+      >
+        {value}
+      </p>
+      <p
+        style={{
+          ...F,
+          margin: '4px 0 0 0',
+          fontSize: 22,
+          fontWeight: 400,
+          lineHeight: '1.55',
+          color: selected ? 'rgba(248,249,250,0.8)' : '#797980',
+        }}
+      >
+        {description}
+      </p>
+    </button>
+  );
+};
+
 export default function S05_PatientInfo() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
@@ -19,189 +218,6 @@ export default function S05_PatientInfo() {
   const [diagnosis, setDiagnosis] = useState('');
   const [level, setLevel] = useState<'낮음' | '보통' | '높음'>('낮음');
   const [companion, setCompanion] = useState<'동행' | '혼자'>('동행');
-
-  const SectionTitle = ({ children }: { children: string }) => (
-    <p
-      style={{
-        ...F,
-        margin: '0 0 24px 0',
-        fontSize: 30,
-        fontWeight: 700,
-        lineHeight: '1.4',
-        color: '#0d0d0d',
-      }}
-    >
-      {children}
-    </p>
-  );
-
-  const Label = ({
-    children,
-    required,
-  }: {
-    children: string;
-    required?: boolean;
-  }) => (
-    <p
-      style={{
-        ...F,
-        margin: '0 0 12px 0',
-        fontSize: 22,
-        fontWeight: 400,
-        lineHeight: '1.55',
-        color: '#0d0d0d',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-      }}
-    >
-      {children}
-      {required && (
-        <span
-          style={{
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            background: '#4188ed',
-          }}
-        />
-      )}
-    </p>
-  );
-
-  const TextInput = ({
-    width = '100%',
-    placeholder,
-    value,
-    onChange,
-  }: {
-    width?: number | string;
-    placeholder: string;
-    value: string;
-    onChange: (v: string) => void;
-  }) => (
-    <div
-      style={{
-        width,
-        height: 81,
-        border: '1px solid #8e8e98',
-        borderRadius: 10,
-        background: '#f8f9fa',
-        boxShadow: '0 0 4px rgba(65,136,237,0.35)',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 29px',
-        boxSizing: 'border-box',
-      }}
-    >
-      <input
-        type='text'
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        style={{
-          ...F,
-          flex: 1,
-          border: 'none',
-          outline: 'none',
-          background: 'transparent',
-          fontSize: 22,
-          fontWeight: 400,
-          lineHeight: '1.55',
-          color: value ? '#0d0d0d' : '#797980',
-        }}
-      />
-    </div>
-  );
-
-  const ChipBtn = ({
-    label,
-    selected,
-    onClick,
-  }: {
-    label: string;
-    selected: boolean;
-    onClick: () => void;
-  }) => (
-    <button
-      onClick={onClick}
-      style={{
-        ...F,
-        padding: '6px 19px',
-        border: selected ? '1px solid #dfdf87' : '1px solid #8e8e98',
-        borderRadius: 10,
-        background: selected ? '#0f66e2' : '#f8f9fa',
-        filter: selected
-          ? 'drop-shadow(0 0 2px #4188ed)'
-          : 'drop-shadow(0 0 2px #797980)',
-        cursor: 'pointer',
-        fontSize: 22,
-        fontWeight: selected ? 700 : 400,
-        lineHeight: '1.55',
-        color: selected ? '#f8f9fa' : '#797980',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {label}
-    </button>
-  );
-
-  const LevelCard = ({
-    value,
-    description,
-  }: {
-    value: '낮음' | '보통' | '높음';
-    description: string;
-  }) => {
-    const selected = level === value;
-    return (
-      <button
-        onClick={() => setLevel(value)}
-        style={{
-          width: '100%',
-          height: 107,
-          border: selected ? '1px solid #dfdf87' : '1px solid #8e8e98',
-          borderRadius: 10,
-          background: selected ? '#0f66e2' : '#f8f9fa',
-          filter: selected
-            ? 'drop-shadow(0 0 2px #2073e8)'
-            : 'drop-shadow(0 0 2px #797980)',
-          cursor: 'pointer',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          paddingLeft: 29,
-          boxSizing: 'border-box',
-          marginBottom: 20,
-        }}
-      >
-        <p
-          style={{
-            ...F,
-            margin: 0,
-            fontSize: 22,
-            fontWeight: 700,
-            lineHeight: '1.55',
-            color: selected ? '#f8f9fa' : '#0d0d0d',
-          }}
-        >
-          {value}
-        </p>
-        <p
-          style={{
-            ...F,
-            margin: '4px 0 0 0',
-            fontSize: 22,
-            fontWeight: 400,
-            lineHeight: '1.55',
-            color: selected ? 'rgba(248,249,250,0.8)' : '#797980',
-          }}
-        >
-          {description}
-        </p>
-      </button>
-    );
-  };
 
   return (
     <PageLayout scrollable>
@@ -228,6 +244,8 @@ export default function S05_PatientInfo() {
             <div style={{ marginBottom: 30 }}>
               <Label required>이름 (실명)</Label>
               <TextInput
+                id="patient-name"
+                name="patient-name"
                 placeholder='이름 (실명)'
                 value={name}
                 onChange={setName}
@@ -238,6 +256,8 @@ export default function S05_PatientInfo() {
               <div style={{ flex: 2 }}>
                 <Label required>생년월일</Label>
                 <TextInput
+                  id="patient-birthdate"
+                  name="patient-birthdate"
                   placeholder='생년월일 (8자리)'
                   value={birthdate}
                   onChange={setBirthdate}
@@ -277,6 +297,8 @@ export default function S05_PatientInfo() {
             <div>
               <Label>주요 진단 상태</Label>
               <TextInput
+                id="patient-diagnosis"
+                name="patient-diagnosis"
                 placeholder='ex. 경도인지장애, 초기 치매 등'
                 value={diagnosis}
                 onChange={setDiagnosis}
@@ -290,14 +312,20 @@ export default function S05_PatientInfo() {
             <LevelCard
               value='낮음'
               description='간단한 안내만 있어도 활동을 수행할 수 있어요'
+              selected={level === '낮음'}
+              onClick={() => setLevel('낮음')}
             />
             <LevelCard
               value='보통'
               description='힌트와 반복 안내가 있으면 더 편하게 수행할 수 있어요'
+              selected={level === '보통'}
+              onClick={() => setLevel('보통')}
             />
             <LevelCard
               value='높음'
               description='짧은 문장, 충분한 음성 안내, 단계별 힌트가 필요해요'
+              selected={level === '높음'}
+              onClick={() => setLevel('높음')}
             />
           </div>
 
@@ -325,6 +353,7 @@ export default function S05_PatientInfo() {
             }}
           >
             <button
+              type="button"
               onClick={() => navigate(-1)}
               style={{
                 ...F,
@@ -344,6 +373,7 @@ export default function S05_PatientInfo() {
               </span>
             </button>
             <button
+              type="button"
               onClick={() => navigate('/voice-setting')}
               style={{
                 ...F,
