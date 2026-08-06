@@ -11,18 +11,20 @@ import { api } from './client';
 import type { UserRole } from '../utils/role';
 
 /* ── 회원가입 ─────────────────────────────────────────────
-   명세: POST /api/auth/register (role 필드 없음)
-   응답에도 token이 없습니다. 로그인은 별도로 호출해야 합니다 (S04에서 처리). */
+   명세: POST /api/auth/register (요청에 role 필드 없음)
+   응답에는 token이 실제로 포함됩니다(가입 시점엔 role 클레임이 비어있음).
+   S04는 역할 설정(PATCH /auth/role) 후 role 클레임이 반영된 토큰을 다시
+   받기 위해 로그인을 별도로 호출합니다. */
 
 export interface RegisterRequest {
   user_id: string;
   user_pw: string;
   name: string;
   birth_date: string; // YYYY-MM-DD
-  phone: string;
 }
 
 export interface RegisterResponse {
+  token: string;
   user_id: string;
   role: UserRole | null;
   name: string;
@@ -81,7 +83,6 @@ export const updateRole = (data: UpdateRoleRequest) =>
 export interface UpdateProfileRequest {
   name?: string;
   birth_date?: string;
-  phone?: string;
   current_pw: string;
   user_pw?: string;
 }

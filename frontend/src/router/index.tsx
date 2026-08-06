@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom'
+import ProtectedRoute    from '../components/common/ProtectedRoute'
 import S01_Main         from '../pages/S01_Main'
 import S02_Login        from '../pages/S02_Login'
 import S03_Register     from '../pages/S03_Register'
@@ -37,44 +38,44 @@ const router = createBrowserRouter([
   { path: '/role-select',   element: <S04_RoleSelect /> },
 
   // ── 환자 초기 설정 흐름 ────────────────────────────
-  { path: '/patient-info',  element: <S05_PatientInfo /> },
-  { path: '/voice-setting', element: <S06_VoiceSetting /> },
-  { path: '/memory-db',     element: <S07_MemoryDB /> },
+  { path: '/patient-info',  element: <ProtectedRoute><S05_PatientInfo /></ProtectedRoute> },
+  { path: '/voice-setting', element: <ProtectedRoute><S06_VoiceSetting /></ProtectedRoute> },
+  { path: '/memory-db',     element: <ProtectedRoute><S07_MemoryDB /></ProtectedRoute> },
 
   // ── 보호자 / 의료진 코드 연동 ─────────────────────
-  { path: '/code-link',     element: <S08_CodeLink /> },
+  { path: '/code-link',     element: <ProtectedRoute><S08_CodeLink /></ProtectedRoute> },
 
   // ── 역할별 홈 ──────────────────────────────────────
-  { path: '/patient-home',  element: <S09_PatientHome /> },
+  { path: '/patient-home',  element: <ProtectedRoute><S09_PatientHome /></ProtectedRoute> },
   // ── 계정 ───────────────────────────────────────────
-  { path: '/mypage',        element: <S27_MyPage /> },
+  { path: '/mypage',        element: <ProtectedRoute><S27_MyPage /></ProtectedRoute> },
 
   // ── 환자 흐름───────────────────────────────────────────
-  { path: '/patient-check',element: <S10_DailyHealthCheck /> },
-  { path: '/patient-voicequiz',element: <S11_TextVoiceQuiz /> },
-  { path: '/patient-photo',element: <S12_PhotoRecallQuiz /> },
-  { path: '/patient-voicechat',element: <S13_RecallVoiceChat /> },
-  
-  { path: '/patient-result',element: <S17_ActivityReport/> },
+  { path: '/patient-check',element: <ProtectedRoute><S10_DailyHealthCheck /></ProtectedRoute> },
+  { path: '/patient-voicequiz',element: <ProtectedRoute><S11_TextVoiceQuiz /></ProtectedRoute> },
+  { path: '/patient-photo',element: <ProtectedRoute><S12_PhotoRecallQuiz /></ProtectedRoute> },
+  { path: '/patient-voicechat',element: <ProtectedRoute><S13_RecallVoiceChat /></ProtectedRoute> },
+
+  { path: '/patient-result',element: <ProtectedRoute><S17_ActivityReport/></ProtectedRoute> },
 
 
   // ── 보호자 흐름───────────────────────────────────────────
-  
-  { path: '/caregiver-home', element: <S18_CargiverHome />},
+
+  { path: '/caregiver-home', element: <ProtectedRoute><S18_CargiverHome /></ProtectedRoute>},
 
   // ── 계정 ───────────────────────────────────────────
-  { path: '/caregiver-mypage',        element: <S27_MyPage /> },
+  { path: '/caregiver-mypage',        element: <ProtectedRoute><S27_MyPage /></ProtectedRoute> },
 
   // ── 보호자 흐름───────────────────────────────────────────
-  { path: '/caregiver-report', element: <S19_CargiverReport />},
-  { path: '/caregiver-memo', element: <S20_CargiverMemo />},
-  { path: '/caregiver-update', element: <S21_CargiverUpdate />},
-  { path: '/caregiver-alerm', element: <S22_CargiverAlerm />},
+  { path: '/caregiver-report', element: <ProtectedRoute><S19_CargiverReport /></ProtectedRoute>},
+  { path: '/caregiver-memo', element: <ProtectedRoute><S20_CargiverMemo /></ProtectedRoute>},
+  { path: '/caregiver-update', element: <ProtectedRoute><S21_CargiverUpdate /></ProtectedRoute>},
+  { path: '/caregiver-alerm', element: <ProtectedRoute><S22_CargiverAlerm /></ProtectedRoute>},
 
   // ── 의료진 흐름───────────────────────────────────────────
-  { path: '/doctor-home', element: <S23_DoctorHome />},
-  { path: '/doctor-dashboard', element: <S24_DoctorDashboard />},
-  { path: '/doctor-level', element: <S26_DoctorLevel/>},
+  { path: '/doctor-home', element: <ProtectedRoute><S23_DoctorHome /></ProtectedRoute>},
+  { path: '/doctor-dashboard', element: <ProtectedRoute><S24_DoctorDashboard /></ProtectedRoute>},
+  { path: '/doctor-level', element: <ProtectedRoute><S26_DoctorLevel/></ProtectedRoute>},
 ])
 
 export default router

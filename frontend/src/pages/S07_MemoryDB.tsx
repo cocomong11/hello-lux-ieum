@@ -1,16 +1,19 @@
 // 백엔드 LifeDbController/LifeDbRequestDto 기준으로 연동.
 // family는 문자열 하나라서 가족 구성원 리스트를 "이름(나이, 호칭)" 형태로
 // 이어붙여 저장합니다 (serializeFamilyMembers, 사용자 확인 완료).
-// TODO: 업로드 API 대기 - 사진 첨부(가족/지인/장소)는 멀티파트 업로드 엔드포인트가
-// 백엔드에 없어서 연동하지 않았습니다.
-import { useState, useEffect } from 'react';
+// 사진 업로드는 POST /api/patients/{pCode}/images (multipart)를 사용합니다
+// (api/patient.ts의 uploadPatientImage). LifeDbRequest에는 photo_url 필드가
+// 하나뿐이라, 가족/지인/장소 중 먼저 업로드된 사진 하나만 memories 저장 요청에
+// 함께 실립니다(family → acquaintance → place 순 우선).
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import imgUpload from '../assets/up-loading.png';
 import imgPolygon from '../assets/Polygon 2.svg';
 import MemoryDBSidebar, {
   type MemoryCategory,
 } from '../components/MemoryDBSidebar';
-import { createLifeDb, serializeFamilyMembers } from '../api/memory';
+import { createLifeDb, addLifeDbEvent, serializeFamilyMembers } from '../api/memory';
+import { uploadPatientImage } from '../api/patient';
 import { getPCode } from '../utils/pcode';
 import { ApiError } from '../api/client';
 
@@ -125,59 +128,123 @@ const PhotoBox = ({
   left,
   top,
   label,
+  photoUrl,
+  uploading,
+  errorMessage,
+  onSelect,
 }: {
   left: number;
   top: number;
   label: string;
-}) => (
-  <div
-    style={{
-      position: 'absolute',
-      left,
-      top,
-      width: 296,
-      height: 168,
-      border: '1px solid #8e8e98',
-      borderRadius: 10,
-      background: 'rgba(217,217,217,0.2)',
-      boxShadow: '0 0 4px #4188ed',
-      cursor: 'pointer',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      paddingTop: 21,
-      boxSizing: 'border-box',
-    }}
-  >
-    <p
-      style={{
-        ...F,
-        margin: 0,
-        fontSize: 22,
-        fontWeight: 400,
-        lineHeight: '1.55',
-        color: '#797980',
-        textAlign: 'center',
-      }}
-    >
-      {label}
-      <br />
-      (JPG/PNG 최대 5MB)
-    </p>
-    <img
-      src={imgUpload}
-      alt=''
-      style={{
-        position: 'absolute',
-        bottom: 20,
-        width: 40,
-        height: 40,
-        opacity: 0.5,
-        objectFit: 'contain',
-      }}
-    />
-  </div>
-);
+  photoUrl?: string;
+  uploading?: boolean;
+  errorMessage?: string;
+  onSelect: (file: File) => void;
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <>
+      <div
+        onClick={() => inputRef.current?.click()}
+        style={{
+          position: 'absolute',
+          left,
+          top,
+          width: 296,
+          height: 168,
+          border: '1px solid #8e8e98',
+          borderRadius: 10,
+          background: 'rgba(217,217,217,0.2)',
+          boxShadow: '0 0 4px #4188ed',
+          cursor: 'pointer',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          paddingTop: 21,
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+        }}
+      >
+        <input
+          ref={inputRef}
+          type='file'
+          accept='image/jpeg,image/png'
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (file) onSelect(file);
+          }}
+        />
+        {photoUrl ? (
+          <img
+            src={photoUrl}
+            alt={label}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        ) : (
+          <>
+            <p
+              style={{
+                ...F,
+                margin: 0,
+                fontSize: 22,
+                fontWeight: 400,
+                lineHeight: '1.55',
+                color: '#797980',
+                textAlign: 'center',
+              }}
+            >
+              {uploading ? '업로드 중...' : label}
+              {!uploading && (
+                <>
+                  <br />
+                  (JPG/PNG 최대 5MB)
+                </>
+              )}
+            </p>
+            <img
+              src={imgUpload}
+              alt=''
+              style={{
+                position: 'absolute',
+                bottom: 20,
+                width: 40,
+                height: 40,
+                opacity: 0.5,
+                objectFit: 'contain',
+              }}
+            />
+          </>
+        )}
+      </div>
+      {errorMessage && (
+        <p
+          style={{
+            ...F,
+            position: 'absolute',
+            left,
+            top: top + 168 + 8,
+            width: 296,
+            margin: 0,
+            fontSize: 16,
+            fontWeight: 500,
+            color: '#ff4d4f',
+          }}
+        >
+          {errorMessage}
+        </p>
+      )}
+    </>
+  );
+};
 
 export default function S07_MemoryDB() {
   const navigate = useNavigate();
@@ -186,11 +253,70 @@ export default function S07_MemoryDB() {
   const [activeCategory, setActiveCategory] =
     useState<MemoryCategory>('가족 정보');
   const [members, setMembers] = useState([
-    { name: '김순자', age: '78세', relation: '아내, 여보' },
+    { name: '', age: '', relation: '' },
     { name: '', age: '', relation: '' },
   ]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  type PhotoKey = 'family' | 'acquaintance' | 'place';
+  const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
+  const [photoUploads, setPhotoUploads] = useState<
+    Record<PhotoKey, { url?: string; uploading: boolean; error?: string }>
+  >({
+    family: { uploading: false },
+    acquaintance: { uploading: false },
+    place: { uploading: false },
+  });
+
+  const handlePhotoSelect = async (key: PhotoKey, file: File) => {
+    const pCode = getPCode();
+    if (!pCode) {
+      setPhotoUploads((prev) => ({
+        ...prev,
+        [key]: { ...prev[key], error: '* 환자 기본 정보를 먼저 등록해 주세요.' },
+      }));
+      return;
+    }
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      setPhotoUploads((prev) => ({
+        ...prev,
+        [key]: { ...prev[key], error: '* JPG/PNG 파일만 업로드할 수 있어요.' },
+      }));
+      return;
+    }
+    if (file.size > MAX_PHOTO_SIZE) {
+      setPhotoUploads((prev) => ({
+        ...prev,
+        [key]: { ...prev[key], error: '* 파일 크기는 5MB 이하여야 해요.' },
+      }));
+      return;
+    }
+
+    setPhotoUploads((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], uploading: true, error: undefined },
+    }));
+
+    try {
+      const res = await uploadPatientImage(pCode, file);
+      setPhotoUploads((prev) => ({
+        ...prev,
+        [key]: { url: res.photo_url, uploading: false },
+      }));
+    } catch {
+      setPhotoUploads((prev) => ({
+        ...prev,
+        [key]: { ...prev[key], uploading: false, error: '* 사진 업로드에 실패했어요.' },
+      }));
+    }
+  };
+
+  const PHOTO_LABELS: Record<PhotoKey, string> = {
+    family: '가족 사진',
+    acquaintance: '지인 사진',
+    place: '장소 사진',
+  };
 
   const handleComplete = async () => {
     const pCode = getPCode();
@@ -203,11 +329,48 @@ export default function S07_MemoryDB() {
     setLoading(true);
 
     try {
-      await createLifeDb(pCode, {
+      // 백엔드(LifeDbService.saveLifeDb)는 event가 비어있으면 photo_url을 그냥
+      // 버립니다(사진을 DetailEvent로만 저장하기 때문). 최초 등록(createLifeDb)엔
+      // photo_url 슬롯이 하나뿐이라 첫 번째 사진만 함께 싣고, 나머지는 사건 추가
+      // (addLifeDbEvent)로 하나씩 등록합니다.
+      const uploadedPhotos = (['family', 'acquaintance', 'place'] as const)
+        .filter((key) => photoUploads[key].url)
+        .map((key) => ({
+          label: PHOTO_LABELS[key],
+          url: photoUploads[key].url as string,
+        }));
+      const [firstPhoto, ...restPhotos] = uploadedPhotos;
+
+      const { memory_id } = await createLifeDb(pCode, {
         title: '가족 정보',
-        category: '가족',
         family: serializeFamilyMembers(members),
+        category: firstPhoto ? firstPhoto.label : '가족',
+        ...(firstPhoto && {
+          photo_url: firstPhoto.url,
+          event: `${firstPhoto.label} 등록`,
+        }),
       });
+
+      const failedLabels: string[] = [];
+      for (const photo of restPhotos) {
+        try {
+          await addLifeDbEvent(pCode, memory_id, {
+            event: `${photo.label} 등록`,
+            photo_url: photo.url,
+            category: photo.label,
+          });
+        } catch {
+          failedLabels.push(photo.label);
+        }
+      }
+
+      if (failedLabels.length > 0) {
+        setErrorMessage(
+          `* 다음 사진은 저장하지 못했습니다: ${failedLabels.join(', ')}. 다시 시도해 주세요.`,
+        );
+        return;
+      }
+
       navigate('/patient-home');
     } catch (err) {
       setErrorMessage(
@@ -283,7 +446,7 @@ export default function S07_MemoryDB() {
             }}
           >
             <button
-              onClick={() => navigate('/caregiver-home')}
+              onClick={() => navigate('/patient-home')}
               style={{
                 ...F,
                 fontSize: 16,
@@ -346,6 +509,7 @@ export default function S07_MemoryDB() {
           width={263}
           placeholder='이름'
           value={members[0].name}
+          onChange={(v) => updateMember(0, 'name', v)}
           filled
         />
         <InputBox
@@ -354,6 +518,7 @@ export default function S07_MemoryDB() {
           width={187}
           placeholder='나이'
           value={members[0].age}
+          onChange={(v) => updateMember(0, 'age', v)}
           filled
         />
         <InputBox
@@ -362,6 +527,7 @@ export default function S07_MemoryDB() {
           width={450}
           placeholder='호칭 / 유사표현'
           value={members[0].relation}
+          onChange={(v) => updateMember(0, 'relation', v)}
           filled
         />
 
@@ -480,9 +646,33 @@ export default function S07_MemoryDB() {
           *업로드된 사진은 개인화 회상 활동에 사용됩니다
         </p>
 
-        <PhotoBox left={636} top={771} label='가족 사진 업로드' />
-        <PhotoBox left={950} top={771} label='지인 사진 업로드' />
-        <PhotoBox left={1264} top={771} label='장소 사진 업로드' />
+        <PhotoBox
+          left={636}
+          top={771}
+          label='가족 사진 업로드'
+          photoUrl={photoUploads.family.url}
+          uploading={photoUploads.family.uploading}
+          errorMessage={photoUploads.family.error}
+          onSelect={(file) => handlePhotoSelect('family', file)}
+        />
+        <PhotoBox
+          left={950}
+          top={771}
+          label='지인 사진 업로드'
+          photoUrl={photoUploads.acquaintance.url}
+          uploading={photoUploads.acquaintance.uploading}
+          errorMessage={photoUploads.acquaintance.error}
+          onSelect={(file) => handlePhotoSelect('acquaintance', file)}
+        />
+        <PhotoBox
+          left={1264}
+          top={771}
+          label='장소 사진 업로드'
+          photoUrl={photoUploads.place.url}
+          uploading={photoUploads.place.uploading}
+          errorMessage={photoUploads.place.error}
+          onSelect={(file) => handlePhotoSelect('place', file)}
+        />
 
         <div
           style={{
