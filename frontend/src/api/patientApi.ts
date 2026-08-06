@@ -2,9 +2,7 @@ import { api } from './client';
 
 const USE_MOCK = false;
 
-// -------------------------------------------------------------------
-// 타입 정의 (Interfaces)
-// -------------------------------------------------------------------
+
 
 // 백엔드 /api/patient/me 응답 타입 정의
 export interface PatientMeResponse {
@@ -18,7 +16,7 @@ export interface PatientMeResponse {
   cognitive_support_level?: string;
   guardian_companion?: boolean;
   patient_status?: string | null;
-  // 백엔드가 혹시 camelCase로 줄 때를 대비한 선택적 필드
+
   internalCode?: number;
   pCode?: string;
 }
@@ -31,7 +29,7 @@ export interface QuizItem {
   set_id?: number;
   quiz_id?: number;
   quiz_num?: number;
-  p_code?: string; // 퀴즈용 환자 코드는 string으로 통일
+  p_code?: string; 
   level?: number;
   quiz_category?: 'choice' | 'photo' | 'text' | string;
   quiz_comment?: string;
@@ -56,11 +54,11 @@ export interface QuizAnswerResponse {
 
 export interface QuizResultPayload {
   setId: number;
-  pCode: string | number; // 퀴즈 결과 제출 시 string 연동코드 또는 필요시 숫자 PK 지원
+  pCode: string | number;
   totalCount: number;
   correctCount: number;
   hint: number;
-  caculate: string; // 백엔드 DTO 변수명 오타(caculate) 반영
+  caculate: string; 
   feedbackContent: string;
 }
 
@@ -107,13 +105,7 @@ export interface DailyStatusResponse {
   [key: string]: any;
 }
 
-// -------------------------------------------------------------------
-// API 호출 함수들
-// -------------------------------------------------------------------
 
-/**
- * /api/patient/me 호출 (로그인된 환자/보호자 본인 정보 조회)
- */
 export const getPatientMe = async (): Promise<PatientMeResponse> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
@@ -126,7 +118,7 @@ export const getPatientMe = async (): Promise<PatientMeResponse> => {
       }, 200);
     });
   }
-  // client.ts의 api.get은 데이터 본문을 바로 반환합니다.
+ 
   return api.get<PatientMeResponse>('/patient/me');
 };
 
@@ -250,9 +242,7 @@ export const getQuizFeedbacks = async (
   );
 };
 
-/**
- * 일일 상태 저장 API (POST)
- */
+
 export const postDailyStatus = async (
   pCode: string | number,
   payload: DailyStatusPayload
@@ -281,10 +271,7 @@ export const postDailyStatus = async (
   );
 };
 
-/**
- * 특정 날짜의 일일 상태 조회 API (GET)
- * GET /patient/{pCode}/daily-status?date=YYYY-MM-DD
- */
+
 export const getDailyStatus = async (
   pCode: string | number,
   date: string

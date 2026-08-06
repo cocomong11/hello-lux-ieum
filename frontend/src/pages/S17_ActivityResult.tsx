@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/patientHeader';
-import { api } from '../api/client';
-import { getQuizResults, getQuizFeedbacks, type DailyStatusResponse } from '../api/patientApi';
+import { 
+  getPatientMe, 
+  getQuizResults, 
+  getQuizFeedbacks, 
+  getDailyStatus, 
+  type PatientMeResponse, 
+  type DailyStatusResponse 
+} from '../api/patientApi';
 
 function CelebrationIcon() {
   return (
@@ -33,29 +39,25 @@ function CelebrationIcon() {
 
 export default function S17_ActivityReport() {
   const navigate = useNavigate();
-
   const todayStr = new Date().toISOString().split('T')[0];
-  const patientCode = sessionStorage.getItem('patientCode') || 'AB37X2';
-  const pCode = sessionStorage.getItem('pCode') || '101';
 
-  const parseSessionValue = (key: string) => {
+  const parseSessionValue = (key: string): number | null => {
     const val = sessionStorage.getItem(key);
-    if (!val) return 0;
+    if (val === null || val === undefined) return null;
     const parsed = parseInt(val, 10);
-    return isNaN(parsed) ? 0 : parsed;
+    return isNaN(parsed) ? null : parsed;
   };
 
-  const [completedCount, setCompletedCount] = useState(() => parseSessionValue('totalCount') || parseSessionValue('completedCount') || 0);
-  const [correctCount, setCorrectCount] = useState(() => parseSessionValue('correctCount') || 0);
-  const [hintCount, setHintCount] = useState(() => parseSessionValue('hint') || parseSessionValue('hintCount') || 0);
   
-  // 미사용 경고(Unused variable) 해결: 단일 변수 관리
-  const [retryCount] = useState(() => parseSessionValue('retryCount') || parseSessionValue('speakRetryCount') || 0);
+  const [completedCount, setCompletedCount] = useState<number>(0);
+
+  const [correctCount, setCorrectCount] = useState<number>(() => parseSessionValue('correctCount') ?? 0);
+  const [hintCount, setHintCount] = useState<number>(() => parseSessionValue('hint') ?? parseSessionValue('hintCount') ?? 0);
+  const [retryCount] = useState<number>(() => parseSessionValue('retryCount') ?? parseSessionValue('speakRetryCount') ?? 0);
 
   const [conditionStatus, setConditionStatus] = useState('좋음');
   const [sleepStatus, setSleepStatus] = useState('잘 잤음');
   const [moodStatus, setMoodStatus] = useState('편안함');
-
   const [feedbackText, setFeedbackText] = useState('오늘도 집중해서 활동을 잘 완료하셨습니다!');
 
   useEffect(() => {
@@ -72,20 +74,50 @@ export default function S17_ActivityReport() {
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAllData = async () => {
+      let internalCode: number | string = sessionStorage.getItem('internalCode') || 10;
+      let pCode: string = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode') || 'HH5N7S';
+
+      
       try {
-        const data = await getQuizResults(patientCode, todayStr);
-        if (data) {
-          if (data.total_count !== undefined && data.total_count !== null) setCompletedCount(data.total_count);
-          if (data.correct_count !== undefined && data.correct_count !== null) setCorrectCount(data.correct_count);
-          if (data.hint !== undefined && data.hint !== null) setHintCount(data.hint);
+        const meRes: PatientMeResponse = await getPatientMe();
+        if (meRes) {
+          internalCode = meRes.internal_code ?? meRes.internalCode ?? internalCode;
+          pCode = meRes.p_code ?? meRes.pCode ?? pCode;
+
+          sessionStorage.setItem('internalCode', String(internalCode));
+          sessionStorage.setItem('p_code', pCode);
+          sessionStorage.setItem('pCode', pCode);
         }
       } catch (err) {
-        console.error('퀴즈 결과 조회 실패 (세션 데이터 사용):', err);
+        console.warn('getPatientMe() 조회 실패 (기존 세션 사용):', err);
       }
 
+      
       try {
-        const data = await api.get<DailyStatusResponse>(`/patient/${pCode}/daily-status?date=${todayStr}`);
+        const data = await getQuizResults(pCode, todayStr);
+       
+        const actualCount = (data && typeof data.total_count === 'number') ? data.total_count : 0;
+
+        setCompletedCount(actualCount);
+        if (pCode) {
+          sessionStorage.setItem(`completedActivityCount_${pCode}`, String(actualCount));
+          sessionStorage.setItem(`todayActivityCompleted_${pCode}`, 'true');
+        }
+        sessionStorage.setItem('completedActivityCount', String(actualCount));
+        sessionStorage.setItem('todayActivityCompleted', 'true');
+
+        if (data && typeof data.correct_count === 'number') setCorrectCount(data.correct_count);
+        if (data && typeof data.hint === 'number') setHintCount(data.hint);
+      } catch (err) {
+        console.error('퀴즈 결과 조회 실패:', err);
+        
+        setCompletedCount(0);
+      }
+
+      
+      try {
+        const data: DailyStatusResponse = await getDailyStatus(internalCode, todayStr);
         if (data) {
           if (data.health_condition) setConditionStatus(data.health_condition);
           if (data.sleep_status) setSleepStatus(data.sleep_status);
@@ -95,9 +127,10 @@ export default function S17_ActivityReport() {
         console.error('건강 상태 조회 실패:', err);
       }
 
-      const setId = sessionStorage.getItem('setId') || '11'; 
+      
+      const setId = sessionStorage.getItem('setId') || '1'; 
       try {
-        const data = await getQuizFeedbacks(patientCode, setId);
+        const data = await getQuizFeedbacks(pCode, setId);
         if (Array.isArray(data) && data.length > 0 && data[0].feedback_content) {
           setFeedbackText(data[0].feedback_content);
         }
@@ -106,8 +139,23 @@ export default function S17_ActivityReport() {
       }
     };
 
-    fetchData();
-  }, [patientCode, pCode, todayStr]);
+    fetchAllData();
+  }, [todayStr]);
+
+  const handleGoHome = () => {
+    const pCode = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
+    const finalCount = String(completedCount ?? 0);
+
+    if (pCode) {
+      sessionStorage.setItem(`todayActivityCompleted_${pCode}`, 'true');
+      sessionStorage.setItem(`completedActivityCount_${pCode}`, finalCount);
+    }
+    
+    sessionStorage.setItem('todayActivityCompleted', 'true');
+    sessionStorage.setItem('completedActivityCount', finalCount);
+
+    navigate('/patient-home');
+  };
 
   const summaryBoxStyle = {
     width: '193px',
@@ -120,7 +168,7 @@ export default function S17_ActivityReport() {
     boxSizing: 'border-box' as const,
     display: 'flex',
     flexDirection: 'column' as const,
-    justify: 'space-between' as const,
+    justifyContent: 'space-between' as const,
     textAlign: 'left' as const
   };
 
@@ -292,7 +340,7 @@ export default function S17_ActivityReport() {
             alignItems: 'center',
             gap: '12px'
           }}>
-            <span style={{ fontSize: '18px', fontWeight:700, color: '#0D0D0D' }}>조금 어려웠어요 💡</span>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: '#0D0D0D' }}>조금 어려웠어요 💡</span>
             <span style={{ fontSize: '16px', fontWeight: 700, color: '#E53134' }}>#장소 기억</span>
           </div>
         </div>
@@ -312,10 +360,7 @@ export default function S17_ActivityReport() {
 
         {/* 홈으로 돌아가기 버튼 */}
         <button 
-          onClick={() => {
-            sessionStorage.setItem('todayActivityCompleted', 'true');
-            navigate('/patient-home');
-          }}
+          onClick={handleGoHome}
           style={{
             width: '805px',
             height: '81px',

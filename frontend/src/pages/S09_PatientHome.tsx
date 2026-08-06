@@ -2,20 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/patientHeader';
+import { 
+  getPatientMe, 
+  getDailyStatus, 
+  type PatientMeResponse, 
+  type DailyStatusResponse 
+} from '../api/patientApi';
 import { api } from '../api/client';
 
 const F: CSSProperties = {
   fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
-
-// 백엔드 GET /api/patient/me 응답 타입
-interface PatientMeResponse {
-  internalCode?: number | string; // DB PK 숫자/문자열 ID (API PathVariable용)
-  pCode?: string; // 6자리 연동용 코드
-  p_code?: string;
-  name?: string;
-  patientName?: string;
-}
 
 interface UserInfoResponse {
   name?: string;
@@ -23,18 +20,6 @@ interface UserInfoResponse {
   p_code?: string;
   user_email?: string;
   role?: string;
-}
-
-interface DailyStatusResponse {
-  status_id?: number;
-  p_code?: string;
-  record_date?: string;
-  health_condition?: string;
-  sleep_status?: string;
-  meal_status?: string;
-  pain_status?: string;
-  mood_status?: string;
-  cognitive_changes?: string[];
 }
 
 function todayStr() {
@@ -54,7 +39,7 @@ function getTodayIsoString() {
   return `${year}-${month}-${day}`;
 }
 
-const formatHealthStatus = (status: string | null) => {
+const formatHealthStatus = (status: string | null | undefined) => {
   if (!status || status === '-') return '-';
   switch (status) {
     case 'good':
@@ -84,78 +69,87 @@ export default function S09_PatientHome() {
     return sessionStorage.getItem('name') || sessionStorage.getItem('patientName') || '환자';
   });
 
-  // 화면 표출 및 퀴즈 조회용 6자리 연동 코드 (p_code)
+  
   const [pairCode, setPairCode] = useState<string>(() => {
-    return sessionStorage.getItem('p_code') || '-------';
+    return sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode') || '-------';
   });
 
+ 
   const syncStorageState = useCallback(() => {
-    const savedHealth = sessionStorage.getItem('todayHealthCondition');
-    setHealthStatusValue(formatHealthStatus(savedHealth));
+    const currentPCode = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
 
-    const isDone = sessionStorage.getItem('todayActivityCompleted');
-    const savedCount = sessionStorage.getItem('completedActivityCount');
+    if (!currentPCode) {
+      setIsCompleted(false);
+      setCompletedCount(0);
+      setHealthStatusValue('-');
+      return;
+    }
+
+    
+    const savedHealth = sessionStorage.getItem(`todayHealthCondition_${currentPCode}`);
+    const isDone = sessionStorage.getItem(`todayActivityCompleted_${currentPCode}`);
+    const savedCount = sessionStorage.getItem(`completedActivityCount_${currentPCode}`);
     const count = savedCount ? parseInt(savedCount, 10) : 0;
 
+    setHealthStatusValue(formatHealthStatus(savedHealth));
     setCompletedCount(count);
     setIsCompleted(isDone === 'true');
   }, []);
 
   useEffect(() => {
-    syncStorageState();
-
     const fetchInitialData = async () => {
+      let internalCode: number | string | undefined = sessionStorage.getItem('internalCode') || undefined;
+      let pCode: string | undefined = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode') || undefined;
+
+      
       try {
-        // 1. 기본 유저 정보 가져오기
         const userData = await api.get<UserInfoResponse>('/auth/me');
-        if (userData.name) {
+        if (userData?.name) {
           setPatientName(userData.name);
           sessionStorage.setItem('name', userData.name);
         }
+      } catch (err) {
+        console.warn('사용자 프로필 조회 실패:', err);
+      }
 
-        // 2. ⭐ /api/patient/me 호출하여 DB PK(internalCode)와 6자리 연동코드(pCode)를 가져온 뒤 각각 명확히 저장
-        const patientData = await api.get<PatientMeResponse>('/patient/me');
+      try {
+        const meRes: PatientMeResponse = await getPatientMe();
+        if (meRes) {
+          internalCode = meRes.internal_code ?? meRes.internalCode ?? internalCode;
+          pCode = meRes.p_code ?? meRes.pCode ?? pCode;
 
-        // [A] DB PK internalCode 저장 (Daily Status API 등 환자 관리용)
-        const fetchedInternalCode = patientData.internalCode;
-        if (fetchedInternalCode !== undefined && fetchedInternalCode !== null) {
-          sessionStorage.setItem('internalCode', String(fetchedInternalCode));
-        }
-
-        // [B] 6자리 연동 코드 p_code 저장 (퀴즈 및 화면 표시용)
-        const fetchedPCode =
-          patientData.pCode ||
-          patientData.p_code ||
-          userData.patientCode ||
-          userData.p_code;
-
-        if (fetchedPCode) {
-          const stringPCode = String(fetchedPCode);
-          setPairCode(stringPCode);
-          sessionStorage.setItem('p_code', stringPCode);
-        }
-
-        // 3. 일일 건강 상태 조회: internalCode를 우선 사용하여 호출
-        const targetPatientId = fetchedInternalCode ?? fetchedPCode;
-
-        if (targetPatientId) {
-          try {
-            const today = getTodayIsoString();
-            const dailyData = await api.get<DailyStatusResponse>(
-              `/patient/${targetPatientId}/daily-status?date=${today}`
-            );
-
-            if (dailyData && dailyData.health_condition) {
-              const formatted = formatHealthStatus(dailyData.health_condition);
-              setHealthStatusValue(formatted);
-              sessionStorage.setItem('todayHealthCondition', dailyData.health_condition);
-            }
-          } catch (err) {
-            console.log('오늘 작성된 건강 상태가 없습니다.');
+          if (internalCode) sessionStorage.setItem('internalCode', String(internalCode));
+          if (pCode) {
+            setPairCode(pCode);
+            sessionStorage.setItem('p_code', pCode);
           }
         }
-      } catch (e) {
-        console.error('환자 정보를 불러오는데 실패했습니다:', e);
+      } catch (err) {
+        console.warn('getPatientMe() 조회 실패:', err);
+      }
+
+     
+      syncStorageState();
+
+      
+      const targetPatientId = internalCode || pCode;
+      if (targetPatientId) {
+        try {
+          const today = getTodayIsoString();
+          const dailyData: DailyStatusResponse = await getDailyStatus(targetPatientId, today);
+
+          if (dailyData && dailyData.health_condition) {
+            const formatted = formatHealthStatus(dailyData.health_condition);
+            setHealthStatusValue(formatted);
+            
+            
+            if (pCode) {
+              sessionStorage.setItem(`todayHealthCondition_${pCode}`, dailyData.health_condition);
+            }
+          }
+        } catch (err) {
+          setHealthStatusValue('-');
+        }
       }
     };
 
@@ -163,7 +157,8 @@ export default function S09_PatientHome() {
   }, [syncStorageState]);
 
   const handleStartActivity = () => {
-    const savedHealth = sessionStorage.getItem('todayHealthCondition');
+    const currentPCode = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
+    const savedHealth = currentPCode ? sessionStorage.getItem(`todayHealthCondition_${currentPCode}`) : null;
     const quizListStr = sessionStorage.getItem('quizList');
 
     if (savedHealth && quizListStr) {
@@ -204,10 +199,10 @@ export default function S09_PatientHome() {
   };
 
   const handleReset = () => {
-    const keysToRemove = [
-      'todayActivityCompleted',
-      'completedActivityCount',
-      'todayHealthCondition',
+    const currentPCode = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
+
+    
+    const generalKeys = [
       'conditionStatus',
       'sleepStatus',
       'moodStatus',
@@ -222,7 +217,13 @@ export default function S09_PatientHome() {
       'correctQuizCount',
       'currentQuizElapsedTime',
     ];
-    keysToRemove.forEach((key) => sessionStorage.removeItem(key));
+    generalKeys.forEach((key) => sessionStorage.removeItem(key));
+
+    if (currentPCode) {
+      sessionStorage.removeItem(`todayActivityCompleted_${currentPCode}`);
+      sessionStorage.removeItem(`completedActivityCount_${currentPCode}`);
+      sessionStorage.removeItem(`todayHealthCondition_${currentPCode}`);
+    }
 
     setIsCompleted(false);
     setCompletedCount(0);
