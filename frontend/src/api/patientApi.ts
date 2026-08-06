@@ -2,7 +2,6 @@ import { api } from './client';
 
 const USE_MOCK = false; 
 
-
 export interface PatientInfo {
   p_code: string;
   name: string;
@@ -91,7 +90,6 @@ export interface DailyStatusResponse {
   cognitive_changes: string[];
 }
 
-
 export const getPatientCode = async (pCode: string): Promise<PatientCodeResponse> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
@@ -101,8 +99,6 @@ export const getPatientCode = async (pCode: string): Promise<PatientCodeResponse
   return api.get<PatientCodeResponse>(`/patient/${pCode}/code`);
 };
 
-
- 
 export const getPatientInfo = async (pCode: string): Promise<PatientInfo> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
@@ -119,8 +115,6 @@ export const getPatientInfo = async (pCode: string): Promise<PatientInfo> => {
   return api.get<PatientInfo>(`/patient/${pCode}`);
 };
 
-
- 
 export const getTodayQuizzes = async (pCode: string): Promise<QuizItem[]> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
@@ -144,7 +138,6 @@ export const getTodayQuizzes = async (pCode: string): Promise<QuizItem[]> => {
   }
   return api.get<QuizItem[]>(`/quiz/${pCode}/today`);
 };
-
 
 export const submitQuizAnswer = async ({
   pCode,
@@ -172,8 +165,7 @@ export const submitQuizAnswer = async ({
   );
 };
 
-
- 
+// 💡 수정 완료: 백엔드 컨트롤러 주소와 일치하도록 `/quiz/result/submit`으로 변경
 export const submitQuizResult = async (
   payload: QuizResultPayload
 ): Promise<QuizResultResponse> => {
@@ -187,11 +179,9 @@ export const submitQuizResult = async (
     });
   }
 
-  return api.post<QuizResultResponse>('/quiz/result', payload);
+  return api.post<QuizResultResponse>('/quiz/result/submit', payload);
 };
 
-
- 
 export const getQuizResults = async (
   pCode: string,
   date: string
@@ -212,8 +202,6 @@ export const getQuizResults = async (
 
   return api.get<QuizResultDetailResponse>(`/patients/${pCode}/results/${date}`);
 };
-
-
 
 export const postDailyStatus = async (
   pCode: string,
