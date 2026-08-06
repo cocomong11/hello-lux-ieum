@@ -75,19 +75,30 @@ export default function S10_DailyHealthCheck() {
       sessionStorage.setItem('sleepStatus', sleep || '잘 잤음');
       sessionStorage.setItem('moodStatus', mood || '안정적');
 
-      // 오늘의 퀴즈 조회 (/api/quiz/{pCode}/today)
+      // ---------------------------------------------------------
+      // [수정 영역] 오늘의 퀴즈 조회 및 안전 처리
+      // ---------------------------------------------------------
       let quizzes: QuizItem[] = [];
       try {
-        quizzes = await getTodayQuizzes(pCode);
+        const res: any = await getTodayQuizzes(pCode);
+        // Response wrapper나 배열 처리 대응
+        if (Array.isArray(res)) {
+          quizzes = res;
+        } else if (res && Array.isArray(res.data)) {
+          quizzes = res.data;
+        } else if (res && Array.isArray(res.quizzes)) {
+          quizzes = res.quizzes;
+        }
       } catch (e) {
         console.warn('⚠️ 백엔드 퀴즈 조회 실패, 기본 임시 퀴즈 데이터로 대체합니다.', e);
       }
 
+      // API 응답이 없거나 빈 배열일 경우 Fallback 데이터 지정
       if (!quizzes || quizzes.length === 0) {
         quizzes = [
           {
             quiz_id: 1,
-            quiz_category: 'choice',
+            quiz_category: 'CHOICE',
             question: '오늘 아침 식사로 무엇을 드셨나요?',
             options: ['밥과 국', '빵과 우유', '과일', '먹지 않음'],
           } as any,
@@ -100,17 +111,21 @@ export default function S10_DailyHealthCheck() {
       sessionStorage.setItem('totalHintCount', '0');
 
       const firstQuiz = quizzes[0];
-      const category = (firstQuiz?.quiz_category || 'choice').toLowerCase().trim();
+      // quiz_category 타입(enum, number, string 등) 및 대소문자 안전 파싱
+      const rawCategory = firstQuiz?.quiz_category ?? (firstQuiz as any)?.category ?? 'CHOICE';
+      const category = String(rawCategory).toLowerCase().trim();
 
-      if (category === 'choice') {
+      // 카테고리값 매핑에 따라 라우팅 처리
+      if (category === 'choice' || category === '1') {
         navigate('/patient-voicechat');
-      } else if (category === 'photo') {
+      } else if (category === 'photo' || category === '2') {
         navigate('/patient-photo');
-      } else if (category === 'text') {
+      } else if (category === 'text' || category === '3') {
         navigate('/patient-voicequiz');
       } else {
         navigate('/patient-voicechat');
       }
+      // ---------------------------------------------------------
     } catch (error) {
       console.error('❌ 이동 중 에러 발생, 강제로 음성채팅 화면으로 이동합니다:', error);
       setBtnStatus('FAIL');

@@ -266,8 +266,6 @@ export default function S05_PatientInfo() {
             <div style={{ marginBottom: 30 }}>
               <Label required>이름 (실명)</Label>
               <TextInput
-                id="patient-name"
-                name="patient-name"
                 placeholder='이름 (실명)'
                 value={name}
                 onChange={setName}
@@ -278,8 +276,6 @@ export default function S05_PatientInfo() {
               <div style={{ flex: 2 }}>
                 <Label required>생년월일</Label>
                 <TextInput
-                  id="patient-birthdate"
-                  name="patient-birthdate"
                   placeholder='생년월일 (8자리)'
                   value={birthdate}
                   onChange={setBirthdate}
@@ -319,8 +315,6 @@ export default function S05_PatientInfo() {
             <div>
               <Label required>주요 진단 상태</Label>
               <TextInput
-                id="patient-diagnosis"
-                name="patient-diagnosis"
                 placeholder='ex. 경도인지장애, 초기 치매 등'
                 value={diagnosis}
                 onChange={setDiagnosis}
@@ -390,7 +384,6 @@ export default function S05_PatientInfo() {
             }}
           >
             <button
-              type="button"
               onClick={() => navigate(-1)}
               style={{
                 ...F,
