@@ -183,6 +183,7 @@ export default function S10_DailyHealthCheck() {
       } else {
         navigate('/patient-voicechat');
       }
+      // ---------------------------------------------------------
     } catch (error) {
       console.error('❌ 저장 중 오류 발생:', error);
       setBtnStatus('FAIL');
