@@ -8,6 +8,15 @@ const F: CSSProperties = {
   fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
 
+// 백엔드 GET /api/patient/me 응답 타입
+interface PatientMeResponse {
+  internalCode?: number | string; // DB PK 숫자/문자열 ID (API PathVariable용)
+  pCode?: string; // 6자리 연동용 코드
+  p_code?: string;
+  name?: string;
+  patientName?: string;
+}
+
 interface UserInfoResponse {
   name?: string;
   patientCode?: string;
@@ -36,7 +45,6 @@ function todayStr() {
     weekday: 'short',
   });
 }
-
 
 function getTodayIsoString() {
   const d = new Date();
@@ -76,7 +84,7 @@ export default function S09_PatientHome() {
     return sessionStorage.getItem('name') || sessionStorage.getItem('patientName') || '환자';
   });
 
-  // p_code는 String 타입으로 관리
+  // 화면 표출 및 퀴즈 조회용 6자리 연동 코드 (p_code)
   const [pairCode, setPairCode] = useState<string>(() => {
     return sessionStorage.getItem('p_code') || '-------';
   });
@@ -98,24 +106,43 @@ export default function S09_PatientHome() {
 
     const fetchInitialData = async () => {
       try {
+        // 1. 기본 유저 정보 가져오기
         const userData = await api.get<UserInfoResponse>('/auth/me');
-
         if (userData.name) {
           setPatientName(userData.name);
           sessionStorage.setItem('name', userData.name);
         }
 
-        const code = userData.patientCode || userData.p_code;
-        if (code) {
-          const stringCode = String(code);
-          setPairCode(stringCode);
-          sessionStorage.setItem('p_code', stringCode);
+        // 2. ⭐ /api/patient/me 호출하여 DB PK(internalCode)와 6자리 연동코드(pCode)를 가져온 뒤 각각 명확히 저장
+        const patientData = await api.get<PatientMeResponse>('/patient/me');
 
-         
+        // [A] DB PK internalCode 저장 (Daily Status API 등 환자 관리용)
+        const fetchedInternalCode = patientData.internalCode;
+        if (fetchedInternalCode !== undefined && fetchedInternalCode !== null) {
+          sessionStorage.setItem('internalCode', String(fetchedInternalCode));
+        }
+
+        // [B] 6자리 연동 코드 p_code 저장 (퀴즈 및 화면 표시용)
+        const fetchedPCode =
+          patientData.pCode ||
+          patientData.p_code ||
+          userData.patientCode ||
+          userData.p_code;
+
+        if (fetchedPCode) {
+          const stringPCode = String(fetchedPCode);
+          setPairCode(stringPCode);
+          sessionStorage.setItem('p_code', stringPCode);
+        }
+
+        // 3. 일일 건강 상태 조회: internalCode를 우선 사용하여 호출
+        const targetPatientId = fetchedInternalCode ?? fetchedPCode;
+
+        if (targetPatientId) {
           try {
             const today = getTodayIsoString();
             const dailyData = await api.get<DailyStatusResponse>(
-              `/patient/${stringCode}/daily-status?date=${today}`
+              `/patient/${targetPatientId}/daily-status?date=${today}`
             );
 
             if (dailyData && dailyData.health_condition) {
@@ -124,12 +151,11 @@ export default function S09_PatientHome() {
               sessionStorage.setItem('todayHealthCondition', dailyData.health_condition);
             }
           } catch (err) {
-            
             console.log('오늘 작성된 건강 상태가 없습니다.');
           }
         }
       } catch (e) {
-        console.error('사용자 정보를 불러오는데 실패했습니다:', e);
+        console.error('환자 정보를 불러오는데 실패했습니다:', e);
       }
     };
 
