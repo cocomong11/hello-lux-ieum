@@ -5,7 +5,7 @@ import HintPopup from '../pages/S16_HintPopup';
 import QuizVoiceController from '../components/quizButton'; 
 import QuizResultCard from '../components/quizResultCard';
 
-import { submitQuizAnswer, submitQuizResult, type QuizItem } from '../api/patientApi';
+import { submitQuizAnswer, submitQuizResult, type QuizItem, type QuizResultPayload } from '../api/patientApi';
 
 export default function S12_PhotoRecallQuiz() {
   const navigate = useNavigate();
@@ -34,6 +34,7 @@ export default function S12_PhotoRecallQuiz() {
 
   const [thisQuizIsCorrect, setThisQuizIsCorrect] = useState<boolean | null>(null);
 
+  // Ref 선언 올바르게 수정
   const startTimeRef = useRef<number>(Date.now());
   const initialAccumulatedTimeRef = useRef<number>(0); 
 
@@ -76,6 +77,7 @@ export default function S12_PhotoRecallQuiz() {
     setMaxHintStepThisQuiz(savedTempHintStep);
 
     const savedAccumulated = parseFloat(sessionStorage.getItem('currentQuizElapsedTime') || '0');
+    // Ref .current 에 값 할당
     initialAccumulatedTimeRef.current = savedAccumulated;
     startTimeRef.current = Date.now();
   }, [currentIndex]);
@@ -105,14 +107,13 @@ export default function S12_PhotoRecallQuiz() {
     ? currentQuiz.hints 
     : ['힌트 정보가 없습니다.'];
 
-  // 문자/숫자 혼합 pCode 호환성 함수
   const getValidPCode = (): string => {
-    return (
+    const code =
       currentQuiz?.p_code ||
       sessionStorage.getItem('p_code') ||
       sessionStorage.getItem('pCode') ||
-      'AB37X2'
-    );
+      '1';
+    return String(code);
   };
 
   const handleHintClick = () => {
@@ -130,6 +131,7 @@ export default function S12_PhotoRecallQuiz() {
 
   const handleSuccessSubmit = async (finalDuration: string, userSpokenAnswer?: string) => {
     const sessionSpent = (Date.now() - startTimeRef.current) / 1000;
+    // .current 값 참조
     const totalSpentSeconds = (initialAccumulatedTimeRef.current + sessionSpent).toFixed(1);
 
     const actualDuration = finalDuration !== '0.0' ? finalDuration : totalSpentSeconds;
@@ -216,9 +218,7 @@ export default function S12_PhotoRecallQuiz() {
       try {
         const res = await submitQuizAnswer(payloadData);
 
-        console.log('[다음 활동 - 스킵/미제출 응답 수신]', res);
-        console.log(' 정답 여부 (isCorrect):', res?.isCorrect);
-        console.log(' 피드백 메시지 (feedback):', res?.feedback);
+        console.log(' 스킵/미제출 응답 수신:', res);
 
         const isCurrentCorrect = Boolean(res?.isCorrect);
 
@@ -243,20 +243,21 @@ export default function S12_PhotoRecallQuiz() {
 
     if (nextIndex >= quizList.length) {
       try {
-        const finalPCode = getValidPCode();
+        const rawPCode = getValidPCode();
+        const numericPCode = parseInt(rawPCode, 10) || 0;
         const finalSetId = currentQuiz.set_id || 1;
         
         const validSolvedCount = parseInt(sessionStorage.getItem('completedActivityCount') || '0', 10);
         const finalCorrectCount = latestCorrectCount;
         const totalHint = Number(sessionStorage.getItem('totalHintCount') || 0);
 
-        const finalPayload = {
+        const finalPayload: QuizResultPayload = {
           setId: finalSetId,
-          pCode: finalPCode,
+          pCode: numericPCode,
           totalCount: validSolvedCount,
           correctCount: finalCorrectCount,
           hint: totalHint,
-          calculate: "0",
+          caculate: "0",
           feedbackContent: `총 ${validSolvedCount}문제 중 ${finalCorrectCount}문제를 맞추셨습니다. 오늘도 수고하셨습니다!`
         };
 
@@ -295,6 +296,7 @@ export default function S12_PhotoRecallQuiz() {
 
     if (!isSubmitted) {
       const sessionSpent = (Date.now() - startTimeRef.current) / 1000;
+      // .current 값 참조
       const totalAccumulated = initialAccumulatedTimeRef.current + sessionSpent;
       sessionStorage.setItem('currentQuizElapsedTime', String(totalAccumulated));
       sessionStorage.setItem('tempQuizHintStep', String(maxHintStepThisQuiz));

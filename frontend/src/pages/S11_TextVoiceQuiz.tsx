@@ -105,13 +105,17 @@ export default function S11_TextVoiceQuiz() {
     ? currentQuiz.hints 
     : ['힌트 정보가 없습니다.'];
 
-  const getValidPCode = (): string => {
-    return (
-      currentQuiz?.p_code ||
-      sessionStorage.getItem('p_code') ||
-      sessionStorage.getItem('pCode') ||
-      'AB37X2'
-    );
+ 
+  const getValidPCodeStr = (): string => {
+    const code = currentQuiz?.p_code || sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
+    return typeof code === 'string' && isNaN(Number(code)) ? code : 'AB37X2';
+  };
+
+  
+  const getValidPatientIdNum = (): number => {
+    const idVal = sessionStorage.getItem('patient_id') || sessionStorage.getItem('p_code') || currentQuiz?.p_code;
+    const parsed = parseInt(String(idVal), 10);
+    return isNaN(parsed) ? 1 : parsed;
   };
 
   const handleHintClick = () => {
@@ -149,7 +153,7 @@ export default function S11_TextVoiceQuiz() {
     }
 
     const payloadData = {
-      pCode: getValidPCode(),
+      pCode: getValidPCodeStr(), 
       setId: currentQuiz.set_id || 1,
       quizNum: currentQuiz.quiz_num || 1,
       userAnswer: userAnswer,
@@ -197,7 +201,7 @@ export default function S11_TextVoiceQuiz() {
     let latestCorrectCount = correctCount;
 
     if (!isSubmitted) {
-      const pCode = getValidPCode();
+      const pCode = getValidPCodeStr();
       const setId = currentQuiz.set_id || 1;
       const quizNum = currentQuiz.quiz_num || 1;
 
@@ -234,7 +238,7 @@ export default function S11_TextVoiceQuiz() {
 
     if (nextIndex >= quizList.length) {
       try {
-        const finalPCode = getValidPCode();
+        const finalPatientIdNum = getValidPatientIdNum(); 
         const finalSetId = currentQuiz.set_id || 1;
         
         const validSolvedCount = parseInt(sessionStorage.getItem('completedActivityCount') || '0', 10);
@@ -244,11 +248,11 @@ export default function S11_TextVoiceQuiz() {
 
         const finalPayload = {
           setId: finalSetId,
-          pCode: finalPCode,
+          pCode: finalPatientIdNum, 
           totalCount: validSolvedCount,
           correctCount: finalCorrectCount,
           hint: totalHint,
-          calculate: "0",
+          caculate: "0", 
           feedbackContent: `총 ${validSolvedCount}문제 중 ${finalCorrectCount}문제를 맞추셨습니다. 오늘도 수고하셨습니다!`
         };
 

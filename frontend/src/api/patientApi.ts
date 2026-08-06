@@ -2,14 +2,6 @@ import { api } from './client';
 
 const USE_MOCK = false; 
 
-
-export interface PatientInfo {
-  p_code: string;
-  name: string;
-  diagnosis: string;
-  personality: string;
-}
-
 export interface PatientCodeResponse {
   p_code: string;
 }
@@ -17,7 +9,7 @@ export interface PatientCodeResponse {
 export interface QuizItem {
   set_id: number;
   quiz_num: number;
-  p_code: string;
+  p_code: number | string;
   level: number;
   quiz_category: 'choice' | 'photo' | 'text';
   quiz_comment: string;
@@ -41,11 +33,11 @@ export interface QuizAnswerResponse {
 
 export interface QuizResultPayload {
   setId: number;
-  pCode: string;
+  pCode: number;        
   totalCount: number;
   correctCount: number;
   hint: number;
-  calculate: string;
+  caculate: string;       // 백엔드 DTO 변수명 오타(caculate) 반영
   feedbackContent: string;
 }
 
@@ -91,7 +83,6 @@ export interface DailyStatusResponse {
   cognitive_changes: string[];
 }
 
-
 export const getPatientCode = async (pCode: string): Promise<PatientCodeResponse> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
@@ -101,26 +92,6 @@ export const getPatientCode = async (pCode: string): Promise<PatientCodeResponse
   return api.get<PatientCodeResponse>(`/patient/${pCode}/code`);
 };
 
-
- 
-export const getPatientInfo = async (pCode: string): Promise<PatientInfo> => {
-  if (USE_MOCK) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          p_code: pCode,
-          name: "홍길동",
-          diagnosis: "경도인지장애",
-          personality: "온화함"
-        });
-      }, 300);
-    });
-  }
-  return api.get<PatientInfo>(`/patient/${pCode}`);
-};
-
-
- 
 export const getTodayQuizzes = async (pCode: string): Promise<QuizItem[]> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
@@ -144,7 +115,6 @@ export const getTodayQuizzes = async (pCode: string): Promise<QuizItem[]> => {
   }
   return api.get<QuizItem[]>(`/quiz/${pCode}/today`);
 };
-
 
 export const submitQuizAnswer = async ({
   pCode,
@@ -172,8 +142,6 @@ export const submitQuizAnswer = async ({
   );
 };
 
-
- 
 export const submitQuizResult = async (
   payload: QuizResultPayload
 ): Promise<QuizResultResponse> => {
@@ -187,11 +155,9 @@ export const submitQuizResult = async (
     });
   }
 
-  return api.post<QuizResultResponse>('/quiz/result', payload);
+  return api.post<QuizResultResponse>('/quiz/result/submit', payload);
 };
 
-
- 
 export const getQuizResults = async (
   pCode: string,
   date: string
@@ -213,7 +179,27 @@ export const getQuizResults = async (
   return api.get<QuizResultDetailResponse>(`/patients/${pCode}/results/${date}`);
 };
 
+export const getQuizFeedbacks = async (
+  patientCode: string,
+  setId: string
+): Promise<QuizFeedbackItem[]> => {
+  if (USE_MOCK) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([
+          {
+            feedback_id: 1,
+            set_id: Number(setId),
+            feedback_content: "오늘도 집중해서 활동을 잘 완료하셨습니다!",
+            created_at: new Date().toISOString()
+          }
+        ]);
+      }, 300);
+    });
+  }
 
+  return api.get<QuizFeedbackItem[]>(`/patients/${patientCode}/quizSet/${setId}/feedbacks`);
+};
 
 export const postDailyStatus = async (
   pCode: string,
