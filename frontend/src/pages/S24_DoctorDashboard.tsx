@@ -282,7 +282,7 @@ export default function S24_DoctorDashboard() {
               <ResponsiveContainer width="100%" height={236}>
                 <LineChart data={kmmseChartData} margin={{ top: 5, right: 30, left: 0, bottom: 12 }}>
                   <CartesianGrid strokeDasharray="4 3" strokeWidth="0.5" vertical={false} fill="#F8F9FA" stroke="#4188ED" />
-                  <XAxis dataKey="month" width={51} axisLine={false} tickLine={false} tick={{ fontSize: 22, fill: 'var(--color-neutural-10)' }} tickMargin={18} />
+                  <XAxis dataKey="month" width="51" axisLine={false} tickLine={false} tick={{ fontSize: 22, fill: 'var(--color-neutural-10)' }} tickMargin={18} />
                   <YAxis domain={[0,'dataMax']} axisLine={false} tickLine={false} tick={{ fontSize: 16, fill: 'var(--color-neutural-10)' }} />
                   <Tooltip />
                   <Line type="monotone" dataKey="score" stroke="#4188ED" strokeWidth={2.5} dot={{ r: 5, fill: '#4188ED' }} />
@@ -312,7 +312,7 @@ export default function S24_DoctorDashboard() {
               <ResponsiveContainer width="100%" height={294}>
                 <LineChart data={typeChartData} margin={{ top: 10, right: 30, left: 18, bottom:12 }}>
                   <CartesianGrid strokeDasharray="3 3" strokeWidth="0.5" vertical={false} fill="#F8F9FA" stroke="#4188ED" />
-                  <XAxis dataKey="month" width={51} axisLine={false} tickLine={false} interval="preserveEnd" tick={{ fontSize: 22, fill: '#0D0D0D', fontWeight: 400}} tickMargin={18}/>
+                  <XAxis dataKey="month" width="51" axisLine={false} tickLine={false} interval="preserveEnd" tick={{ fontSize: 22, fill: '#0D0D0D', fontWeight: 400}} tickMargin={18}/>
                   <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 16, fill: '#0D0D0D' }} ticks={[0,25,50,75,100]} tickFormatter={(v)=>{ if(v===50||v===100){ return `${v}%`} return "";}} />
                   <Tooltip />
                   <Line type="monotone" dataKey="유형1" stroke="#4188ED" strokeWidth={2.5} dot={true} />
