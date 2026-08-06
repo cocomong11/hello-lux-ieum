@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/patientHeader';
 import { api } from '../api/client';
+import { getQuizResults, getQuizFeedbacks, type DailyStatusResponse } from '../api/patientApi';
 
 function CelebrationIcon() {
   return (
@@ -30,33 +31,26 @@ function CelebrationIcon() {
   );
 }
 
-
-interface QuizResult {
-  total_count?: number;
-  correct_count?: number;
-  hint?: number;
-}
-
-interface DailyStatus {
-  health_condition?: string;
-  sleep_status?: string;
-  mood_status?: string;
-}
-
-interface Feedback {
-  feedback_content?: string;
-}
-
 export default function S17_ActivityReport() {
   const navigate = useNavigate();
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const pCode = sessionStorage.getItem('pCode') || '1001';
+  const patientCode = sessionStorage.getItem('patientCode') || 'AB37X2';
+  const pCode = sessionStorage.getItem('pCode') || '101';
 
-  const [completedCount, setCompletedCount] = useState(0);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [hintCount, setHintCount] = useState(0);
-  const [retryCount, setRetryCount] = useState(0);
+  const parseSessionValue = (key: string) => {
+    const val = sessionStorage.getItem(key);
+    if (!val) return 0;
+    const parsed = parseInt(val, 10);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const [completedCount, setCompletedCount] = useState(() => parseSessionValue('totalCount') || parseSessionValue('completedCount') || 0);
+  const [correctCount, setCorrectCount] = useState(() => parseSessionValue('correctCount') || 0);
+  const [hintCount, setHintCount] = useState(() => parseSessionValue('hint') || parseSessionValue('hintCount') || 0);
+  
+  // 미사용 경고(Unused variable) 해결: 단일 변수 관리
+  const [retryCount] = useState(() => parseSessionValue('retryCount') || parseSessionValue('speakRetryCount') || 0);
 
   const [conditionStatus, setConditionStatus] = useState('좋음');
   const [sleepStatus, setSleepStatus] = useState('잘 잤음');
@@ -79,21 +73,19 @@ export default function S17_ActivityReport() {
 
   useEffect(() => {
     const fetchData = async () => {
-      
       try {
-        const data = await api.get<QuizResult>(`/patients/${pCode}/results/${todayStr}`);
+        const data = await getQuizResults(patientCode, todayStr);
         if (data) {
-          setCompletedCount(data.total_count ?? 0);
-          setCorrectCount(data.correct_count ?? 0);
-          setHintCount(data.hint ?? 0);
+          if (data.total_count !== undefined && data.total_count !== null) setCompletedCount(data.total_count);
+          if (data.correct_count !== undefined && data.correct_count !== null) setCorrectCount(data.correct_count);
+          if (data.hint !== undefined && data.hint !== null) setHintCount(data.hint);
         }
       } catch (err) {
-        console.error('결과 조회 실패:', err);
+        console.error('퀴즈 결과 조회 실패 (세션 데이터 사용):', err);
       }
 
-      
       try {
-        const data = await api.get<DailyStatus>(`/patient/${pCode}/daily-status?date=${todayStr}`);
+        const data = await api.get<DailyStatusResponse>(`/patient/${pCode}/daily-status?date=${todayStr}`);
         if (data) {
           if (data.health_condition) setConditionStatus(data.health_condition);
           if (data.sleep_status) setSleepStatus(data.sleep_status);
@@ -103,11 +95,11 @@ export default function S17_ActivityReport() {
         console.error('건강 상태 조회 실패:', err);
       }
 
-     
+      const setId = sessionStorage.getItem('setId') || '11'; 
       try {
-        const data = await api.get<Feedback[]>(`/patients/${pCode}/quizSet/1/feedbacks`);
-        if (Array.isArray(data) && data.length > 0) {
-          setFeedbackText(data[0].feedback_content || '오늘도 끝까지 잘 해주셨어요!');
+        const data = await getQuizFeedbacks(patientCode, setId);
+        if (Array.isArray(data) && data.length > 0 && data[0].feedback_content) {
+          setFeedbackText(data[0].feedback_content);
         }
       } catch (err) {
         console.error('피드백 조회 실패:', err);
@@ -115,16 +107,7 @@ export default function S17_ActivityReport() {
     };
 
     fetchData();
-
-    
-    const parseValue = (key: string) => {
-      const val = sessionStorage.getItem(key);
-      if (!val) return 0;
-      const parsed = parseInt(val, 10);
-      return isNaN(parsed) ? 0 : parsed;
-    };
-    setRetryCount(parseValue('retryCount') || parseValue('speakRetryCount'));
-  }, [pCode, todayStr]);
+  }, [patientCode, pCode, todayStr]);
 
   const summaryBoxStyle = {
     width: '193px',
@@ -137,7 +120,7 @@ export default function S17_ActivityReport() {
     boxSizing: 'border-box' as const,
     display: 'flex',
     flexDirection: 'column' as const,
-    justifyContent: 'space-between',
+    justify: 'space-between' as const,
     textAlign: 'left' as const
   };
 
@@ -205,7 +188,7 @@ export default function S17_ActivityReport() {
           오늘도 끝까지 잘해주셨어요!
         </h1>
 
-        {/* 피드백 문구 (API 조회 응답 연결) */}
+        {/* 피드백 문구 */}
         <p style={{
           width: '800px',
           fontSize: '22px',

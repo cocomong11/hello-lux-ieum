@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/patientHeader';
 import QuizResultCard from '../components/quizResultCard';
 
-import { submitQuizAnswer, submitQuizResult, type QuizItem } from '../api/patientApi';
+import { submitQuizAnswer, submitQuizResult, type QuizItem, type QuizResultPayload } from '../api/patientApi';
 
 export default function S13_RecallVoiceChat() {
   const navigate = useNavigate();
@@ -25,7 +25,7 @@ export default function S13_RecallVoiceChat() {
   }, []);
 
   const currentQuiz = quizList[currentIndex] || {
-    p_code: 'AB37X2',
+    p_code: '1',
     set_id: 1,
     quiz_num: 1,
     quiz_comment: '고향에서 가장 기억에 남는 장소는 어디인가요?',
@@ -98,7 +98,7 @@ export default function S13_RecallVoiceChat() {
 
     const selectedAnswerText = optionsList[selectedOption];
     
-    const pCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || 'AB37X2');
+    const pCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || '1');
     const setId = Number(currentQuiz.set_id || 1);
     const quizNum = Number(currentQuiz.quiz_num || 1);
 
@@ -118,7 +118,6 @@ export default function S13_RecallVoiceChat() {
         setFeedbackMessage(res.feedback);
       }
 
-      
       if (res?.isCorrect === true) {
         const currentCorrect = parseInt(sessionStorage.getItem('correctQuizCount') || '0', 10);
         sessionStorage.setItem('correctQuizCount', String(currentCorrect + 1));
@@ -126,7 +125,6 @@ export default function S13_RecallVoiceChat() {
     } catch (error) {
       console.error(' 객관식 답안 제출 API 오류:', error);
     }
-
 
     const nextSolvedCount = totalSolvedCount + 1;
     setTotalSolvedCount(nextSolvedCount);
@@ -136,9 +134,8 @@ export default function S13_RecallVoiceChat() {
   const handleNextPage = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 
-   
     if (!isSubmittedRef.current) {
-      const pCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || 'AB37X2');
+      const pCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || '1');
       const setId = Number(currentQuiz.set_id || 1);
       const quizNum = Number(currentQuiz.quiz_num || 1);
 
@@ -170,20 +167,21 @@ export default function S13_RecallVoiceChat() {
 
     if (nextIndex >= quizList.length) {
       try {
-        const finalPCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || 'AB37X2');
+        const rawPCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || '1');
+        const numericPCode = parseInt(rawPCode, 10) || 0;
         const finalSetId = Number(currentQuiz.set_id || 1);
         
         const validSolvedCount = parseInt(sessionStorage.getItem('completedActivityCount') || '0', 10);
         const correctCount = parseInt(sessionStorage.getItem('correctQuizCount') || '0', 10);
         const totalHint = parseInt(sessionStorage.getItem('totalHintCount') || '0', 10);
 
-        const finalPayload = {
+        const finalPayload: QuizResultPayload = {
           setId: finalSetId,
-          pCode: finalPCode,
+          pCode: numericPCode,
           totalCount: validSolvedCount,
           correctCount: correctCount,
           hint: totalHint,
-          calculate: "0",
+          caculate: "0", // 백엔드 DTO에 맞춘 caculate 키
           feedbackContent: "오늘도 퀴즈를 잘 마쳤습니다!"
         };
 
