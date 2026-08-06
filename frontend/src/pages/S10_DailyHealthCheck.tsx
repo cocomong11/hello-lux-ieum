@@ -9,8 +9,12 @@ import faceBad from '../assets/poorface.png';
 import faceSleep from '../assets/sleepyface.png';
 import faceTired from '../assets/tired.png';
 
-// patientApi에서 postDailyStatus import
-import { getTodayQuizzes, postDailyStatus, type QuizItem } from '../api/patientApi';
+import {
+  getPatientMe,
+  getTodayQuizzes,
+  postDailyStatus,
+  type QuizItem,
+} from '../api/patientApi';
 
 type ButtonStatus = 'READY' | 'LOADING' | 'MISSING' | 'FAIL';
 
@@ -26,11 +30,47 @@ export default function S10_DailyHealthCheck() {
   const [isMemoFocused, setIsMemoFocused] = useState<boolean>(false);
   const [memoText, setMemoText] = useState<string>('');
 
+  // internalCode는 정수(number, 예: 1001) / pCodeStr은 6자리 문자열(string, 예: "HH5N7S")
+  const [internalCode, setInternalCode] = useState<number | null>(null);
+  const [pCodeStr, setPCodeStr] = useState<string>('');
+
+  // 10번 페이지 진입 시 /api/patient/me 호출하여 내 식별자 정보 확보
   useEffect(() => {
     sessionStorage.removeItem('todayHealthCondition');
     sessionStorage.removeItem('conditionStatus');
     sessionStorage.removeItem('sleepStatus');
     sessionStorage.removeItem('moodStatus');
+
+    const fetchMeInfo = async () => {
+      try {
+        const data = await getPatientMe();
+
+        if (data) {
+          // 1. internal_code (숫자값: 1001)
+          const fetchedInternalCode = Number(data.internal_code || data.internalCode);
+          if (!isNaN(fetchedInternalCode) && fetchedInternalCode > 0) {
+            setInternalCode(fetchedInternalCode);
+            sessionStorage.setItem('internal_code', String(fetchedInternalCode));
+          }
+
+          // 2. p_code (문자열: "HH5N7S")
+          const fetchedPCode = data.p_code || data.pCode || '';
+          if (fetchedPCode) {
+            setPCodeStr(fetchedPCode);
+            sessionStorage.setItem('p_code', fetchedPCode);
+          }
+
+          console.log('✅ 내 식별자 확보 성공:', {
+            internalCode: fetchedInternalCode,
+            pCode: fetchedPCode,
+          });
+        }
+      } catch (error) {
+        console.error('❌ /api/patient/me 호출 오류:', error);
+      }
+    };
+
+    fetchMeInfo();
   }, []);
 
   const addCognitive = (value: string) => {
@@ -46,9 +86,26 @@ export default function S10_DailyHealthCheck() {
     setBtnStatus('LOADING');
 
     try {
-      const rawPCode = sessionStorage.getItem('p_code');
-      // 영문+숫자 혼합 문자열 p_code 처리
-      const pCode: string = (rawPCode && rawPCode !== 'undefined' && rawPCode !== 'null') ? String(rawPCode) : 'AB37X2';
+      // 1. internalCode (숫자) 가져오기
+      const rawInternalCode =
+        internalCode ||
+        Number(sessionStorage.getItem('internal_code')) ||
+        Number(sessionStorage.getItem('internalCode'));
+
+      const targetInternalCode = Number(rawInternalCode);
+
+      if (!targetInternalCode || isNaN(targetInternalCode)) {
+        console.error('❌ 유효한 internalCode(숫자)를 찾을 수 없습니다.');
+        setBtnStatus('FAIL');
+        return;
+      }
+
+      // 2. pCode (문자열) 가져오기
+      const targetPCode =
+        pCodeStr ||
+        sessionStorage.getItem('p_code') ||
+        sessionStorage.getItem('pCode') ||
+        '';
 
       const statusPayload = {
         health_condition: condition || '좋음',
@@ -60,28 +117,25 @@ export default function S10_DailyHealthCheck() {
         memo: memoText,
       };
 
-      // 일일 상태 저장 API 호출 (/api/patient/{pCode}/daily-status)
-      let postResponse;
-      try {
-        postResponse = await postDailyStatus(pCode, statusPayload as any);
-      } catch (err) {
-        postResponse = await (postDailyStatus as any)({ p_code: pCode, ...statusPayload });
-      }
-      console.log('✅ 일일 상태 저장 성공 응답:', postResponse);
+      // 3. Daily Status 저장 (정수형 internalCode 전달 -> /patient/1001/daily-status)
+      console.log(`🚀 daily-status 요청 전송: /patient/${targetInternalCode}/daily-status`);
+      const postResponse = await postDailyStatus(targetInternalCode, statusPayload as any);
+      console.log('✅ 일일 상태 저장 성공:', postResponse);
 
-      // 세션 스토리지 세팅
+      // 세션에 선택 상태 기록
       sessionStorage.setItem('todayHealthCondition', condition || '좋음');
       sessionStorage.setItem('conditionStatus', condition || '좋음');
       sessionStorage.setItem('sleepStatus', sleep || '잘 잤음');
       sessionStorage.setItem('moodStatus', mood || '안정적');
 
-      // ---------------------------------------------------------
-      // [수정 영역] 오늘의 퀴즈 조회 및 안전 처리
-      // ---------------------------------------------------------
+      // 4. Today Quizzes 조회 (문자열 pCode 전달 -> /quiz/HH5N7S/today)
       let quizzes: QuizItem[] = [];
+      const quizCode = targetPCode || String(targetInternalCode);
+
       try {
-        const res: any = await getTodayQuizzes(pCode);
-        // Response wrapper나 배열 처리 대응
+        console.log(`🚀 퀴즈 요청 전송: /quiz/${quizCode}/today`);
+        const res: any = await getTodayQuizzes(quizCode);
+
         if (Array.isArray(res)) {
           quizzes = res;
         } else if (res && Array.isArray(res.data)) {
@@ -90,18 +144,23 @@ export default function S10_DailyHealthCheck() {
           quizzes = res.quizzes;
         }
       } catch (e) {
-        console.warn('⚠️ 백엔드 퀴즈 조회 실패, 기본 임시 퀴즈 데이터로 대체합니다.', e);
+        console.warn('⚠️ 퀴즈 조회 실패, Fallback 데이터 적용:', e);
       }
 
-      // API 응답이 없거나 빈 배열일 경우 Fallback 데이터 지정
+      // Fallback 퀴즈
       if (!quizzes || quizzes.length === 0) {
         quizzes = [
           {
-            quiz_id: 1,
-            quiz_category: 'CHOICE',
-            question: '오늘 아침 식사로 무엇을 드셨나요?',
+            set_id: 1,
+            quiz_num: 1,
+            p_code: quizCode,
+            level: 1,
+            quiz_category: 'choice',
+            quiz_comment: '오늘 아침 식사로 무엇을 드셨나요?',
+            answer: '밥과 국',
             options: ['밥과 국', '빵과 우유', '과일', '먹지 않음'],
-          } as any,
+            hints: [],
+          },
         ];
       }
 
@@ -111,11 +170,10 @@ export default function S10_DailyHealthCheck() {
       sessionStorage.setItem('totalHintCount', '0');
 
       const firstQuiz = quizzes[0];
-      // quiz_category 타입(enum, number, string 등) 및 대소문자 안전 파싱
-      const rawCategory = firstQuiz?.quiz_category ?? (firstQuiz as any)?.category ?? 'CHOICE';
+      const rawCategory = firstQuiz?.quiz_category ?? (firstQuiz as any)?.category ?? 'choice';
       const category = String(rawCategory).toLowerCase().trim();
 
-      // 카테고리값 매핑에 따라 라우팅 처리
+      // 카테고리별 라우팅
       if (category === 'choice' || category === '1') {
         navigate('/patient-voicechat');
       } else if (category === 'photo' || category === '2') {
@@ -125,11 +183,9 @@ export default function S10_DailyHealthCheck() {
       } else {
         navigate('/patient-voicechat');
       }
-      // ---------------------------------------------------------
     } catch (error) {
-      console.error('❌ 이동 중 에러 발생, 강제로 음성채팅 화면으로 이동합니다:', error);
+      console.error('❌ 저장 중 오류 발생:', error);
       setBtnStatus('FAIL');
-      navigate('/patient-voicechat');
     }
   };
 
