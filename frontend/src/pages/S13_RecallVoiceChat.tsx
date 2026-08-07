@@ -11,10 +11,48 @@ export default function S13_RecallVoiceChat() {
   const [quizList, setQuizList] = useState<QuizItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
 
+ 
+  const getSafePCode = (quizItem?: QuizItem) => {
+    const sessionPCode = sessionStorage.getItem('p_code');
+    if (sessionPCode && isNaN(Number(sessionPCode))) {
+      return sessionPCode;
+    }
+    if (quizItem?.p_code && isNaN(Number(quizItem.p_code))) {
+      return String(quizItem.p_code);
+    }
+    return sessionPCode || 'HH5N7S';
+  };
+
+  
+  const getNumericPCode = (quizItem?: QuizItem): number => {
+    if (quizItem?.p_code !== undefined && !isNaN(Number(quizItem.p_code))) {
+      return Number(quizItem.p_code);
+    }
+    if (quizItem?.pCode !== undefined && !isNaN(Number(quizItem.pCode))) {
+      return Number(quizItem.pCode);
+    }
+
+    const sessionNum = sessionStorage.getItem('p_code_num') || sessionStorage.getItem('internal_code');
+    if (sessionNum && !isNaN(Number(sessionNum))) {
+      return Number(sessionNum);
+    }
+
+    const sessionPCode = sessionStorage.getItem('p_code');
+    if (sessionPCode && !isNaN(Number(sessionPCode))) {
+      return Number(sessionPCode);
+    }
+
+    return 1;
+  };
+
   useEffect(() => {
     try {
-      const storedQuizzes = JSON.parse(sessionStorage.getItem('quizList') || '[]');
-      const storedIndex = parseInt(sessionStorage.getItem('currentQuizIndex') || '0', 10);
+      const storedQuizzes: QuizItem[] = JSON.parse(sessionStorage.getItem('quizList') || '[]');
+      let storedIndex = parseInt(sessionStorage.getItem('currentQuizIndex') || '0', 10);
+
+      if (storedIndex >= storedQuizzes.length && storedQuizzes.length > 0) {
+        storedIndex = storedQuizzes.length - 1;
+      }
 
       setQuizList(storedQuizzes);
       setCurrentIndex(storedIndex);
@@ -25,12 +63,18 @@ export default function S13_RecallVoiceChat() {
   }, []);
 
   const currentQuiz = quizList[currentIndex] || {
-    p_code: '1',
+    p_code: getSafePCode(),
     set_id: 1,
     quiz_num: 1,
     quiz_comment: '고향에서 가장 기억에 남는 장소는 어디인가요?',
     options: ['슈퍼마켓', '집', '공원', '우물가'],
   };
+
+  const currentQuestionText = 
+    currentQuiz?.quiz_comment || 
+    currentQuiz?.quizComment || 
+    currentQuiz?.question || 
+    '문제를 불러오는 중입니다.';
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
@@ -38,6 +82,9 @@ export default function S13_RecallVoiceChat() {
 
   const [elapsedTime, setElapsedTime] = useState<string>('0.0');
   const [feedbackMessage, setFeedbackMessage] = useState<string>('잘 하셨어요!');
+  
+ 
+  const [thisQuizIsCorrect, setThisQuizIsCorrect] = useState<boolean | undefined>(undefined);
 
   const [totalSolvedCount, setTotalSolvedCount] = useState<number>(() => {
     const saved = sessionStorage.getItem('completedActivityCount');
@@ -70,6 +117,7 @@ export default function S13_RecallVoiceChat() {
     isSubmittedRef.current = false; 
     setElapsedTime('0.0');
     setFeedbackMessage('잘 하셨어요!');
+    setThisQuizIsCorrect(undefined);
 
     const savedAccumulated = parseFloat(sessionStorage.getItem('currentQuizElapsedTime') || '0');
     initialAccumulatedTimeRef.current = savedAccumulated;
@@ -86,7 +134,6 @@ export default function S13_RecallVoiceChat() {
 
     if (isSubmittedRef.current) return; 
 
-    // 제출 처리 즉시 플래그 세팅
     setIsSubmitted(true);
     isSubmittedRef.current = true;
 
@@ -98,9 +145,9 @@ export default function S13_RecallVoiceChat() {
 
     const selectedAnswerText = optionsList[selectedOption];
     
-    const pCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || '1');
-    const setId = Number(currentQuiz.set_id || 1);
-    const quizNum = Number(currentQuiz.quiz_num || 1);
+    const pCode = getSafePCode(currentQuiz);
+    const setId = Number(currentQuiz.set_id || currentQuiz.setId || 1);
+    const quizNum = Number(currentQuiz.quiz_num || currentQuiz.quizNum || 1);
 
     const payloadData = {
       pCode,
@@ -111,19 +158,21 @@ export default function S13_RecallVoiceChat() {
 
     try {
       const res = await submitQuizAnswer(payloadData);
-
-      console.log(' [S13 제출 응답 수신]', res);
+      console.log('[S13 제출 응답 수신]', res);
 
       if (res?.feedback) {
         setFeedbackMessage(res.feedback);
       }
 
-      if (res?.isCorrect === true) {
+      const isCorrect = res?.correct ?? res?.isCorrect ?? res?.is_correct ?? false;
+      setThisQuizIsCorrect(isCorrect);
+
+      if (isCorrect) {
         const currentCorrect = parseInt(sessionStorage.getItem('correctQuizCount') || '0', 10);
         sessionStorage.setItem('correctQuizCount', String(currentCorrect + 1));
       }
     } catch (error) {
-      console.error(' 객관식 답안 제출 API 오류:', error);
+      console.error('객관식 답안 제출 API 오류:', error);
     }
 
     const nextSolvedCount = totalSolvedCount + 1;
@@ -135,9 +184,9 @@ export default function S13_RecallVoiceChat() {
     if (e) e.preventDefault();
 
     if (!isSubmittedRef.current) {
-      const pCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || '1');
-      const setId = Number(currentQuiz.set_id || 1);
-      const quizNum = Number(currentQuiz.quiz_num || 1);
+      const pCode = getSafePCode(currentQuiz);
+      const setId = Number(currentQuiz.set_id || currentQuiz.setId || 1);
+      const quizNum = Number(currentQuiz.quiz_num || currentQuiz.quizNum || 1);
 
       const payloadData = {
         pCode,
@@ -146,18 +195,15 @@ export default function S13_RecallVoiceChat() {
         userAnswer: '',
       };
 
-      console.log('⏭ [제출 없이 다음 활동] 스킵 답안 Payload 전송:', payloadData);
-
       try {
         const res = await submitQuizAnswer(payloadData);
-        console.log(' [스킵 답안 제출 응답 수신]', res);
-
-        if (res?.isCorrect === true) {
+        const isCorrect = res?.correct ?? res?.isCorrect ?? res?.is_correct ?? false;
+        if (isCorrect) {
           const currentCorrect = parseInt(sessionStorage.getItem('correctQuizCount') || '0', 10);
           sessionStorage.setItem('correctQuizCount', String(currentCorrect + 1));
         }
       } catch (error) {
-        console.error(' 스킵 답안 제출 API 오류:', error);
+        console.error('스킵 답안 제출 API 오류:', error);
       }
     }
 
@@ -165,15 +211,15 @@ export default function S13_RecallVoiceChat() {
 
     const nextIndex = currentIndex + 1;
 
+    
     if (nextIndex >= quizList.length) {
       try {
-        const rawPCode = String(currentQuiz.p_code || sessionStorage.getItem('p_code') || '1');
-        const numericPCode = parseInt(rawPCode, 10) || 0;
-        const finalSetId = Number(currentQuiz.set_id || 1);
+        const numericPCode = getNumericPCode(currentQuiz);
+        const finalSetId = Number(currentQuiz.set_id || currentQuiz.setId || 1);
         
         const validSolvedCount = parseInt(sessionStorage.getItem('completedActivityCount') || '0', 10);
         const correctCount = parseInt(sessionStorage.getItem('correctQuizCount') || '0', 10);
-        const totalHint = parseInt(sessionStorage.getItem('totalHintCount') || '0', 10);
+        const totalHint = parseInt(sessionStorage.getItem('totalHintId') || sessionStorage.getItem('totalHintCount') || '0', 10);
 
         const finalPayload: QuizResultPayload = {
           setId: finalSetId,
@@ -181,14 +227,11 @@ export default function S13_RecallVoiceChat() {
           totalCount: validSolvedCount,
           correctCount: correctCount,
           hint: totalHint,
-          caculate: "0", // 백엔드 DTO에 맞춘 caculate 키
+          caculate: "0",
           feedbackContent: "오늘도 퀴즈를 잘 마쳤습니다!"
         };
 
-        console.log('[전체 퀴즈 결과 최종 제출 Payload 전송]', finalPayload);
-
-        const resultResponse = await submitQuizResult(finalPayload);
-        console.log('[전체 퀴즈 결과 제출 완료 응답]', resultResponse);
+        await submitQuizResult(finalPayload);
       } catch (err) {
         console.error('전체 퀴즈 결과 제출 실패:', err);
       }
@@ -198,25 +241,32 @@ export default function S13_RecallVoiceChat() {
       return;
     }
 
+    
     sessionStorage.setItem('currentQuizIndex', String(nextIndex));
 
     const nextQuiz = quizList[nextIndex];
-    const category = (nextQuiz?.quiz_category || '').toLowerCase().trim();
+    
+    const rawCategory = nextQuiz?.quizCategory ?? nextQuiz?.quiz_category ?? nextQuiz?.category ?? 'choice';
+    const category = String(rawCategory).toLowerCase().trim();
 
-    if (category === 'choice') {
+    if (category === 'choice' || category === '1' || category === '객관식') {
       setCurrentIndex(nextIndex);
       window.scrollTo(0, 0);
-    } else if (category === 'photo') {
+    } else if (category === 'photo' || category === '2' || category === '사진') {
       navigate('/patient-photo');
-    } else if (category === 'text') {
+    } else if (category === 'text' || category === '3' || category === '단답형' || category === '주관식') {
       navigate('/patient-voicequiz');
     } else {
-      navigate('/patient-home');
+      
+      setCurrentIndex(nextIndex);
+      window.scrollTo(0, 0);
     }
   };
 
   const handleQuit = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
+
+    const targetIndex = isSubmittedRef.current ? currentIndex + 1 : currentIndex;
 
     if (!isSubmittedRef.current) {
       const sessionSpent = (Date.now() - startTimeRef.current) / 1000;
@@ -227,8 +277,6 @@ export default function S13_RecallVoiceChat() {
     }
 
     sessionStorage.setItem('todayActivityQuit', 'true');
-
-    const targetIndex = isSubmittedRef.current ? currentIndex + 1 : currentIndex;
     sessionStorage.setItem('currentQuizIndex', String(targetIndex));
     sessionStorage.setItem('completedActivityCount', String(totalSolvedCount));
 
@@ -292,8 +340,9 @@ export default function S13_RecallVoiceChat() {
               textAlign: 'left',
             }}
           >
-            {currentQuiz.quiz_comment}
+            {currentQuestionText}
           </h1>
+
           <p
             style={{
               width: '100%',
@@ -373,6 +422,7 @@ export default function S13_RecallVoiceChat() {
                 duration={elapsedTime}
                 hintCount={totalHintCount}
                 feedback={feedbackMessage}
+                isCorrect={thisQuizIsCorrect}
                 resultDescription={`지금까지 총 ${totalSolvedCount}문제를 완료하셨어요! 고생하셨습니다.`}
                 showHintCount={true}
               />

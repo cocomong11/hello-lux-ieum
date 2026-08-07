@@ -3,7 +3,8 @@ interface QuizResultCardProps {
   hintCount?: number;
   resultDescription: string;
   feedback?: string;
-  showHintCount?: boolean; 
+  showHintCount?: boolean;
+  isCorrect?: boolean | null; 
 }
 
 export default function QuizResultCard({ 
@@ -11,8 +12,16 @@ export default function QuizResultCard({
   hintCount = 0, 
   resultDescription, 
   feedback, 
-  showHintCount = true 
+  showHintCount = true,
+  isCorrect
 }: QuizResultCardProps) {
+  
+  const defaultFeedback = isCorrect === true 
+    ? '정답입니다! 🎉' 
+    : isCorrect === false 
+    ? '아쉽네요! 다음 문제에 도전해 보세요.' 
+    : '수고하셨습니다!';
+
   return (
     <div style={{ 
       height: '170px', width: '648px', borderRadius: '10px', 
@@ -25,12 +34,12 @@ export default function QuizResultCard({
       <h3 style={{ 
         fontFamily: "'Pretendard Variable', Pretendard, sans-serif", 
         fontWeight: 700, 
-        fontSize: '30px', 
+        fontSize: '26px', 
         lineHeight: '140%', 
-        color: '#0D0D0D', 
+        color: isCorrect === false ? '#0D0D0D' : '#0D0D0D', 
         margin: '0 0 6px 0' 
       }}>
-        {feedback || '수고하셨습니다!'}
+        {feedback || defaultFeedback}
       </h3>
 
       <p style={{ 

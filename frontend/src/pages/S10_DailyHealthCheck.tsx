@@ -30,11 +30,11 @@ export default function S10_DailyHealthCheck() {
   const [isMemoFocused, setIsMemoFocused] = useState<boolean>(false);
   const [memoText, setMemoText] = useState<string>('');
 
-  // internalCode는 정수(number, 예: 1001) / pCodeStr은 6자리 문자열(string, 예: "HH5N7S")
+  
   const [internalCode, setInternalCode] = useState<number | null>(null);
   const [pCodeStr, setPCodeStr] = useState<string>('');
 
-  // 10번 페이지 진입 시 /api/patient/me 호출하여 내 식별자 정보 확보
+  
   useEffect(() => {
     sessionStorage.removeItem('todayHealthCondition');
     sessionStorage.removeItem('conditionStatus');
@@ -46,14 +46,14 @@ export default function S10_DailyHealthCheck() {
         const data = await getPatientMe();
 
         if (data) {
-          // 1. internal_code (숫자값: 1001)
+          
           const fetchedInternalCode = Number(data.internal_code || data.internalCode);
           if (!isNaN(fetchedInternalCode) && fetchedInternalCode > 0) {
             setInternalCode(fetchedInternalCode);
             sessionStorage.setItem('internal_code', String(fetchedInternalCode));
           }
 
-          // 2. p_code (문자열: "HH5N7S")
+          
           const fetchedPCode = data.p_code || data.pCode || '';
           if (fetchedPCode) {
             setPCodeStr(fetchedPCode);
@@ -86,7 +86,7 @@ export default function S10_DailyHealthCheck() {
     setBtnStatus('LOADING');
 
     try {
-      // 1. internalCode (숫자) 가져오기
+      
       const rawInternalCode =
         internalCode ||
         Number(sessionStorage.getItem('internal_code')) ||
@@ -100,7 +100,7 @@ export default function S10_DailyHealthCheck() {
         return;
       }
 
-      // 2. pCode (문자열) 가져오기
+      
       const targetPCode =
         pCodeStr ||
         sessionStorage.getItem('p_code') ||
@@ -117,18 +117,18 @@ export default function S10_DailyHealthCheck() {
         memo: memoText,
       };
 
-      // 3. Daily Status 저장 (정수형 internalCode 전달 -> /patient/1001/daily-status)
+      
       console.log(`🚀 daily-status 요청 전송: /patient/${targetInternalCode}/daily-status`);
       const postResponse = await postDailyStatus(targetInternalCode, statusPayload as any);
       console.log('✅ 일일 상태 저장 성공:', postResponse);
 
-      // 세션에 선택 상태 기록
+      
       sessionStorage.setItem('todayHealthCondition', condition || '좋음');
       sessionStorage.setItem('conditionStatus', condition || '좋음');
       sessionStorage.setItem('sleepStatus', sleep || '잘 잤음');
       sessionStorage.setItem('moodStatus', mood || '안정적');
 
-      // 4. Today Quizzes 조회 (문자열 pCode 전달 -> /quiz/HH5N7S/today)
+      
       let quizzes: QuizItem[] = [];
       const quizCode = targetPCode || String(targetInternalCode);
 
@@ -147,7 +147,7 @@ export default function S10_DailyHealthCheck() {
         console.warn('⚠️ 퀴즈 조회 실패, Fallback 데이터 적용:', e);
       }
 
-      // Fallback 퀴즈
+     
       if (!quizzes || quizzes.length === 0) {
         quizzes = [
           {
@@ -164,16 +164,23 @@ export default function S10_DailyHealthCheck() {
         ];
       }
 
+      
+      const firstQuiz = quizzes[0];
+      const extractedSetId = firstQuiz?.set_id ?? (firstQuiz as any)?.setId ?? 1;
+      
+      sessionStorage.setItem('set_id', String(extractedSetId));
+      sessionStorage.setItem('setId', String(extractedSetId));
+      console.log('✅ set_id 세션 저장 완료:', extractedSetId);
+
       sessionStorage.setItem('quizList', JSON.stringify(quizzes));
       sessionStorage.setItem('currentQuizIndex', '0');
       sessionStorage.setItem('completedActivityCount', '0');
       sessionStorage.setItem('totalHintCount', '0');
 
-      const firstQuiz = quizzes[0];
       const rawCategory = firstQuiz?.quiz_category ?? (firstQuiz as any)?.category ?? 'choice';
       const category = String(rawCategory).toLowerCase().trim();
 
-      // 카테고리별 라우팅
+      
       if (category === 'choice' || category === '1') {
         navigate('/patient-voicechat');
       } else if (category === 'photo' || category === '2') {
@@ -183,7 +190,7 @@ export default function S10_DailyHealthCheck() {
       } else {
         navigate('/patient-voicechat');
       }
-      // ---------------------------------------------------------
+      
     } catch (error) {
       console.error('❌ 저장 중 오류 발생:', error);
       setBtnStatus('FAIL');
@@ -270,7 +277,7 @@ export default function S10_DailyHealthCheck() {
           boxSizing: 'border-box',
         }}
       >
-        {/* 오늘의 컨디션 */}
+       
         <h2 style={getSectionTitleStyle()}>오늘의 컨디션</h2>
         <div style={{ display: 'flex', gap: '14px', width: '100%', marginBottom: '70px' }}>
           {conditionOptions.map((item) => (
@@ -299,7 +306,7 @@ export default function S10_DailyHealthCheck() {
           ))}
         </div>
 
-        {/* 수면 상태 */}
+        
         <h2 style={getSectionTitleStyle()}>수면 상태</h2>
         <div style={{ display: 'flex', gap: '14px', width: '100%', marginBottom: '70px' }}>
           {sleepOptions.map((item) => (
@@ -328,7 +335,7 @@ export default function S10_DailyHealthCheck() {
           ))}
         </div>
 
-        {/* 식사 여부 */}
+        
         <h2 style={getSectionTitleStyle()}>식사 여부</h2>
         <div style={{ display: 'flex', gap: '16px', width: '100%', marginBottom: '70px' }}>
           <div
@@ -359,7 +366,7 @@ export default function S10_DailyHealthCheck() {
           </div>
         </div>
 
-        {/* 통증 / 불편감 */}
+       
         <h2 style={getSectionTitleStyle()}>통증 / 불편감</h2>
         <div style={{ display: 'flex', gap: '16px', width: '100%', marginBottom: '70px' }}>
           {['없음', '있음'].map((item) => (
@@ -380,7 +387,7 @@ export default function S10_DailyHealthCheck() {
           ))}
         </div>
 
-        {/* 오늘 기분 상태 */}
+       
         <h2 style={getSectionTitleStyle()}>오늘 기분 상태</h2>
         <div
           style={{
@@ -415,7 +422,7 @@ export default function S10_DailyHealthCheck() {
           ))}
         </div>
 
-        {/* 오늘 행동 및 인지 변화 */}
+        
         <h2 style={getSectionTitleStyle()}>
           오늘 행동 및 인지 변화 (중복 선택 가능)
         </h2>
@@ -494,7 +501,6 @@ export default function S10_DailyHealthCheck() {
           </div>
         </div>
 
-        {/* 보호자 메모 (선택) */}
         <h2 style={getSectionTitleStyle()}>보호자 메모 (선택)</h2>
         <textarea
           placeholder="ex. 보호자가 자유롭게 적어 주세요."
@@ -521,7 +527,7 @@ export default function S10_DailyHealthCheck() {
           }}
         />
 
-        {/* 하단 버튼 영역 */}
+        
         <div
           style={{
             display: 'flex',
