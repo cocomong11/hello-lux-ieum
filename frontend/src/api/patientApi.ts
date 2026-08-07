@@ -3,8 +3,6 @@ import { api } from './client';
 const USE_MOCK = false;
 
 
-
-// 백엔드 /api/patient/me 응답 타입 정의
 export interface PatientMeResponse {
   internal_code: number;
   p_code: string;
@@ -27,21 +25,33 @@ export interface PatientCodeResponse {
 
 export interface QuizItem {
   set_id?: number;
+  setId?: number;
   quiz_id?: number;
+  quizId?: number | null;
   quiz_num?: number;
-  p_code?: string; 
+  quizNum?: number;
+  p_code?: string | number;
+  pCode?: string | number;
   level?: number;
+  
   quiz_category?: 'choice' | 'photo' | 'text' | string;
+  quizCategory?: 'choice' | 'photo' | 'text' | string;
+  category?: string;
+
   quiz_comment?: string;
+  quizComment?: string;
   question?: string;
+
   quiz_photo?: string | null;
+  quizPhoto?: string | null;
+
   answer?: string;
   options?: string[];
   hints?: string[];
 }
 
 export interface QuizAnswerPayload {
-  pCode: string;
+  pCode: string | number;
   setId: number;
   quizNum: number;
   userAnswer: string;
@@ -49,16 +59,19 @@ export interface QuizAnswerPayload {
 
 export interface QuizAnswerResponse {
   feedback: string;
-  isCorrect: boolean;
+  correct?: boolean;     
+  isCorrect?: boolean;    
+  is_correct?: boolean;   
 }
 
 export interface QuizResultPayload {
   setId: number;
-  pCode: string | number;
+  pCode: number | string;
+  p_code?: number | string;
   totalCount: number;
   correctCount: number;
   hint: number;
-  caculate: string; 
+  caculate: string;       
   feedbackContent: string;
 }
 
@@ -67,12 +80,23 @@ export interface QuizResultResponse {
   [key: string]: any;
 }
 
+
 export interface QuizResultDetailResponse {
+  result_id?: number;
+  set_id?: number;         
+  setId?: number;          
+  p_code?: number | string;
   date: string;
   total_count: number;
   correct_count: number;
   hint: number;
-  calculate: string;
+  caculate?: string;      
+  calculate?: string;      
+  avg_response_time?: number;
+  emotion_status?: string;
+  health_status?: string;
+  sleep_status?: string;
+  success_rate?: number;
 }
 
 export interface QuizFeedbackItem {
@@ -105,7 +129,6 @@ export interface DailyStatusResponse {
   [key: string]: any;
 }
 
-
 export const getPatientMe = async (): Promise<PatientMeResponse> => {
   if (USE_MOCK) {
     return new Promise((resolve) => {
@@ -118,7 +141,7 @@ export const getPatientMe = async (): Promise<PatientMeResponse> => {
       }, 200);
     });
   }
- 
+
   return api.get<PatientMeResponse>('/patient/me');
 };
 
@@ -138,12 +161,12 @@ export const getTodayQuizzes = async (pCode: string): Promise<QuizItem[]> => {
         resolve([
           {
             set_id: 1,
-            quiz_num: 1,
-            p_code: pCode,
+            quizNum: 1,
+            pCode: pCode,
             level: 1,
-            quiz_category: 'choice',
-            quiz_comment: '어르신이 가장 좋아하시는 음식은 무엇인가요?',
-            quiz_photo: null,
+            quizCategory: 'choice',
+            quizComment: '어르신이 가장 좋아하시는 음식은 무엇인가요?',
+            quizPhoto: null,
             answer: '돈까스',
             options: ['돈까스', '김치찌개', '비빔밥', '국밥'],
             hints: [],
@@ -165,7 +188,7 @@ export const submitQuizAnswer = async ({
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
-          isCorrect: userAnswer.trim() !== '',
+          correct: userAnswer.trim() !== '',
           feedback: `잘 하셨어요!`,
         });
       }, 200);
@@ -194,7 +217,15 @@ export const submitQuizResult = async (
     });
   }
 
-  return api.post<QuizResultResponse>('/quiz/result/submit', payload);
+  const numericPCode = !isNaN(Number(payload.pCode)) ? Number(payload.pCode) : payload.pCode;
+
+  const formattedPayload = {
+    ...payload,
+    pCode: numericPCode,
+    p_code: numericPCode,
+  };
+
+  return api.post<QuizResultResponse>('/quiz/result/submit', formattedPayload);
 };
 
 export const getQuizResults = async (
@@ -205,11 +236,12 @@ export const getQuizResults = async (
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
+          set_id: 11,
           date: date,
           total_count: 5,
           correct_count: 4,
           hint: 1,
-          calculate: '최근 7일간 정답률이 안정적이며 학습 상태가 우수합니다.',
+          caculate: '최근 7일간 정답률이 안정적이며 학습 상태가 우수합니다.',
         });
       }, 300);
     });
@@ -242,7 +274,6 @@ export const getQuizFeedbacks = async (
   );
 };
 
-
 export const postDailyStatus = async (
   pCode: string | number,
   payload: DailyStatusPayload
@@ -270,7 +301,6 @@ export const postDailyStatus = async (
     payload
   );
 };
-
 
 export const getDailyStatus = async (
   pCode: string | number,

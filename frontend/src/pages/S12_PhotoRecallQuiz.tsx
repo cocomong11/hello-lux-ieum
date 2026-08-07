@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import type React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/patientHeader';
 import HintPopup from '../pages/S16_HintPopup';
@@ -13,18 +14,64 @@ export default function S12_PhotoRecallQuiz() {
   const [quizList, setQuizList] = useState<QuizItem[] | null>(null);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
 
+ 
+  const getSafePCode = (quizItem?: QuizItem) => {
+    const sessionPCode = sessionStorage.getItem('p_code');
+    if (sessionPCode && isNaN(Number(sessionPCode))) {
+      return sessionPCode;
+    }
+    if (quizItem?.p_code && isNaN(Number(quizItem.p_code))) {
+      return String(quizItem.p_code);
+    }
+    if (quizItem?.pCode && isNaN(Number(quizItem.pCode))) {
+      return String(quizItem.pCode);
+    }
+    return sessionPCode || quizItem?.p_code || quizItem?.pCode || 'HH5N7S';
+  };
+
   useEffect(() => {
     try {
-      const storedQuizzes = JSON.parse(sessionStorage.getItem('quizList') || '[]');
-      const storedIndex = parseInt(sessionStorage.getItem('currentQuizIndex') || '0', 10);
+      const storedQuizzesRaw = sessionStorage.getItem('quizList');
+      const storedQuizzes: QuizItem[] = storedQuizzesRaw ? JSON.parse(storedQuizzesRaw) : [];
       
+      let storedIndex = parseInt(sessionStorage.getItem('currentQuizIndex') || '0', 10);
+
+      if (isNaN(storedIndex) || storedIndex < 0) {
+        storedIndex = 0;
+      }
+
+     
+      if (storedQuizzes.length > 0 && storedIndex >= storedQuizzes.length) {
+        storedIndex = storedQuizzes.length - 1;
+      }
+
+      
+      if (storedQuizzes.length > 0 && storedQuizzes[storedIndex]) {
+        const currentQuizData = storedQuizzes[storedIndex] as any;
+        const rawCategory = currentQuizData?.quizCategory ?? currentQuizData?.quiz_category ?? currentQuizData?.category ?? currentQuizData?.level ?? '';
+        const cat = String(rawCategory).toLowerCase().trim();
+        const hasPhoto = Boolean(currentQuizData?.quiz_photo || currentQuizData?.quizPhoto);
+
+        const isPhotoCategory = cat === 'photo' || cat === '2' || cat === '사진' || cat === 'picture' || cat === 'image' || hasPhoto;
+
+        if (!isPhotoCategory) {
+          if (cat === 'choice' || cat === '1' || cat === '객관식') {
+            navigate('/patient-voicechat', { replace: true });
+            return;
+          } else if (cat === 'text' || cat === '3' || cat === '단답형' || cat === '주관식') {
+            navigate('/patient-voicequiz', { replace: true });
+            return;
+          }
+        }
+      }
+
       setQuizList(storedQuizzes);
       setCurrentIndex(storedIndex);
     } catch (e) {
       console.error('퀴즈 데이터 로딩 실패:', e);
       setQuizList([]);
     }
-  }, []);
+  }, [navigate]);
 
   const [isListening, setIsListening] = useState<boolean>(false);
   const [isHintOpen, setIsHintOpen] = useState<boolean>(false);
@@ -34,7 +81,6 @@ export default function S12_PhotoRecallQuiz() {
 
   const [thisQuizIsCorrect, setThisQuizIsCorrect] = useState<boolean | null>(null);
 
-  // Ref 선언 올바르게 수정
   const startTimeRef = useRef<number>(Date.now());
   const initialAccumulatedTimeRef = useRef<number>(0); 
 
@@ -77,7 +123,6 @@ export default function S12_PhotoRecallQuiz() {
     setMaxHintStepThisQuiz(savedTempHintStep);
 
     const savedAccumulated = parseFloat(sessionStorage.getItem('currentQuizElapsedTime') || '0');
-    // Ref .current 에 값 할당
     initialAccumulatedTimeRef.current = savedAccumulated;
     startTimeRef.current = Date.now();
   }, [currentIndex]);
@@ -90,31 +135,36 @@ export default function S12_PhotoRecallQuiz() {
     );
   }
 
-  if (quizList.length === 0) {
+  if (quizList.length === 0 || currentIndex >= quizList.length) {
     return (
       <div style={{ width: '100%', minHeight: '100vh', backgroundColor: '#F8F9FA', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
-        <h2>불러올 퀴즈가 없습니다.</h2>
-        <button onClick={() => navigate('/patient-home')} style={{ padding: '10px 20px', borderRadius: '20px', backgroundColor: '#4188ED', color: '#FFF', border: 'none', cursor: 'pointer' }}>
+        <h2>불러올 퀴즈가 없거나 진행 상태가 유효하지 않습니다.</h2>
+        <button 
+          onClick={() => {
+            sessionStorage.setItem('currentQuizIndex', '0');
+            navigate('/patient-home');
+          }} 
+          style={{ padding: '10px 20px', borderRadius: '20px', backgroundColor: '#4188ED', color: '#FFF', border: 'none', cursor: 'pointer' }}
+        >
           홈으로 돌아가기
         </button>
       </div>
     );
   }
 
-  const currentQuiz = quizList[currentIndex] || quizList[0];
+  const currentQuiz = quizList[currentIndex];
+
+  const currentQuestionText = 
+    currentQuiz?.quiz_comment || 
+    currentQuiz?.quizComment || 
+    currentQuiz?.question || 
+    '문제를 불러오는 중입니다.';
+
+  const imageUrl = currentQuiz?.quiz_photo || currentQuiz?.quizPhoto;
 
   const hintsList = currentQuiz?.hints && currentQuiz.hints.length > 0 
     ? currentQuiz.hints 
     : ['힌트 정보가 없습니다.'];
-
-  const getValidPCode = (): string => {
-    const code =
-      currentQuiz?.p_code ||
-      sessionStorage.getItem('p_code') ||
-      sessionStorage.getItem('pCode') ||
-      '1';
-    return String(code);
-  };
 
   const handleHintClick = () => {
     setIsHintOpen(true); 
@@ -129,9 +179,9 @@ export default function S12_PhotoRecallQuiz() {
     }
   };
 
+  
   const handleSuccessSubmit = async (finalDuration: string, userSpokenAnswer?: string) => {
     const sessionSpent = (Date.now() - startTimeRef.current) / 1000;
-    // .current 값 참조
     const totalSpentSeconds = (initialAccumulatedTimeRef.current + sessionSpent).toFixed(1);
 
     const actualDuration = finalDuration !== '0.0' ? finalDuration : totalSpentSeconds;
@@ -152,18 +202,14 @@ export default function S12_PhotoRecallQuiz() {
     }
 
     const payloadData = {
-      pCode: getValidPCode(),
-      setId: currentQuiz.set_id || 1,
-      quizNum: currentQuiz.quiz_num || 1,
+      pCode: String(getSafePCode(currentQuiz)), 
+      setId: Number(currentQuiz.set_id || currentQuiz.setId || 1),
+      quizNum: Number(currentQuiz.quiz_num || currentQuiz.quizNum || 1),
       userAnswer: answerText,
     };
 
     try {
       const res = await submitQuizAnswer(payloadData);
-
-      console.log('📩 [S12 제출 응답 수신]', res);
-      console.log('✅ 정답 여부 (isCorrect):', res?.isCorrect);
-      console.log('💬 피드백 메시지 (feedback):', res?.feedback);
 
       if (res?.feedback) {
         setFeedbackMessage(res.feedback);
@@ -187,7 +233,7 @@ export default function S12_PhotoRecallQuiz() {
       setThisQuizIsCorrect(isCurrentCorrect);
 
     } catch (error) {
-      console.error('❌ 사진 퀴즈 답안 제출 실패:', error);
+      console.error('사진 퀴즈 답안 제출 실패:', error);
     }
 
     if (!isSubmitted) {
@@ -198,15 +244,16 @@ export default function S12_PhotoRecallQuiz() {
     }
   };
 
+  
   const handleNextPage = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 
     let latestCorrectCount = correctCount;
 
     if (!isSubmitted) {
-      const pCode = getValidPCode();
-      const setId = currentQuiz.set_id || 1;
-      const quizNum = currentQuiz.quiz_num || 1;
+      const pCode = String(getSafePCode(currentQuiz)); 
+      const setId = Number(currentQuiz.set_id || currentQuiz.setId || 1);
+      const quizNum = Number(currentQuiz.quiz_num || currentQuiz.quizNum || 1);
 
       const payloadData = {
         pCode,
@@ -217,9 +264,6 @@ export default function S12_PhotoRecallQuiz() {
 
       try {
         const res = await submitQuizAnswer(payloadData);
-
-        console.log(' 스킵/미제출 응답 수신:', res);
-
         const isCurrentCorrect = Boolean(res?.isCorrect);
 
         if (thisQuizIsCorrect !== true && isCurrentCorrect) {
@@ -232,7 +276,7 @@ export default function S12_PhotoRecallQuiz() {
         sessionStorage.setItem('correctQuizCount', String(latestCorrectCount));
         setThisQuizIsCorrect(isCurrentCorrect);
       } catch (error) {
-        console.error(' 사진 퀴즈 스킵 제출 실패:', error);
+        console.error('사진 퀴즈 스킵 제출 실패:', error);
       }
     }
 
@@ -243,9 +287,8 @@ export default function S12_PhotoRecallQuiz() {
 
     if (nextIndex >= quizList.length) {
       try {
-        const rawPCode = getValidPCode();
-        const numericPCode = parseInt(rawPCode, 10) || 0;
-        const finalSetId = currentQuiz.set_id || 1;
+        const finalPCodeStr = String(getSafePCode(currentQuiz)); 
+        const finalSetId = Number(currentQuiz.set_id || currentQuiz.setId || 1);
         
         const validSolvedCount = parseInt(sessionStorage.getItem('completedActivityCount') || '0', 10);
         const finalCorrectCount = latestCorrectCount;
@@ -253,7 +296,7 @@ export default function S12_PhotoRecallQuiz() {
 
         const finalPayload: QuizResultPayload = {
           setId: finalSetId,
-          pCode: numericPCode,
+          pCode: finalPCodeStr as any,
           totalCount: validSolvedCount,
           correctCount: finalCorrectCount,
           hint: totalHint,
@@ -261,12 +304,9 @@ export default function S12_PhotoRecallQuiz() {
           feedbackContent: `총 ${validSolvedCount}문제 중 ${finalCorrectCount}문제를 맞추셨습니다. 오늘도 수고하셨습니다!`
         };
 
-        console.log(' [전체 퀴즈 결과 최종 제출 Payload 전송]', finalPayload);
-
-        const resultResponse = await submitQuizResult(finalPayload);
-        console.log(' [전체 퀴즈 결과 제출 완료 응답]', resultResponse);
+        await submitQuizResult(finalPayload);
       } catch (err) {
-        console.error(' 전체 퀴즈 결과 제출 실패:', err);
+        console.error('전체 퀴즈 결과 제출 실패:', err);
       }
 
       sessionStorage.setItem('todayActivityCompleted', 'true');
@@ -276,45 +316,46 @@ export default function S12_PhotoRecallQuiz() {
 
     sessionStorage.setItem('currentQuizIndex', String(nextIndex));
 
-    const nextQuiz = quizList[nextIndex];
-    const category = (nextQuiz?.quiz_category || '').toLowerCase().trim();
+    const nextQuiz = quizList[nextIndex] as any;
+    const rawCategory = nextQuiz?.quiz_category ?? nextQuiz?.quizCategory ?? nextQuiz?.category ?? nextQuiz?.level ?? '';
+    const category = String(rawCategory).toLowerCase().trim();
+    const hasPhoto = Boolean(nextQuiz?.quiz_photo || nextQuiz?.quizPhoto);
 
-    if (category === 'choice') {
+    if (category === 'choice' || category === '1' || category === '객관식') {
       navigate('/patient-voicechat');
-    } else if (category === 'photo') {
+    } else if (category === 'photo' || category === '2' || category === '사진' || category === 'picture' || category === 'image' || hasPhoto) {
       setCurrentIndex(nextIndex);
       window.scrollTo(0, 0);
-    } else if (category === 'text') {
+    } else if (category === 'text' || category === '3' || category === '단답형' || category === '주관식') {
       navigate('/patient-voicequiz');
     } else {
-      navigate('/patient-home');
+      setCurrentIndex(nextIndex);
+      window.scrollTo(0, 0);
     }
   };
 
+  
   const handleQuit = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 
     if (!isSubmitted) {
       const sessionSpent = (Date.now() - startTimeRef.current) / 1000;
-      // .current 값 참조
       const totalAccumulated = initialAccumulatedTimeRef.current + sessionSpent;
       sessionStorage.setItem('currentQuizElapsedTime', String(totalAccumulated));
       sessionStorage.setItem('tempQuizHintStep', String(maxHintStepThisQuiz));
+      sessionStorage.setItem('currentQuizIndex', String(currentIndex));
     } else {
       sessionStorage.removeItem('currentQuizElapsedTime');
       sessionStorage.removeItem('tempQuizHintStep');
+      const nextIdx = Math.min(currentIndex + 1, quizList.length - 1);
+      sessionStorage.setItem('currentQuizIndex', String(nextIdx));
     }
 
     sessionStorage.setItem('todayActivityQuit', 'true');
-
-    const targetIndex = isSubmitted ? currentIndex + 1 : currentIndex;
-    sessionStorage.setItem('currentQuizIndex', String(targetIndex));
     sessionStorage.setItem('completedActivityCount', String(totalSolvedCount));
 
     navigate('/patient-home');
   };
-
-  const imageUrl = currentQuiz?.quiz_photo;
 
   return (
     <div style={{ width: '100%', minHeight: '100vh', backgroundColor: '#F8F9FA', fontFamily: "'Pretendard Variable', Pretendard, sans-serif", display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', paddingBottom: '120px', position: 'relative' }}>
@@ -328,7 +369,7 @@ export default function S12_PhotoRecallQuiz() {
         </div>
 
         <h1 style={{ width: '100%', fontWeight: 700, fontSize: '30px', lineHeight: '140%', color: '#0D0D0D', margin: '0 0 9px 0', textAlign: 'left' }}>
-          {currentQuiz?.quiz_comment}
+          {currentQuestionText}
         </h1>
 
         <p style={{ width: '100%', fontWeight: 400, fontSize: '22px', lineHeight: '155%', color: '#797980', margin: '0 0 26px 0', textAlign: 'left' }}>
@@ -373,6 +414,7 @@ export default function S12_PhotoRecallQuiz() {
               duration={elapsedTime}
               hintCount={hintCount}
               feedback={feedbackMessage}
+              isCorrect={thisQuizIsCorrect}
               resultDescription={`지금까지 총 ${totalSolvedCount}문제를 완료하셨어요.`}
               showHintCount={true}
             />
