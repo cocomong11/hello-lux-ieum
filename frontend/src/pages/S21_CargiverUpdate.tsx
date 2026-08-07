@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import CaregiverSidebar from '../components/CaregiverSidebar';
-import { getMemory, patchMemory, getPatient, uploadPatientImage, type LifeDbResponse } from '../api/patient';
+import { getMemory, patchMemory, addMemoryEvent, getPatient, uploadPatientImage, type LifeDbResponse } from '../api/patient';
 import { getPCode } from '../utils/pcode';
 import { ApiError } from '../api/client';
 
@@ -25,7 +25,8 @@ type MemberEntry = {
   alias: string;
   keyword: string;
   isEditing: boolean;
-  photo?: string; // 미리보기 URL
+  isNew?: boolean; // 새로 추가된 항목인지
+  photo?: string;
 };
 
 const INITIAL_MEMBERS: Record<string, MemberEntry[]> = {
@@ -158,7 +159,7 @@ export default function S21_CargiverUpdate() {
         ...prev,
         [category]: [
           ...current,
-          { name: '', age: '', alias: '', keyword: '', isEditing: true },
+          { name: '', age: '', alias: '', keyword: '', isEditing: true, isNew: true },
         ],
       };
     });
@@ -167,35 +168,48 @@ export default function S21_CargiverUpdate() {
   const handleSave = async (idx: number) => {
     toggleEdit(idx);
 
-    // 서버 연동: 카테고리 → LifeDb 필드 매핑
     const pCode = getPCode();
-    if (pCode) {
-      const currentData = members[category];
-      const serialized = currentData
-        .map(m => `${m.name}|${m.age}|${m.alias}|${m.keyword}`)
-        .join(';;');
+    if (!pCode) return;
 
-      // 카테고리별로 어떤 필드에 저장할지 매핑
-      const fieldMap: Record<string, string> = {
-        '가족': 'family',
-        '지인': 'family',
-        '장소': 'place',
-        '음식': 'like',
-        '인생 사건': 'hometown',
-      };
+    const item = (members[category] || [])[idx];
+    if (!item || !item.name) return;
 
-      const field = fieldMap[category];
-      if (field) {
-        try {
+    try {
+      if (item.isNew) {
+        // 새 항목 → 사건 추가 (세분화 테이블)
+        const eventDesc = [item.name, item.age, item.alias, item.keyword].filter(Boolean).join(', ');
+        await addMemoryEvent(pCode, 1, {
+          event: eventDesc,
+          photo_url: item.photo || '',
+          category: category,
+        });
+        // 저장 후 isNew 해제
+        setMembers(prev => ({
+          ...prev,
+          [category]: (prev[category] || []).map((m, i) => i === idx ? { ...m, isNew: false } : m),
+        }));
+      } else {
+        // 기존 항목 수정 → 삶의DB PATCH
+        const fieldMap: Record<string, string> = {
+          '가족': 'family',
+          '지인': 'family',
+          '장소': 'place',
+          '음식': 'like',
+          '인생 사건': 'hometown',
+        };
+        const field = fieldMap[category];
+        if (field) {
+          const currentData = (members[category] || []).filter(m => m.name);
+          const value = currentData.map(m => [m.name, m.age, m.alias, m.keyword].filter(Boolean).join(', ')).join('; ');
           await patchMemory(pCode, {
-            memory_id: 1, // TODO: 실제 memory_id 관리 필요
-            [field]: serialized,
+            memory_id: 1,
+            [field]: value,
           });
-        } catch (err) {
-          if (err instanceof ApiError) {
-            console.error('저장 실패:', err.message);
-          }
         }
+      }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        console.error('저장 실패:', err.message);
       }
     }
 

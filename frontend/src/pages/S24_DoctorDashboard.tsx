@@ -54,6 +54,7 @@ export default function S24_DoctorDashboard() {
   const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
   const [patientInfo, setPatientInfo] = useState(EMPTY_PATIENT);
   const [dayStatus, setDayStatus] = useState<{ health: string; sleep: string; mood: string; cognitive: string[] } | null>(null);
+  const [monthlyStats, setMonthlyStats] = useState({ totalQuiz: 0, correctCount: 0, avgScore: 0 });
 
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
@@ -108,8 +109,11 @@ export default function S24_DoctorDashboard() {
   useEffect(() => {
     getDoctorReport(pCode)
       .then(data => {
-        console.log('리포트 로드:', data);
-        // TODO: 월별 차트에 avg_score, trend 반영 가능
+        // 저장된 리포트가 있으면 오늘 날짜 코멘트에 반영
+        if (data.report) {
+          const today = new Date();
+          setComments(prev => ({ ...prev, [today.getDate()]: data.report || '' }));
+        }
       })
       .catch(err => console.log('리포트 API 미연결:', err instanceof ApiError ? err.message : err));
 
@@ -123,6 +127,15 @@ export default function S24_DoctorDashboard() {
             scores[day] = Math.round((r.correct_count / r.total_count) * 100);
           });
           setDailyScores(scores);
+
+          // 최근 한 달 통계 계산
+          const oneMonthAgo = new Date();
+          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+          const recentResults = results.filter(r => new Date(r.date) >= oneMonthAgo);
+          const totalCorrect = recentResults.reduce((sum, r) => sum + r.correct_count, 0);
+          const totalCount = recentResults.reduce((sum, r) => sum + r.total_count, 0);
+          const avg = totalCount > 0 ? Math.round((totalCorrect / totalCount) * 100) : 0;
+          setMonthlyStats({ totalQuiz: recentResults.length, correctCount: totalCorrect, avgScore: avg });
         }
       })
       .catch(err => console.log('퀴즈 결과 API 미연결:', err instanceof ApiError ? err.message : err));
@@ -133,8 +146,14 @@ export default function S24_DoctorDashboard() {
     birth_date: patientData.birth_date,
     dignosis: patientData.dignosis,
     support_level: patientData.support_level,
-    recentKMMSE: patientData.recentKMMSE || undefined,
-    kmmseScore: '-',
+    recentKMMSE: (() => {
+      const today = new Date();
+      const monthAgo = new Date();
+      monthAgo.setMonth(today.getMonth() - 1);
+      const fmt = (d: Date) => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+      return `${fmt(monthAgo)} ~ ${fmt(today)}`;
+    })(),
+    kmmseScore: `${monthlyStats.totalQuiz}/30`,
     kmmseRange: patientData.dignosis || '-',
     stats: {
       activity: `완료 (${patientData.stats.find(s => s.label === '진행한 활동')?.value || '0/0'})`,
