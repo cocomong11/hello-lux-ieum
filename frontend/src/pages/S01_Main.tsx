@@ -334,7 +334,7 @@ export default function S01_Main() {
         </Text>
 
         {/* 카드 3종 */}
-        {CARD_LEFT.map((left, i) => (
+        {CARD_LEFT.map((left) => (
           <div
             key={left}
             style={{
@@ -347,7 +347,7 @@ export default function S01_Main() {
             }}
           />
         ))}
-        {ICONS.map((ic, i) => (
+        {ICONS.map((ic) => (
           <Img
             key={ic.left}
             src={ic.src}

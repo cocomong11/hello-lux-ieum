@@ -4,7 +4,6 @@ import PageLayout from '../components/common/PageLayout';
 import { loadVoiceSettings, saveVoiceSettings } from '../utils/voiceSettings';
 import { saveVoiceSetting } from '../api/patient';
 import { getPCode } from '../utils/pcode';
-import { ApiError } from '../api/client';
 
 // UI 라벨 ↔ 백엔드 필드값 매핑 (VoiceSettingRequestDto 기준)
 const TTS_SPEED_MAP: Record<'느리게' | '보통' | '빠르게', number> = {
@@ -56,35 +55,32 @@ export default function S06_VoiceSetting() {
     });
   }, [formal, autoPlay, repeat, lowStress, positiveFeedback, speed, sentenceLen]);
 
+  // 이번 버전의 저장 기준은 localStorage 입니다(값이 바뀔 때마다 위 useEffect가 이미 저장).
+  // 서버 저장은 best-effort로만 시도하고, 실패하더라도 다음 화면 이동을 막지 않습니다.
   const handleNext = async () => {
     const pCode = getPCode();
-    if (!pCode) {
-      setErrorMessage('* 환자 기본 정보를 먼저 등록해 주세요.');
-      return;
-    }
 
     setErrorMessage('');
     setLoading(true);
 
     try {
-      await saveVoiceSetting(pCode, {
-        ttsSpeed: TTS_SPEED_MAP[speed],
-        sentenceLength: SENTENCE_LENGTH_MAP[sentenceLen],
-        isHonorific: formal,
-        isAutoPlay: autoPlay,
-        isRepeatGuide: repeat,
-        isLowPressure: lowStress,
-        isPositiveFeedback: positiveFeedback,
-      });
-      navigate('/memory-db');
-    } catch (err) {
-      setErrorMessage(
-        err instanceof ApiError
-          ? `* ${err.message}`
-          : '* 음성 설정 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.',
-      );
+      if (pCode) {
+        await saveVoiceSetting(pCode, {
+          ttsSpeed: TTS_SPEED_MAP[speed],
+          sentenceLength: SENTENCE_LENGTH_MAP[sentenceLen],
+          isHonorific: formal,
+          isAutoPlay: autoPlay,
+          isRepeatGuide: repeat,
+          isLowPressure: lowStress,
+          isPositiveFeedback: positiveFeedback,
+        });
+      }
+    } catch {
+      // 서버 저장 실패는 화면 흐름을 막지 않습니다. 설정값은 localStorage에 남아 있습니다.
     } finally {
       setLoading(false);
+      // 환자 초기 설정의 마지막 단계입니다. 삶의 DB(S07)는 보호자 흐름으로 옮겨졌습니다.
+      navigate('/patient-home');
     }
   };
 

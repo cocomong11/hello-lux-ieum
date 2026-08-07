@@ -25,34 +25,22 @@ const SECTION_TITLE: React.CSSProperties = {
 };
 
 const DUMMY_PATIENT = {
-  name: '홍길동',
-  birth_date: '1950-01-01',
-  dignosis: '경도인지장애',
+  name: '-',
+  birth_date: '',
+  dignosis: '-',
 };
 
 const TODAY_STATS = [
-  { label: '활동 완료 여부', value: '완료 🎉' },
-  { label: '진행한 활동',   value: '5 / 5'  },
-  { label: '성공률',        value: '60%'    },
-  { label: '힌트 사용',     value: '2회'    },
+  { label: '활동 완료 여부', value: '-' },
+  { label: '진행한 활동',   value: '-'  },
+  { label: '성공률',        value: '-'  },
+  { label: '힌트 사용',     value: '-'  },
 ];
 
-// 오늘 기준 7일 날짜 생성
-function getLast7Days(): { date: string; percent: number }[] {
-  const today = new Date();
-  const percents = [67, 50, 78, 33, 44, 56, 100]; // 더미 성공률
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() - (6 - i));
-    const label = i === 6 ? '오늘' : `${d.getMonth() + 1}/${d.getDate()}`;
-    return { date: label, percent: percents[i] };
-  });
-}
+const BAR_DATA: { date: string; percent: number }[] = [];
 
-const BAR_DATA = getLast7Days();
-
-const MEMORY_TAGS  = ['장소 기억', '날짜/시간'];
-const EMOTION_TAGS_DEFAULT = ['반복 발화', '불안 반응'];
+const MEMORY_TAGS: string[]  = [];
+const EMOTION_TAGS_DEFAULT: string[] = [];
 
 export default function S18_CargiverHome() {
   const navigate = useNavigate();
@@ -79,7 +67,7 @@ export default function S18_CargiverHome() {
       .then(data => {
         setPatient({
           name: data.name,
-          birth_date: '', // API에 birth_date 없으면 빈값
+          birth_date: data.birth_date || '',
           dignosis: data.diagnosis,
         });
       })
@@ -307,10 +295,10 @@ export default function S18_CargiverHome() {
               paddingRight: 30,
               display: 'flex',
               alignItems: 'flex-end',
-              justifyContent: 'space-around',
+              justifyContent: barData.length > 0 ? 'space-around' : 'center',
             }}
           >
-            {barData.map((bar) => {
+            {barData.length > 0 ? barData.map((bar) => {
               const isToday = bar.date === '오늘';
               const chartH = 252 - 42 - 68; // 142px = 100%
               const barH = (bar.percent / 100) * chartH;
@@ -332,7 +320,9 @@ export default function S18_CargiverHome() {
                   </span>
                 </div>
               );
-            })}
+            }) : (
+              <span style={{ ...F, fontSize: 20, color: '#797980', paddingBottom: 80 }}>아직 데이터가 없습니다</span>
+            )}
           </div>
 
           {/* ── 섹션 4: 어려워한 기억 유형 + 감정·행동 특이 기록 ── */}
@@ -351,7 +341,7 @@ export default function S18_CargiverHome() {
               gap: 10,
             }}
           >
-            {MEMORY_TAGS.map((tag) => (
+            {MEMORY_TAGS.length > 0 ? MEMORY_TAGS.map((tag) => (
               <div
                 key={tag}
                 style={{
@@ -366,7 +356,9 @@ export default function S18_CargiverHome() {
               >
                 <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-100)' }}>{tag}</span>
               </div>
-            ))}
+            )) : (
+              <span style={{ ...F, fontSize: 20, color: '#797980' }}>데이터 없음</span>
+            )}
           </div>
 
           {/* 감정·행동 특이 기록 */}
@@ -382,7 +374,7 @@ export default function S18_CargiverHome() {
               gap: 10,
             }}
           >
-            {emotionTags.map((tag) => (
+            {emotionTags.length > 0 ? emotionTags.map((tag) => (
               <div
                 key={tag}
                 style={{
@@ -397,7 +389,9 @@ export default function S18_CargiverHome() {
               >
                 <span style={{ ...F, fontSize: 22, fontWeight: 700, lineHeight:'155%', color: '#0D0D0D' }}>{tag}</span>
               </div>
-            ))}
+            )) : (
+              <span style={{ ...F, fontSize: 20, color: '#797980' }}>데이터 없음</span>
+            )}
           </div>
 
         </div>

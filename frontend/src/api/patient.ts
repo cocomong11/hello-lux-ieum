@@ -15,6 +15,7 @@ import { api } from './client';
 export interface PatientInfo {
   p_code: number;
   name: string;
+  birth_date: string;   // "YYYY-MM-DD"
   diagnosis: string;    // "경도인지장애"
   personality: string;  // "온화함"
 }

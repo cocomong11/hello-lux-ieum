@@ -2,6 +2,9 @@ import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRole, roleHome } from '../utils/role';
 import { linkGuardian, linkDoctor } from '../api/link';
+import { getGuardianPatients } from '../api/guardian';
+import { getDoctorPatients } from '../api/doctor';
+import { savePCode } from '../utils/pcode';
 import { ApiError } from '../api/client';
 import PageLayout from '../components/common/PageLayout';
 import imgLinkIcon from '../assets/link.png';
@@ -46,9 +49,20 @@ export default function S08_CodeLink() {
 
       setPatientName(res.patient_name ?? null);
 
+      // 연동 성공 후 p_code를 저장 (보호자/의사 홈에서 환자 정보 조회에 필요)
+      if (role === 'guardian') {
+        const patients = await getGuardianPatients();
+        if (patients.length > 0) {
+          savePCode(patients[0].p_code);
+        }
+      } else if (role === 'doctor') {
+        const patients = await getDoctorPatients();
+        if (patients.length > 0) {
+          savePCode(patients[0].p_code);
+        }
+      }
+
       // 연동 성공 즉시 다음 화면으로 넘어갑니다.
-      // 환자 이름을 잠깐 보여주고 싶으면 아래 navigate를 지연시키거나
-      // 버튼을 한 번 더 눌러 이동하도록 바꿀 수 있습니다.
       navigate(role ? roleHome[role] : '/role-select');
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {

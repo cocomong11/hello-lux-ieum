@@ -33,51 +33,13 @@ const LABEL_STYLE: React.CSSProperties = {
 };
 
 const DUMMY_PATIENT = {
-  name: '홍길동',
-  birth_date: '1950-01-01',
-  dignosis: '경도인지장애',
+  name: '-',
+  birth_date: '',
+  dignosis: '-',
 };
 
 // 날짜 포맷 헬퍼
-function getDateLabel(daysAgo: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${weekdays[d.getDay()]})`;
-}
-
-function getDateParts(daysAgo: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() };
-}
-
-const PREV_MEMOS_DEFAULT = [
-  {
-    memoId: 0,
-    date: getDateLabel(1),
-    desc: '수면 부족 · 반복 발화 기록 · 불안 반응',
-    data: {
-      ...getDateParts(1),
-      health: '좋지 않음', sleep: '못 잠', meal: '식사함', pain: '있음', mood: '불안',
-      behaviors: new Set(['반복 발화', '망상 또는 불안']),
-      needReferral: true,
-      memo: '수면 부족으로 인해 반복 발화 증상 심화. 불안 반응 지속됨.',
-    },
-  },
-  {
-    memoId: 0,
-    date: getDateLabel(2),
-    desc: '상태 양호 · 식사 잘 함 · 특이사항 없음',
-    data: {
-      ...getDateParts(2),
-      health: '좋음', sleep: '잘잠', meal: '식사함', pain: '없음', mood: '안정',
-      behaviors: new Set<string>(),
-      needReferral: false,
-      memo: '',
-    },
-  },
-];
+const PREV_MEMOS_DEFAULT: { memoId: number; date: string; desc: string; data: { year: number; month: number; day: number; health: string; sleep: string; meal: string; pain: string; mood: string; behaviors: Set<string>; needReferral: boolean; memo: string } }[] = [];
 
 // 토글 버튼 공통 스타일
 function tagStyle(selected: boolean): React.CSSProperties {
@@ -128,7 +90,7 @@ export default function S20_CargiverMemo() {
   const [needReferral, setNeedReferral] = useState(true);
 
   // 메모
-  const [memo, setMemo] = useState('아들 이름을 반복해서 부르며 왜 안오냐고 하심. 30분 정도 지속 후 안정됨.');
+  const [memo, setMemo] = useState('');
   const [savedMsg, setSavedMsg] = useState(false);
   const [selectedMemoIdx, setSelectedMemoIdx] = useState<number | null>(null);
   const [prevMemos, setPrevMemos] = useState(PREV_MEMOS_DEFAULT);
@@ -165,7 +127,7 @@ export default function S20_CargiverMemo() {
 
     // 환자 정보
     getPatient(pCode)
-      .then(data => setPatient({ name: data.name, birth_date: '', dignosis: data.diagnosis }))
+      .then(data => setPatient({ name: data.name, birth_date: data.birth_date || '', dignosis: data.diagnosis }))
       .catch(() => {});
 
     getGuardianMemos(pCode)

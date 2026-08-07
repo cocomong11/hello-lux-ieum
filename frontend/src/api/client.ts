@@ -77,6 +77,11 @@ async function request<T>(
   if (!res.ok) {
     if (res.status === 401) {
       clearToken();
+      // skipAuth 요청(로그인 등)의 401은 자격 증명 오류이지 세션 만료가 아니므로
+      // 리다이렉트하지 않습니다. 그 외 인증된 요청의 401만 로그인 화면으로 보냅니다.
+      if (!skipAuth && window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     const message =
       ((parsed as { message?: string })?.message ??
