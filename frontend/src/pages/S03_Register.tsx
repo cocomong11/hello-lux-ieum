@@ -96,9 +96,6 @@ export default function S03_Register() {
       user_pw: password,
       name,
       birth_date: `${birth.slice(0, 4)}-${birth.slice(4, 6)}-${birth.slice(6, 8)}`,
-      // TODO: 화면에 전화번호 입력란이 없어 임시 더미 값을 사용합니다.
-      // 백엔드 RegisterRequest.phone은 필수(숫자만 10~11자리)입니다.
-      phone: '01000000000',
     });
 
     navigate('/role-select');

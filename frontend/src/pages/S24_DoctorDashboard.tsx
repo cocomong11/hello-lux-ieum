@@ -4,7 +4,7 @@ import Sidebar from '../components/DoctorSidebar';
 import polygon from '../assets/Polygon 2.svg';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getDoctorReport, updateDoctorReport } from '../api/doctor';
-import { getQuizResults } from '../api/patient';
+import { getQuizResults, getPatient, getDailyStatus } from '../api/patient';
 import { ApiError } from '../api/client';
 
 const DESIGN_W = 1920;
@@ -15,103 +15,25 @@ const F: React.CSSProperties = {
   fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
 
-// 환자별 데이터
-const PATIENTS_DB: Record<number, {
-  name: string;
-  birth_date: string;
-  dignosis: string;
-  support_level: string;
-  recentKMMSE: string;
-  kmmseScores: number[];       // 6개월 점수
-  monthlyRates: number[][];    // 6개월 문항별 정답률
-  latestRates: { label: string; value: number }[];
-  dailyScores: Record<number, number>; // 일별 점수 (1~31)
-  stats: { label: string; value: string }[];
-  memo: string;
-}> = {
-  1001: {
-    name: '홍길동',
-    birth_date: '1950-01-01',
-    dignosis: '경도인지장애',
-    support_level: '보통',
-    recentKMMSE: '2026.05.01',
-    kmmseScores: [1, 1, 3, 7, 0, 5],
-    monthlyRates: [
-      [80, 75, 70, 65, 60, 55],
-      [70, 68, 65, 62, 60, 58],
-      [85, 80, 78, 75, 72, 70],
-      [60, 55, 50, 48, 45, 42],
-      [40, 38, 35, 30, 28, 25],
-    ],
-    latestRates: [
-      { label: '유형1', value: 80 },
-      { label: '유형2', value: 80 },
-      { label: '유형3', value: 70 },
-    ],
-    dailyScores: {
-      1: 65, 2: 70, 3: 61, 4: 38, 5: 55,
-      8: 75, 9: 70, 10: 62, 11: 58, 12: 35,
-      15: 60, 16: 72, 17: 65, 18: 58, 19: 55,
-      22: 35, 23: 60, 26: 60,
-    },
-    stats: [
-      { label: '활동 완료 여부', value: '완료 🎉' },
-      { label: '진행한 활동', value: '5 / 5' },
-      { label: '성공률', value: '60%' },
-      { label: '힌트 사용', value: '2회' },
-    ],
-    memo: '다음 진료 시 수면 패턴 집중 확인 필요. 반복 발화 빈도 모니터링.',
-  },
-  1002: {
-    name: '이순희',
-    birth_date: '1955-11-11',
-    dignosis: '초기 치매',
-    support_level: '높음',
-    recentKMMSE: '2026.04.15',
-    kmmseScores: [1, 1, 3, 7, 0, 5],
-    monthlyRates: [[70, 65, 60, 55, 50, 48], [60, 55, 50, 48, 45, 40], [75, 70, 65, 60, 58, 55], [50, 45, 40, 38, 35, 30], [35, 30, 28, 25, 22, 20]],
-    latestRates: [
-      { label: '지남력-시간', value: 48 },
-      { label: '지남력-장소', value: 40 },
-      { label: '언어 능력', value: 55 },
-      { label: '기억 회상', value: 30 },
-      { label: '주의·계산', value: 35 },
-      { label: '시공간 구성', value: 20 },
-    ],
-    dailyScores: { 1: 78, 5: 72, 10: 68, 15: 75, 20: 70, 25: 78 },
-    stats: [
-      { label: '활동 완료 여부', value: '완료 🎉' },
-      { label: '진행한 활동', value: '4 / 5' },
-      { label: '성공률', value: '78%' },
-      { label: '힌트 사용', value: '3회' },
-    ],
-    memo: '전반적 인지 저하 진행 중. 가족 상담 필요.',
-  },
-  1003: {
-    name: '박영수',
-    birth_date: '1943-07-01',
-    dignosis: '경도인지장애',
-    support_level: '낮음',
-    recentKMMSE: '2026.03.20',
-    kmmseScores: [1, 1, 3, 7, 0, 5],
-    monthlyRates: [[85, 80, 78, 75, 72, 70], [75, 72, 70, 68, 65, 62], [80, 78, 75, 72, 70, 68], [55, 52, 50, 48, 45, 42], [45, 42, 40, 38, 35, 32]],
-    latestRates: [
-      { label: '지남력-시간', value: 70 },
-      { label: '지남력-장소', value: 62 },
-      { label: '언어 능력', value: 68 },
-      { label: '기억 회상', value: 42 },
-      { label: '주의·계산', value: 45 },
-      { label: '시공간 구성', value: 32 },
-    ],
-    dailyScores: { 1: 30, 5: 28, 10: 35, 15: 30, 20: 32, 24: 30 },
-    stats: [
-      { label: '활동 완료 여부', value: '미완료' },
-      { label: '진행한 활동', value: '2 / 5' },
-      { label: '성공률', value: '30%' },
-      { label: '힌트 사용', value: '5회' },
-    ],
-    memo: '운동 병행 권고. 다음 검사 예정.',
-  },
+// 환자별 데이터 (API에서 가져옴)
+
+const EMPTY_PATIENT = {
+  name: '-',
+  birth_date: '',
+  dignosis: '-',
+  support_level: '-',
+  recentKMMSE: '',
+  kmmseScores: [] as number[],
+  monthlyRates: [] as number[][],
+  latestRates: [] as { label: string; value: number }[],
+  dailyScores: {} as Record<number, number>,
+  stats: [
+    { label: '활동 완료 여부', value: '-' },
+    { label: '진행한 활동', value: '-' },
+    { label: '성공률', value: '-' },
+    { label: '힌트 사용', value: '-' },
+  ],
+  memo: '',
 };
 
 export default function S24_DoctorDashboard() {
@@ -125,9 +47,14 @@ export default function S24_DoctorDashboard() {
   const [dailyScores, setDailyScores] = useState<Record<number, number>>({});
   const [selectedPeriod, setSelectedPeriod] = useState('6개월');
   const [dailyPeriod, setDailyPeriod] = useState('3개월');
-  const [selectedDay, setSelectedDay] = useState(26);
-  const [calYear, setCalYear] = useState(2026);
-  const [calMonth, setCalMonth] = useState(7);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
+  const [calYear, setCalYear] = useState(new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
+  const [patientInfo, setPatientInfo] = useState(EMPTY_PATIENT);
+  const [dayStatus, setDayStatus] = useState<{ health: string; sleep: string; mood: string; cognitive: string[] } | null>(null);
+  const [monthlyStats, setMonthlyStats] = useState({ totalQuiz: 0, correctCount: 0, avgScore: 0 });
 
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
@@ -136,7 +63,36 @@ export default function S24_DoctorDashboard() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  const patientData = PATIENTS_DB[pCode] || PATIENTS_DB[1001];
+  const patientData = patientInfo;
+
+  // API: 환자 정보 로드
+  useEffect(() => {
+    getPatient(pCode)
+      .then(data => {
+        setPatientInfo(prev => ({
+          ...prev,
+          name: data.name,
+          birth_date: data.birth_date || '',
+          dignosis: data.diagnosis,
+        }));
+      })
+      .catch(err => console.log('환자 정보 API 미연결:', err instanceof ApiError ? err.message : err));
+  }, [pCode]);
+
+  // API: 선택 날짜의 일일 상태 로드
+  useEffect(() => {
+    const dateStr = `${calYear}-${String(calMonth).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+    getDailyStatus(pCode, dateStr)
+      .then(data => {
+        setDayStatus({
+          health: data.health_condition || '-',
+          sleep: data.sleep_status || '-',
+          mood: data.mood_status || '-',
+          cognitive: data.cognitive_changes || [],
+        });
+      })
+      .catch(() => setDayStatus(null));
+  }, [pCode, calYear, calMonth, selectedDay]);
 
   // 초기 dailyScores 설정 (더미)
   useEffect(() => {
@@ -153,8 +109,11 @@ export default function S24_DoctorDashboard() {
   useEffect(() => {
     getDoctorReport(pCode)
       .then(data => {
-        console.log('리포트 로드:', data);
-        // TODO: 월별 차트에 avg_score, trend 반영 가능
+        // 저장된 리포트가 있으면 오늘 날짜 코멘트에 반영
+        if (data.report) {
+          const today = new Date();
+          setComments(prev => ({ ...prev, [today.getDate()]: data.report || '' }));
+        }
       })
       .catch(err => console.log('리포트 API 미연결:', err instanceof ApiError ? err.message : err));
 
@@ -168,6 +127,15 @@ export default function S24_DoctorDashboard() {
             scores[day] = Math.round((r.correct_count / r.total_count) * 100);
           });
           setDailyScores(scores);
+
+          // 최근 한 달 통계 계산
+          const oneMonthAgo = new Date();
+          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+          const recentResults = results.filter(r => new Date(r.date) >= oneMonthAgo);
+          const totalCorrect = recentResults.reduce((sum, r) => sum + r.correct_count, 0);
+          const totalCount = recentResults.reduce((sum, r) => sum + r.total_count, 0);
+          const avg = totalCount > 0 ? Math.round((totalCorrect / totalCount) * 100) : 0;
+          setMonthlyStats({ totalQuiz: recentResults.length, correctCount: totalCorrect, avgScore: avg });
         }
       })
       .catch(err => console.log('퀴즈 결과 API 미연결:', err instanceof ApiError ? err.message : err));
@@ -178,9 +146,15 @@ export default function S24_DoctorDashboard() {
     birth_date: patientData.birth_date,
     dignosis: patientData.dignosis,
     support_level: patientData.support_level,
-    recentKMMSE: patientData.recentKMMSE || undefined,
-    kmmseScore: pCode === 1001 ? '22/30' : pCode === 1002 ? '17/30' : '23/30',
-    kmmseRange: pCode === 1002 ? '초기 치매 범위' : '경도인지장애 범위',
+    recentKMMSE: (() => {
+      const today = new Date();
+      const monthAgo = new Date();
+      monthAgo.setMonth(today.getMonth() - 1);
+      const fmt = (d: Date) => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+      return `${fmt(monthAgo)} ~ ${fmt(today)}`;
+    })(),
+    kmmseScore: `${monthlyStats.totalQuiz}/30`,
+    kmmseRange: patientData.dignosis || '-',
     stats: {
       activity: `완료 (${patientData.stats.find(s => s.label === '진행한 활동')?.value || '0/0'})`,
       rate: patientData.stats.find(s => s.label === '성공률')?.value || '0%',
@@ -377,27 +351,49 @@ export default function S24_DoctorDashboard() {
               if (dailyPeriod === '7일') start.setDate(end.getDate() - 7);
               else if (dailyPeriod === '30일') start.setDate(end.getDate() - 30);
               else if (dailyPeriod === '3개월') start.setMonth(end.getMonth() - 3);
-              else start.setMonth(end.getMonth() - 1); // 직접입력 기본 30일
+              else if (dailyPeriod === '직접입력' && customStart && customEnd) {
+                // 직접입력: customStart/customEnd 사용
+              } else {
+                start.setMonth(end.getMonth() - 1);
+              }
               const fmt = (d: Date) => `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getDate()).padStart(2, '0')}`;
+              const startDisplay = dailyPeriod === '직접입력' && customStart ? customStart.replace(/-/g, '. ') : fmt(start);
+              const endDisplay = dailyPeriod === '직접입력' && customEnd ? customEnd.replace(/-/g, '. ') : fmt(end);
               return (
             <div style={{ display: 'flex', gap: 50, margin: '28px 0 20px' }}>
               <div style={{
-                flex: 1, padding: '19px 122px', borderRadius: 10,
+                flex: 1, padding: '19px 24px', borderRadius: 10,
                 border: '1px solid var(--color-neutral-60)', background: 'var(--color-neutral-100)',
                 boxShadow: '0 0 4px 0 #797980',
                 display: 'flex', justifyContent: 'center', alignItems: 'center',
               }}>
                 <span style={{ ...F, margin: '0 10px 0 0', fontSize: 22, fontWeight: 400, color: 'var(--color-neutral-gray)' }}>시작일</span>
-                <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>{fmt(start)}</span>
+                {dailyPeriod === '직접입력' ? (
+                  <input type="date" value={customStart} onChange={e => {
+                    setCustomStart(e.target.value);
+                    if (e.target.value) {
+                      const d = new Date(e.target.value);
+                      setCalYear(d.getFullYear());
+                      setCalMonth(d.getMonth() + 1);
+                      setSelectedDay(d.getDate());
+                    }
+                  }} style={{ ...F, fontSize: 18, border: 'none', outline: 'none', fontWeight: 700, color: 'var(--color-neutral-gray)' }} />
+                ) : (
+                  <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>{startDisplay}</span>
+                )}
               </div>
               <div style={{
-                flex: 1, padding: '19px 123px', borderRadius: 10,
+                flex: 1, padding: '19px 24px', borderRadius: 10,
                 border: '1px solid var(--color-neutral-60)', background: 'var(--color-neutral-100)',
                 boxShadow: '0 0 4px 0 #797980',
                 display: 'flex', justifyContent: 'center', alignItems: 'center',
               }}>
                 <span style={{ ...F, fontSize: 22, margin: '0 10px 0 0', fontWeight: 400, color: 'var(--color-neutral-gray)' }}>종료일</span>
-                <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>{fmt(end)}</span>
+                {dailyPeriod === '직접입력' ? (
+                  <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)} style={{ ...F, fontSize: 18, border: 'none', outline: 'none', fontWeight: 700, color: 'var(--color-neutral-gray)' }} />
+                ) : (
+                  <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>{endDisplay}</span>
+                )}
               </div>
             </div>
               );
@@ -405,11 +401,24 @@ export default function S24_DoctorDashboard() {
 
             {/* 기간 통계 카드 */}
             {(() => {
-              const today = new Date();
-              const todayDate = (calYear === today.getFullYear() && calMonth === today.getMonth() + 1)
-                ? today.getDate() : daysInMonth;
+              const end = new Date();
+              const start = new Date();
+              if (dailyPeriod === '7일') start.setDate(end.getDate() - 7);
+              else if (dailyPeriod === '30일') start.setDate(end.getDate() - 30);
+              else if (dailyPeriod === '3개월') start.setMonth(end.getMonth() - 3);
+              else start.setMonth(end.getMonth() - 1);
+
+              const endDay = end.getDate();
+              const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+              // 선택된 기간 내 점수만 필터 (같은 월 기준 간단 필터)
               const scores = Object.entries(dailyScores)
-                .filter(([d]) => Number(d) <= todayDate)
+                .filter(([d]) => {
+                  const day = Number(d);
+                  if (dailyPeriod === '7일') return day > endDay - 7 && day <= endDay;
+                  if (dailyPeriod === '30일') return day > endDay - 30 && day <= endDay;
+                  return true; // 3개월, 직접입력은 전체
+                })
                 .map(([, v]) => v as number);
               const recordDays = scores.length;
               const cautionDays = scores.filter(s => s <= 40).length;
@@ -419,7 +428,7 @@ export default function S24_DoctorDashboard() {
             <div style={{ display: 'flex', gap: 24, marginBottom: 60 }}>
               {[
                 { label: '기간 평균 점수', value: `${avgScore}%`, color: 'var(--color-neutral-10)' },
-                { label: '기록 일수', value: `${recordDays} / ${todayDate}일`, color: 'var(--color-neutral-10)' },
+                { label: '기록 일수', value: `${recordDays} / ${totalDays}일`, color: 'var(--color-neutral-10)' },
                 { label: '주의 일수', value: `${cautionDays}일`, color: '#E53134' },
               ].map(stat => (
                 <div key={stat.label} style={{
@@ -608,21 +617,23 @@ export default function S24_DoctorDashboard() {
             </div>
 
             {/*선택일자 */}
-            {dailyScores[selectedDay] ? (
+            {(dailyScores[selectedDay] || dayStatus) ? (
               <div style={{
-                width: 936, height:203,paddingTop: '28px',paddingLeft: 29,borderRadius: 10,
+                width: 936, minHeight: 203, paddingTop: '28px', paddingLeft: 29, paddingBottom: 20, borderRadius: 10,
                 border: '1px solid var(--Secondary-80, #DFDF87)', background: '#0F66E2',
                 boxShadow: '0 0 10px 0 #4188ED', marginBottom: 34,
               }}>
+                {dailyScores[selectedDay] && (
                 <p style={{ ...F, margin: 0, fontSize: 30, fontWeight: 700, color: 'var(--color-neutral-100)' }}>
                   인지점수 {dailyScores[selectedDay]}%
                 </p>
+                )}
                 <p style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-100)' }}>
-                  활동 5/5 수행 · 힌트 2회 사용
+                  {dayStatus ? `건강: ${dayStatus.health} · 수면: ${dayStatus.sleep} · 기분: ${dayStatus.mood}` : dailyScores[selectedDay] ? '' : '상세 정보 없음'}
                 </p>
-                <div style={{ display: 'inline-flex', gap: 10, marginTop: 12 }}>
-                  {['건강 : 좋음', '수면 : 보통', '기분 : 안정', '반복 발화'].map(tag => {
-                    const isGood = tag.includes('좋음') || tag.includes('안정');
+                <div style={{ display: 'inline-flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+                  {(dayStatus ? [`건강 : ${dayStatus.health}`, `수면 : ${dayStatus.sleep}`, `기분 : ${dayStatus.mood}`, ...dayStatus.cognitive] : []).map(tag => {
+                    const isGood = tag.includes('좋음') || tag.includes('안정') || tag.includes('잘');
                     return (
                     <div key={tag} style={{
                       padding: '6px 19px', borderRadius: 10,

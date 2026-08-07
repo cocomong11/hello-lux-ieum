@@ -4,6 +4,7 @@ import Header from '../components/doctorHeader';
 import pprofile from '../assets/pprofile.png';
 import { getDoctorPatients, type DoctorPatient } from '../api/doctor';
 import { getQuizResults } from '../api/patient';
+import { getMe } from '../api/auth';
 import { ApiError } from '../api/client';
 
 const DESIGN_W = 1920;
@@ -15,19 +16,17 @@ const F: React.CSSProperties = {
 };
 
 const DUMMY_DOCTOR = {
-  name: '김민준',
-  locate: '서울 기억 신경과 클리닉',
+  name: '-',
+  locate: '-',
 };
 
-const DUMMY_PATIENTS = [
-  { p_code: 1001, name: '홍길동', birth_date: '1950-01-01', dignosis: '경도인지장애', recentKMMSE: '2026-05-01', recentQuize: '2026-05-26', rate: 60 },
-  { p_code: 1002, name: '이순희', birth_date: '1955-11-11', dignosis: '초기 치매', recentKMMSE: '', recentQuize: '2026-05-25', rate: 78 },
-  { p_code: 1003, name: '박영수', birth_date: '1943-07-01', dignosis: '경도인지장애', recentKMMSE: '', recentQuize: '2026-05-24', rate: 30 },
-];
+const DUMMY_PATIENTS: { p_code: number; name: string; birth_date: string; dignosis: string; recentKMMSE: string; recentQuize: string; rate: number }[] = [];
 
-function calcAge(birthDate: string): number {
+function calcAge(birthDate: string): number | null {
+  if (!birthDate) return null;
   const today = new Date();
   const birth = new Date(birthDate);
+  if (isNaN(birth.getTime())) return null;
   let age = today.getFullYear() - birth.getFullYear();
   const hasBirthdayPassed =
     today.getMonth() > birth.getMonth() ||
@@ -76,13 +75,23 @@ export default function S23_DoctorHome() {
   const [search, setSearch] = useState('');
   const [scale, setScale] = useState(1);
   const [patients, setPatients] = useState(DUMMY_PATIENTS);
-  const doctor = DUMMY_DOCTOR;
+  const [doctor, setDoctor] = useState(DUMMY_DOCTOR);
 
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
+  }, []);
+
+  // API: 의사 본인 정보 로드
+  useEffect(() => {
+    getMe()
+      .then(data => {
+        const age = data.birth_date ? calcAge(data.birth_date) : null;
+        setDoctor({ name: data.name, locate: age !== null ? `${age}세` : '' });
+      })
+      .catch(() => {});
   }, []);
 
   // API: 담당 환자 목록 로드
@@ -269,7 +278,7 @@ export default function S23_DoctorHome() {
                   {patient.name}
                 </p>
                 <p style={{ ...F, margin: 0, fontSize: 16, fontWeight: 400, lineHeight: '165%', color: 'var(--color-neutral-gray)' }}>
-                  {calcAge(patient.birth_date)}세 · {patient.dignosis}
+                  {calcAge(patient.birth_date) !== null ? `${calcAge(patient.birth_date)}세 · ` : ''}{patient.dignosis}
                   {patient.recentKMMSE && (
                     <span style={{ marginLeft: 16, color: 'var(--color-neutral-30, #797980)', fontWeight: 700 }}>
                       K-MMSE : {patient.recentKMMSE}

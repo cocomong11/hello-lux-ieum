@@ -332,6 +332,7 @@ export default function S12_PhotoRecallQuiz() {
     }
   };
 
+  
   const handleQuit = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 

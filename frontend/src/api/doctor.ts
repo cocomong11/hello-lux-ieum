@@ -30,6 +30,7 @@ export interface DoctorReport {
   avg_score: number;      // 평균 점수
   trend: string;          // "상승" | "하락" | "유지"
   feedback_list: string[]; // 피드백 목록
+  report?: string;        // 의사 코멘트 (저장된 리포트)
 }
 
 export const getDoctorReport = (p_code: number) =>

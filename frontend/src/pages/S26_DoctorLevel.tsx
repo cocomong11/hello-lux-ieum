@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/DoctorSidebar';
 import { updatePatientStatus, updateDoctorLevel } from '../api/doctor';
+import { getPatient, getQuizResults } from '../api/patient';
 import { getPCode } from '../utils/pcode';
 import { ApiError } from '../api/client';
 
@@ -13,15 +14,11 @@ const F: React.CSSProperties = {
   fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
 
-const PATIENTS_DB: Record<number, {
-  name: string; birth_date: string; dignosis: string; support_level: string;
-  recentKMMSE: string; kmmseScore: string; kmmseRange: string;
-  stats: { activity: string; rate: string; hint: string };
-  memo: string;
-}> = {
-  1001: { name: '홍길동', birth_date: '1950-01-01', dignosis: '경도인지장애', support_level: '보통', recentKMMSE: '2026.05.01', kmmseScore: '22/30', kmmseRange: '경도인지장애 범위', stats: { activity: '완료 (5/5)', rate: '60%', hint: '2회' }, memo: '다음 진료 시 수면 패턴 집중 확인 필요. 반복 발화 빈도 모니터링.' },
-  1002: { name: '이순희', birth_date: '1955-11-11', dignosis: '초기 치매', support_level: '높음', recentKMMSE: '2026.04.15', kmmseScore: '17/30', kmmseRange: '초기 치매 범위', stats: { activity: '완료 (4/5)', rate: '78%', hint: '3회' }, memo: '전반적 인지 저하 진행 중. 가족 상담 필요.' },
-  1003: { name: '박영수', birth_date: '1943-07-01', dignosis: '경도인지장애', support_level: '낮음', recentKMMSE: '2026.03.20', kmmseScore: '23/30', kmmseRange: '경도인지장애 범위', stats: { activity: '미완료 (2/5)', rate: '30%', hint: '5회' }, memo: '운동 병행 권고. 다음 검사 예정.' },
+const EMPTY_PATIENT_DATA = {
+  name: '-', birth_date: '', dignosis: '-', support_level: '-',
+  recentKMMSE: '', kmmseScore: '-', kmmseRange: '-',
+  stats: { activity: '-', rate: '-', hint: '-' },
+  memo: '',
 };
 
 const LEVELS = [
@@ -34,18 +31,25 @@ const HINT_OPTIONS = ['없음', '보통', '1~2개'];
 const TTS_LENGTH = ['짧음', '보통'];
 const TTS_SPEED = ['느리게', '보통'];
 
-const INITIAL_HISTORY = [
-  { title: '3단계로 조정 · 2026. 03. 15', desc: '진료 참고 데이터 검토 후 2단계 → 3단계 상향 [담당 : 김민준]' },
-  { title: '2단계 유지 · 2026. 01. 10', desc: '상태 안정적 현행 유지 결정 [담당 : 김민준]' },
-];
-
 export default function S26_DoctorLevel() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const pCode = Number(searchParams.get('p_code')) || 1001;
   const [scale, setScale] = useState(1);
-  const patientData = PATIENTS_DB[pCode] || PATIENTS_DB[1001];
-  const patient = { ...patientData };
+  const [patientData, setPatientData] = useState(EMPTY_PATIENT_DATA);
+  const [monthlyQuizCount, setMonthlyQuizCount] = useState(0);
+  const patient = {
+    ...patientData,
+    recentKMMSE: (() => {
+      const today = new Date();
+      const monthAgo = new Date();
+      monthAgo.setMonth(today.getMonth() - 1);
+      const fmt = (d: Date) => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+      return `${fmt(monthAgo)} ~ ${fmt(today)}`;
+    })(),
+    kmmseScore: `${monthlyQuizCount}/30`,
+    kmmseRange: patientData.dignosis || '-',
+  };
 
   const [selectedLevel, setSelectedLevel] = useState(3);
 
@@ -60,9 +64,9 @@ export default function S26_DoctorLevel() {
   const [repeatAuto, setRepeatAuto] = useState(true);
   const [ttsLength, setTtsLength] = useState('짧음');
   const [ttsSpeed, setTtsSpeed] = useState('느리게');
-  const [reason, setReason] = useState('5월 K-MMSE 결과 및 플랫폼 데이터 종합 검토 후 현행 유지 결정.');
+  const [reason, setReason] = useState('');
   const [savedMsg, setSavedMsg] = useState(false);
-  const [history, setHistory] = useState(INITIAL_HISTORY);
+  const [history, setHistory] = useState<{ title: string; desc: string }[]>([]);
 
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
@@ -70,6 +74,30 @@ export default function S26_DoctorLevel() {
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
   }, []);
+
+  // API: 환자 정보 로드
+  useEffect(() => {
+    getPatient(pCode)
+      .then(data => {
+        setPatientData(prev => ({
+          ...prev,
+          name: data.name,
+          birth_date: data.birth_date || '',
+          dignosis: data.diagnosis,
+        }));
+      })
+      .catch(err => console.log('환자 정보 API 미연결:', err instanceof ApiError ? err.message : err));
+
+    // 최근 한달 퀴즈 횟수
+    getQuizResults(pCode)
+      .then(results => {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        const recentCount = results.filter(r => new Date(r.date) >= oneMonthAgo).length;
+        setMonthlyQuizCount(recentCount);
+      })
+      .catch(() => {});
+  }, [pCode]);
 
   const handleSave = async () => {
     // 서버에 난이도 변경 요청

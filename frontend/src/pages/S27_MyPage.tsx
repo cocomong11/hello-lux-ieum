@@ -6,7 +6,8 @@ import { getMe, updateProfile, withdraw } from '../api/auth';
 import type { MeResponse } from '../api/auth';
 import { ApiError } from '../api/client';
 import { clearToken } from '../utils/auth';
-import { clearRole } from '../utils/role';
+import { clearRole, saveRole, roleHome } from '../utils/role';
+import type { UserRole } from '../utils/role';
 
 const ROLE_LABEL: Record<string, string> = {
   patient: '환자',
@@ -71,7 +72,15 @@ export default function S27_MyPage() {
 
   useEffect(() => {
     getMe()
-      .then(setMe)
+      .then((data) => {
+        setMe(data);
+        // 헤더의 "홈" 버튼은 localStorage의 역할을 보고 이동할 곳을 정합니다.
+        // 그 값이 비어 있으면 역할별 홈 대신 메인(/)으로 빠지므로,
+        // 서버가 알려준 역할로 다시 채워 넣어 복구합니다.
+        if (data.role && data.role in roleHome) {
+          saveRole(data.role as UserRole);
+        }
+      })
       .catch((err) => {
         setLoadError(
           err instanceof ApiError

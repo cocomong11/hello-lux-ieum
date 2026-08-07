@@ -168,6 +168,7 @@ export default function S09_PatientHome() {
     fetchInitialData();
   }, [syncStorageState, todayIso]);
 
+  
   const handleStartActivity = () => {
     const currentPCode = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
     const prefix = currentPCode ? `${currentPCode}_` : '';

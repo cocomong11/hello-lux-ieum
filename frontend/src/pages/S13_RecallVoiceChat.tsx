@@ -274,6 +274,7 @@ export default function S13_RecallVoiceChat() {
       return;
     }
 
+    
     sessionStorage.setItem('currentQuizIndex', String(nextIndex));
 
     const nextQuiz = quizList[nextIndex];

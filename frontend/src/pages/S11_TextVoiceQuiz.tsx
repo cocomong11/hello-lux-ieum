@@ -240,6 +240,12 @@ export default function S11_TextVoiceQuiz() {
         setIsSubmitted(true);
       }
 
+      if (!isSubmitted && isCurrentCorrect) {
+        const newCorrect = correctCount + 1;
+        setCorrectCount(newCorrect);
+        sessionStorage.setItem('correctQuizCount', String(newCorrect));
+      }
+
     } catch (error) {
       console.error('답안 제출 API 오류:', error);
       setThisQuizIsCorrect(false);
@@ -271,6 +277,10 @@ export default function S11_TextVoiceQuiz() {
       } catch (error) {
         console.error('주관식 퀴즈 스킵 알림 실패:', error);
       }
+
+      const updatedCount = totalSolvedCount + 1;
+      setTotalSolvedCount(updatedCount);
+      sessionStorage.setItem('completedActivityCount', String(updatedCount));
     }
 
     sessionStorage.removeItem('currentQuizElapsedTime');
@@ -321,10 +331,12 @@ export default function S11_TextVoiceQuiz() {
     }
   };
 
+ 
   const handleQuit = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 
     if (!isSubmitted) {
+     
       const sessionSpent = (Date.now() - startTimeRef.current) / 1000;
       const totalAccumulated = initialAccumulatedTimeRef.current + sessionSpent;
       sessionStorage.setItem('currentQuizElapsedTime', String(totalAccumulated));

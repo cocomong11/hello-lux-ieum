@@ -126,6 +126,11 @@ export default function S17_ActivityReport() {
           if (internalCode) sessionStorage.setItem('internalCode', String(internalCode));
           if (pCode) sessionStorage.setItem('p_code', pCode);
         }
+        sessionStorage.setItem('completedActivityCount', String(actualCount));
+        sessionStorage.setItem('todayActivityCompleted', 'true');
+
+        if (data && typeof data.correct_count === 'number') setCorrectCount(data.correct_count);
+        if (data && typeof data.hint === 'number') setHintCount(data.hint);
       } catch (err) {
         console.warn('getPatientMe() 조회 실패:', err);
       }
