@@ -15,15 +15,11 @@ const F: React.CSSProperties = {
 };
 
 const DUMMY_DOCTOR = {
-  name: '김민준',
-  locate: '서울 기억 신경과 클리닉',
+  name: '-',
+  locate: '-',
 };
 
-const DUMMY_PATIENTS = [
-  { p_code: 1001, name: '홍길동', birth_date: '1950-01-01', dignosis: '경도인지장애', recentKMMSE: '2026-05-01', recentQuize: '2026-05-26', rate: 60 },
-  { p_code: 1002, name: '이순희', birth_date: '1955-11-11', dignosis: '초기 치매', recentKMMSE: '', recentQuize: '2026-05-25', rate: 78 },
-  { p_code: 1003, name: '박영수', birth_date: '1943-07-01', dignosis: '경도인지장애', recentKMMSE: '', recentQuize: '2026-05-24', rate: 30 },
-];
+const DUMMY_PATIENTS: { p_code: number; name: string; birth_date: string; dignosis: string; recentKMMSE: string; recentQuize: string; rate: number }[] = [];
 
 function calcAge(birthDate: string): number {
   const today = new Date();

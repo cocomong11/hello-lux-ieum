@@ -28,90 +28,25 @@ const PATIENTS_DB: Record<number, {
   dailyScores: Record<number, number>; // 일별 점수 (1~31)
   stats: { label: string; value: string }[];
   memo: string;
-}> = {
-  1001: {
-    name: '홍길동',
-    birth_date: '1950-01-01',
-    dignosis: '경도인지장애',
-    support_level: '보통',
-    recentKMMSE: '2026.05.01',
-    kmmseScores: [1, 1, 3, 7, 0, 5],
-    monthlyRates: [
-      [80, 75, 70, 65, 60, 55],
-      [70, 68, 65, 62, 60, 58],
-      [85, 80, 78, 75, 72, 70],
-      [60, 55, 50, 48, 45, 42],
-      [40, 38, 35, 30, 28, 25],
-    ],
-    latestRates: [
-      { label: '유형1', value: 80 },
-      { label: '유형2', value: 80 },
-      { label: '유형3', value: 70 },
-    ],
-    dailyScores: {
-      1: 65, 2: 70, 3: 61, 4: 38, 5: 55,
-      8: 75, 9: 70, 10: 62, 11: 58, 12: 35,
-      15: 60, 16: 72, 17: 65, 18: 58, 19: 55,
-      22: 35, 23: 60, 26: 60,
-    },
-    stats: [
-      { label: '활동 완료 여부', value: '완료 🎉' },
-      { label: '진행한 활동', value: '5 / 5' },
-      { label: '성공률', value: '60%' },
-      { label: '힌트 사용', value: '2회' },
-    ],
-    memo: '다음 진료 시 수면 패턴 집중 확인 필요. 반복 발화 빈도 모니터링.',
-  },
-  1002: {
-    name: '이순희',
-    birth_date: '1955-11-11',
-    dignosis: '초기 치매',
-    support_level: '높음',
-    recentKMMSE: '2026.04.15',
-    kmmseScores: [1, 1, 3, 7, 0, 5],
-    monthlyRates: [[70, 65, 60, 55, 50, 48], [60, 55, 50, 48, 45, 40], [75, 70, 65, 60, 58, 55], [50, 45, 40, 38, 35, 30], [35, 30, 28, 25, 22, 20]],
-    latestRates: [
-      { label: '지남력-시간', value: 48 },
-      { label: '지남력-장소', value: 40 },
-      { label: '언어 능력', value: 55 },
-      { label: '기억 회상', value: 30 },
-      { label: '주의·계산', value: 35 },
-      { label: '시공간 구성', value: 20 },
-    ],
-    dailyScores: { 1: 78, 5: 72, 10: 68, 15: 75, 20: 70, 25: 78 },
-    stats: [
-      { label: '활동 완료 여부', value: '완료 🎉' },
-      { label: '진행한 활동', value: '4 / 5' },
-      { label: '성공률', value: '78%' },
-      { label: '힌트 사용', value: '3회' },
-    ],
-    memo: '전반적 인지 저하 진행 중. 가족 상담 필요.',
-  },
-  1003: {
-    name: '박영수',
-    birth_date: '1943-07-01',
-    dignosis: '경도인지장애',
-    support_level: '낮음',
-    recentKMMSE: '2026.03.20',
-    kmmseScores: [1, 1, 3, 7, 0, 5],
-    monthlyRates: [[85, 80, 78, 75, 72, 70], [75, 72, 70, 68, 65, 62], [80, 78, 75, 72, 70, 68], [55, 52, 50, 48, 45, 42], [45, 42, 40, 38, 35, 32]],
-    latestRates: [
-      { label: '지남력-시간', value: 70 },
-      { label: '지남력-장소', value: 62 },
-      { label: '언어 능력', value: 68 },
-      { label: '기억 회상', value: 42 },
-      { label: '주의·계산', value: 45 },
-      { label: '시공간 구성', value: 32 },
-    ],
-    dailyScores: { 1: 30, 5: 28, 10: 35, 15: 30, 20: 32, 24: 30 },
-    stats: [
-      { label: '활동 완료 여부', value: '미완료' },
-      { label: '진행한 활동', value: '2 / 5' },
-      { label: '성공률', value: '30%' },
-      { label: '힌트 사용', value: '5회' },
-    ],
-    memo: '운동 병행 권고. 다음 검사 예정.',
-  },
+}> = {};
+
+const EMPTY_PATIENT = {
+  name: '-',
+  birth_date: '',
+  dignosis: '-',
+  support_level: '-',
+  recentKMMSE: '',
+  kmmseScores: [] as number[],
+  monthlyRates: [] as number[][],
+  latestRates: [] as { label: string; value: number }[],
+  dailyScores: {} as Record<number, number>,
+  stats: [
+    { label: '활동 완료 여부', value: '-' },
+    { label: '진행한 활동', value: '-' },
+    { label: '성공률', value: '-' },
+    { label: '힌트 사용', value: '-' },
+  ],
+  memo: '',
 };
 
 export default function S24_DoctorDashboard() {
@@ -136,7 +71,7 @@ export default function S24_DoctorDashboard() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  const patientData = PATIENTS_DB[pCode] || PATIENTS_DB[1001];
+  const patientData = PATIENTS_DB[pCode] || EMPTY_PATIENT;
 
   // 초기 dailyScores 설정 (더미)
   useEffect(() => {
