@@ -10,6 +10,8 @@
  */
 
 import { api } from './client';
+import { getDoctorPatients } from './doctor';
+import type { UserRole } from '../utils/role';
 
 export interface LinkRequest {
   p_code: string; // 6자리 코드
@@ -40,3 +42,15 @@ export interface LinkedPatient {
 
 export const getLinkedPatients = () =>
   api.get<LinkedPatient[]>('/guardian/patients');
+
+/**
+ * 로그인한 사용자가 연동해 둔 환자가 있는지 확인합니다.
+ * 보호자·의사는 환자를 연동해야 화면에 보여줄 데이터가 생기므로,
+ * 연동 전에는 코드 연동 화면(S08)으로 보내기 위해 사용합니다.
+ * 환자 본인은 연동 대상이 아니므로 항상 true 입니다.
+ */
+export const hasLinkedPatient = async (role: UserRole): Promise<boolean> => {
+  if (role === 'guardian') return (await getLinkedPatients()).length > 0;
+  if (role === 'doctor') return (await getDoctorPatients()).length > 0;
+  return true;
+};
