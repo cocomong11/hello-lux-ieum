@@ -89,7 +89,7 @@ export default function S21_CargiverUpdate() {
     const pCode = getPCode();
     if (!pCode) return;
     getPatient(pCode)
-      .then(data => setPatient({ name: data.name, birth_date: '', dignosis: data.diagnosis }))
+      .then(data => setPatient({ name: data.name, birth_date: data.birth_date || '', dignosis: data.diagnosis }))
       .catch(() => {});
     getMemory(pCode, 1) // TODO: memory_id 관리
       .then((data: LifeDbResponse) => {
@@ -133,33 +133,35 @@ export default function S21_CargiverUpdate() {
   const updateMember = (idx: number, field: keyof MemberEntry, value: string) => {
     setMembers(prev => ({
       ...prev,
-      [category]: prev[category].map((m, i) => i === idx ? { ...m, [field]: value } : m),
+      [category]: (prev[category] || []).map((m, i) => i === idx ? { ...m, [field]: value } : m),
     }));
   };
 
   const toggleEdit = (idx: number) => {
     setMembers(prev => ({
       ...prev,
-      [category]: prev[category].map((m, i) => i === idx ? { ...m, isEditing: !m.isEditing } : m),
+      [category]: (prev[category] || []).map((m, i) => i === idx ? { ...m, isEditing: !m.isEditing } : m),
     }));
   };
 
   const deleteMember = (idx: number) => {
     setMembers(prev => ({
       ...prev,
-      [category]: prev[category].filter((_, i) => i !== idx),
+      [category]: (prev[category] || []).filter((_, i) => i !== idx),
     }));
   };
 
   const addMember = () => {
-    setMembers(prev => ({
-      ...prev,
-      [category]: [
-        prev[category][0],
-        { name: '', age: '', alias: '', keyword: '', isEditing: true },
-        ...prev[category].slice(1),
-      ],
-    }));
+    setMembers(prev => {
+      const current = prev[category] || [];
+      return {
+        ...prev,
+        [category]: [
+          ...current,
+          { name: '', age: '', alias: '', keyword: '', isEditing: true },
+        ],
+      };
+    });
   };
 
   const handleSave = async (idx: number) => {
@@ -285,7 +287,7 @@ export default function S21_CargiverUpdate() {
                           const url = URL.createObjectURL(file);
                           setMembers(prev => ({
                             ...prev,
-                            [category]: prev[category].map((m, i) => i === idx ? { ...m, photo: url } : m),
+                            [category]: (prev[category] || []).map((m, i) => i === idx ? { ...m, photo: url } : m),
                           }));
                           // 서버 업로드
                           const pCode = getPCode();
@@ -295,7 +297,7 @@ export default function S21_CargiverUpdate() {
                               // 서버 URL로 교체
                               setMembers(prev => ({
                                 ...prev,
-                                [category]: prev[category].map((m, i) => i === idx ? { ...m, photo: res.photo_url } : m),
+                                [category]: (prev[category] || []).map((m, i) => i === idx ? { ...m, photo: res.photo_url } : m),
                               }));
                             } catch (err) {
                               console.log('이미지 업로드 실패:', err);

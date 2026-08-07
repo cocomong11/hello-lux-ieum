@@ -70,6 +70,7 @@ export default function S26_DoctorLevel() {
         setPatientData(prev => ({
           ...prev,
           name: data.name,
+          birth_date: data.birth_date || '',
           dignosis: data.diagnosis,
         }));
       })

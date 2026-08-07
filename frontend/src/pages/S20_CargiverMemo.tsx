@@ -127,7 +127,7 @@ export default function S20_CargiverMemo() {
 
     // 환자 정보
     getPatient(pCode)
-      .then(data => setPatient({ name: data.name, birth_date: '', dignosis: data.diagnosis }))
+      .then(data => setPatient({ name: data.name, birth_date: data.birth_date || '', dignosis: data.diagnosis }))
       .catch(() => {});
 
     getGuardianMemos(pCode)

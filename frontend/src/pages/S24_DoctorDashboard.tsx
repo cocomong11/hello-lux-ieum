@@ -47,9 +47,11 @@ export default function S24_DoctorDashboard() {
   const [dailyScores, setDailyScores] = useState<Record<number, number>>({});
   const [selectedPeriod, setSelectedPeriod] = useState('6개월');
   const [dailyPeriod, setDailyPeriod] = useState('3개월');
-  const [selectedDay, setSelectedDay] = useState(26);
-  const [calYear, setCalYear] = useState(2026);
-  const [calMonth, setCalMonth] = useState(7);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
+  const [calYear, setCalYear] = useState(new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
   const [patientInfo, setPatientInfo] = useState(EMPTY_PATIENT);
   const [dayStatus, setDayStatus] = useState<{ health: string; sleep: string; mood: string; cognitive: string[] } | null>(null);
 
@@ -69,6 +71,7 @@ export default function S24_DoctorDashboard() {
         setPatientInfo(prev => ({
           ...prev,
           name: data.name,
+          birth_date: data.birth_date || '',
           dignosis: data.diagnosis,
         }));
       })
@@ -329,8 +332,14 @@ export default function S24_DoctorDashboard() {
               if (dailyPeriod === '7일') start.setDate(end.getDate() - 7);
               else if (dailyPeriod === '30일') start.setDate(end.getDate() - 30);
               else if (dailyPeriod === '3개월') start.setMonth(end.getMonth() - 3);
-              else start.setMonth(end.getMonth() - 1);
+              else if (dailyPeriod === '직접입력' && customStart && customEnd) {
+                // 직접입력: customStart/customEnd 사용
+              } else {
+                start.setMonth(end.getMonth() - 1);
+              }
               const fmt = (d: Date) => `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getDate()).padStart(2, '0')}`;
+              const startDisplay = dailyPeriod === '직접입력' && customStart ? customStart.replace(/-/g, '. ') : fmt(start);
+              const endDisplay = dailyPeriod === '직접입력' && customEnd ? customEnd.replace(/-/g, '. ') : fmt(end);
               return (
             <div style={{ display: 'flex', gap: 50, margin: '28px 0 20px' }}>
               <div style={{
@@ -340,7 +349,19 @@ export default function S24_DoctorDashboard() {
                 display: 'flex', justifyContent: 'center', alignItems: 'center',
               }}>
                 <span style={{ ...F, margin: '0 10px 0 0', fontSize: 22, fontWeight: 400, color: 'var(--color-neutral-gray)' }}>시작일</span>
-                <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>{fmt(start)}</span>
+                {dailyPeriod === '직접입력' ? (
+                  <input type="date" value={customStart} onChange={e => {
+                    setCustomStart(e.target.value);
+                    if (e.target.value) {
+                      const d = new Date(e.target.value);
+                      setCalYear(d.getFullYear());
+                      setCalMonth(d.getMonth() + 1);
+                      setSelectedDay(d.getDate());
+                    }
+                  }} style={{ ...F, fontSize: 18, border: 'none', outline: 'none', fontWeight: 700, color: 'var(--color-neutral-gray)' }} />
+                ) : (
+                  <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>{startDisplay}</span>
+                )}
               </div>
               <div style={{
                 flex: 1, padding: '19px 24px', borderRadius: 10,
@@ -349,7 +370,11 @@ export default function S24_DoctorDashboard() {
                 display: 'flex', justifyContent: 'center', alignItems: 'center',
               }}>
                 <span style={{ ...F, fontSize: 22, margin: '0 10px 0 0', fontWeight: 400, color: 'var(--color-neutral-gray)' }}>종료일</span>
-                <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>{fmt(end)}</span>
+                {dailyPeriod === '직접입력' ? (
+                  <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)} style={{ ...F, fontSize: 18, border: 'none', outline: 'none', fontWeight: 700, color: 'var(--color-neutral-gray)' }} />
+                ) : (
+                  <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>{endDisplay}</span>
+                )}
               </div>
             </div>
               );
@@ -573,19 +598,21 @@ export default function S24_DoctorDashboard() {
             </div>
 
             {/*선택일자 */}
-            {dailyScores[selectedDay] ? (
+            {(dailyScores[selectedDay] || dayStatus) ? (
               <div style={{
-                width: 936, height:203,paddingTop: '28px',paddingLeft: 29,borderRadius: 10,
+                width: 936, minHeight: 203, paddingTop: '28px', paddingLeft: 29, paddingBottom: 20, borderRadius: 10,
                 border: '1px solid var(--Secondary-80, #DFDF87)', background: '#0F66E2',
                 boxShadow: '0 0 10px 0 #4188ED', marginBottom: 34,
               }}>
+                {dailyScores[selectedDay] && (
                 <p style={{ ...F, margin: 0, fontSize: 30, fontWeight: 700, color: 'var(--color-neutral-100)' }}>
                   인지점수 {dailyScores[selectedDay]}%
                 </p>
+                )}
                 <p style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-100)' }}>
-                  {dayStatus ? `건강: ${dayStatus.health} · 수면: ${dayStatus.sleep} · 기분: ${dayStatus.mood}` : '상세 정보 없음'}
+                  {dayStatus ? `건강: ${dayStatus.health} · 수면: ${dayStatus.sleep} · 기분: ${dayStatus.mood}` : dailyScores[selectedDay] ? '' : '상세 정보 없음'}
                 </p>
-                <div style={{ display: 'inline-flex', gap: 10, marginTop: 12 }}>
+                <div style={{ display: 'inline-flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
                   {(dayStatus ? [`건강 : ${dayStatus.health}`, `수면 : ${dayStatus.sleep}`, `기분 : ${dayStatus.mood}`, ...dayStatus.cognitive] : []).map(tag => {
                     const isGood = tag.includes('좋음') || tag.includes('안정') || tag.includes('잘');
                     return (

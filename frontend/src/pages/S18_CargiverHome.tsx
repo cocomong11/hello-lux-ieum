@@ -67,7 +67,7 @@ export default function S18_CargiverHome() {
       .then(data => {
         setPatient({
           name: data.name,
-          birth_date: '', // API에 birth_date 없으면 빈값
+          birth_date: data.birth_date || '',
           dignosis: data.diagnosis,
         });
       })

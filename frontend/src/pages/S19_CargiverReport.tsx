@@ -111,7 +111,7 @@ export default function S19_CargiverReport() {
     const pCode = getPCode();
     if (!pCode) return;
     getPatient(pCode)
-      .then(data => setPatient({ name: data.name, birth_date: '', dignosis: data.diagnosis }))
+      .then(data => setPatient({ name: data.name, birth_date: data.birth_date || '', dignosis: data.diagnosis }))
       .catch(() => {});
 
     // 변화 추이 API 호출
