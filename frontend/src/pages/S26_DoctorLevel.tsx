@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/DoctorSidebar';
 import { updatePatientStatus, updateDoctorLevel } from '../api/doctor';
-import { getPatient } from '../api/patient';
+import { getPatient, getQuizResults } from '../api/patient';
 import { getPCode } from '../utils/pcode';
 import { ApiError } from '../api/client';
 
@@ -37,7 +37,19 @@ export default function S26_DoctorLevel() {
   const pCode = Number(searchParams.get('p_code')) || 1001;
   const [scale, setScale] = useState(1);
   const [patientData, setPatientData] = useState(EMPTY_PATIENT_DATA);
-  const patient = { ...patientData };
+  const [monthlyQuizCount, setMonthlyQuizCount] = useState(0);
+  const patient = {
+    ...patientData,
+    recentKMMSE: (() => {
+      const today = new Date();
+      const monthAgo = new Date();
+      monthAgo.setMonth(today.getMonth() - 1);
+      const fmt = (d: Date) => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+      return `${fmt(monthAgo)} ~ ${fmt(today)}`;
+    })(),
+    kmmseScore: `${monthlyQuizCount}/30`,
+    kmmseRange: patientData.dignosis || '-',
+  };
 
   const [selectedLevel, setSelectedLevel] = useState(3);
 
@@ -75,6 +87,16 @@ export default function S26_DoctorLevel() {
         }));
       })
       .catch(err => console.log('환자 정보 API 미연결:', err instanceof ApiError ? err.message : err));
+
+    // 최근 한달 퀴즈 횟수
+    getQuizResults(pCode)
+      .then(results => {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        const recentCount = results.filter(r => new Date(r.date) >= oneMonthAgo).length;
+        setMonthlyQuizCount(recentCount);
+      })
+      .catch(() => {});
   }, [pCode]);
 
   const handleSave = async () => {
