@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { saveRole, roleHome } from '../utils/role';
 import { setToken } from '../utils/auth';
 import { login } from '../api/auth';
+import { hasLinkedPatient } from '../api/link';
 import { ApiError } from '../api/client';
 import PageLayout from '../components/common/PageLayout';
 
@@ -29,7 +30,11 @@ export default function S02_Login() {
       setToken(res.token, autoLogin);
       if (res.role) {
         saveRole(res.role);
-        navigate(roleHome[res.role]);
+        // 보호자·의사는 환자를 연동해야 볼 수 있는 화면들이라, 연동 전이면
+        // 홈을 거치지 않고 곧장 코드 연동 화면으로 보냅니다.
+        // (연동 여부를 확인하지 못하면 홈으로 보내고, 라우터 가드가 다시 판단합니다)
+        const linked = await hasLinkedPatient(res.role).catch(() => true);
+        navigate(linked ? roleHome[res.role] : '/code-link');
       } else {
         // 가입은 했지만 아직 역할을 고르지 않은 계정
         navigate('/role-select');

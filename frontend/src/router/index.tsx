@@ -40,7 +40,8 @@ const router = createBrowserRouter([
   // ── 환자 초기 설정 흐름 ────────────────────────────
   { path: '/patient-info',  element: <ProtectedRoute><S05_PatientInfo /></ProtectedRoute> },
   { path: '/voice-setting', element: <ProtectedRoute><S06_VoiceSetting /></ProtectedRoute> },
-  { path: '/memory-db',     element: <ProtectedRoute><S07_MemoryDB /></ProtectedRoute> },
+  // 삶의 DB는 보호자 화면이라 환자 연동이 끝난 뒤에만 들어갈 수 있습니다.
+  { path: '/memory-db',     element: <ProtectedRoute requireLink><S07_MemoryDB /></ProtectedRoute> },
 
   // ── 보호자 / 의료진 코드 연동 ─────────────────────
   { path: '/code-link',     element: <ProtectedRoute><S08_CodeLink /></ProtectedRoute> },
@@ -60,22 +61,24 @@ const router = createBrowserRouter([
 
 
   // ── 보호자 흐름───────────────────────────────────────────
+  // requireLink: 환자 코드를 연동하기 전에는 전부 /code-link 로 되돌립니다.
 
-  { path: '/caregiver-home', element: <ProtectedRoute><S18_CargiverHome /></ProtectedRoute>},
+  { path: '/caregiver-home', element: <ProtectedRoute requireLink><S18_CargiverHome /></ProtectedRoute>},
 
   // ── 계정 ───────────────────────────────────────────
+  // 마이페이지는 연동 전에도 열려 있어야 합니다(로그아웃 경로가 여기뿐입니다).
   { path: '/caregiver-mypage',        element: <ProtectedRoute><S27_MyPage /></ProtectedRoute> },
 
   // ── 보호자 흐름───────────────────────────────────────────
-  { path: '/caregiver-report', element: <ProtectedRoute><S19_CargiverReport /></ProtectedRoute>},
-  { path: '/caregiver-memo', element: <ProtectedRoute><S20_CargiverMemo /></ProtectedRoute>},
-  { path: '/caregiver-update', element: <ProtectedRoute><S21_CargiverUpdate /></ProtectedRoute>},
-  { path: '/caregiver-alerm', element: <ProtectedRoute><S22_CargiverAlerm /></ProtectedRoute>},
+  { path: '/caregiver-report', element: <ProtectedRoute requireLink><S19_CargiverReport /></ProtectedRoute>},
+  { path: '/caregiver-memo', element: <ProtectedRoute requireLink><S20_CargiverMemo /></ProtectedRoute>},
+  { path: '/caregiver-update', element: <ProtectedRoute requireLink><S21_CargiverUpdate /></ProtectedRoute>},
+  { path: '/caregiver-alerm', element: <ProtectedRoute requireLink><S22_CargiverAlerm /></ProtectedRoute>},
 
   // ── 의료진 흐름───────────────────────────────────────────
-  { path: '/doctor-home', element: <ProtectedRoute><S23_DoctorHome /></ProtectedRoute>},
-  { path: '/doctor-dashboard', element: <ProtectedRoute><S24_DoctorDashboard /></ProtectedRoute>},
-  { path: '/doctor-level', element: <ProtectedRoute><S26_DoctorLevel/></ProtectedRoute>},
+  { path: '/doctor-home', element: <ProtectedRoute requireLink><S23_DoctorHome /></ProtectedRoute>},
+  { path: '/doctor-dashboard', element: <ProtectedRoute requireLink><S24_DoctorDashboard /></ProtectedRoute>},
+  { path: '/doctor-level', element: <ProtectedRoute requireLink><S26_DoctorLevel/></ProtectedRoute>},
 ])
 
 export default router
