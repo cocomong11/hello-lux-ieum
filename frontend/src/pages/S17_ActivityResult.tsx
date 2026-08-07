@@ -218,7 +218,7 @@ export default function S17_ActivityReport() {
     boxSizing: 'border-box' as const,
     display: 'flex',
     flexDirection: 'column' as const,
-    justifyInContent: 'space-between' as const,
+    justifyContent: 'space-between' as const,
     textAlign: 'left' as const
   };
 
