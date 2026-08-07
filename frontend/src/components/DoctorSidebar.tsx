@@ -21,9 +21,11 @@ type Props = {
   } | null;
 };
 
-function calcAge(birthDate: string): number {
+function calcAge(birthDate: string): number | null {
+  if (!birthDate) return null;
   const today = new Date();
   const birth = new Date(birthDate);
+  if (isNaN(birth.getTime())) return null;
   let age = today.getFullYear() - birth.getFullYear();
   const hasBirthdayPassed =
     today.getMonth() > birth.getMonth() ||
@@ -99,7 +101,7 @@ export default function DoctorSidebar({ patient }: Props) {
           {patient.name}
         </p>
         <p style={{ position: 'absolute', left: 123, top: 81, fontSize: 16, fontWeight: 700, lineHeight: '165%', color: 'var(--color-neutral-gray)', margin: 0 }}>
-          {calcAge(patient.birth_date)}세 · {patient.dignosis}
+          {calcAge(patient.birth_date) !== null ? `${calcAge(patient.birth_date)}세 · ` : ''}{patient.dignosis}
         </p>
         <p style={{ position: 'absolute', left: 123, top: 109, fontSize: 16, fontWeight: 700, lineHeight: '165%', color: 'var(--color-neutral-gray)', margin: 0 }}>
           지원 수준 : {patient.support_level}

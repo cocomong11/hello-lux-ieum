@@ -11,9 +11,11 @@ type Props = {
   } | null;
 };
 //나이 계산 함수
-function calcAge(birthDate: string): number {
+function calcAge(birthDate: string): number | null {
+  if (!birthDate) return null;
   const today = new Date();
   const birth = new Date(birthDate);
+  if (isNaN(birth.getTime())) return null;
   let age = today.getFullYear() - birth.getFullYear();
   const hasBirthdayPassed =
     today.getMonth() > birth.getMonth() ||
@@ -148,7 +150,7 @@ export default function CaregiverSidebar({ patient }: Props) {
             margin: 0,
           }}
         >
-          {calcAge(patient.birth_date)}세
+          {calcAge(patient.birth_date) !== null ? `${calcAge(patient.birth_date)}세` : ''}
         </p>
         <p
           style={{
