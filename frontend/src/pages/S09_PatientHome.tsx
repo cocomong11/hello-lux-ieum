@@ -31,34 +31,25 @@ function todayStr() {
   });
 }
 
+
 function getTodayIsoString() {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' });
+  return formatter.format(now);
 }
 
 const formatHealthStatus = (status: string | null | undefined) => {
   if (!status || status === '-') return '-';
-  switch (status) {
-    case 'good':
-    case '좋음':
-      return '좋음';
-    case 'normal':
-    case '보통':
-      return '보통';
-    case 'bad':
-    case '나쁨':
-    case '좋지 않음':
-      return '나쁨';
-    default:
-      return status;
-  }
+  const trimmed = String(status).trim();
+  if (trimmed === 'good') return '좋음';
+  if (trimmed === 'normal') return '보통';
+  if (trimmed === 'bad') return '좋지 않음';
+  return trimmed;
 };
 
 export default function S09_PatientHome() {
   const navigate = useNavigate();
+  const todayIso = getTodayIsoString();
 
   const [isCompleted, setIsCompleted] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
@@ -74,37 +65,58 @@ export default function S09_PatientHome() {
   });
 
   
-  const syncStorageState = useCallback(() => {
-    const currentPCode = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
+  const syncStorageState = useCallback((currentPCode?: string) => {
+    const pCodeToUse = currentPCode || sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
+    const prefix = pCodeToUse ? `${pCodeToUse}_` : '';
 
-    if (currentPCode) {
-      const savedCount = sessionStorage.getItem(`completedActivityCount_${currentPCode}`) || sessionStorage.getItem('completedActivityCount');
-      const count = savedCount ? parseInt(savedCount, 10) : 0;
+    const todayDoneKey = `activityCompleted_${prefix}${todayIso}`;
+    const isTodayDone = 
+      sessionStorage.getItem(todayDoneKey) === 'true' ||
+      sessionStorage.getItem(`todayActivityCompleted_${prefix}${todayIso}`) === 'true' ||
+      sessionStorage.getItem('todayActivityCompleted') === 'true';
 
-      const isDone = sessionStorage.getItem(`todayActivityCompleted_${currentPCode}`);
-      const savedHealth = sessionStorage.getItem(`todayHealthCondition_${currentPCode}`) || sessionStorage.getItem('conditionStatus');
+    
+    let total = 7;
+    const customTotal = sessionStorage.getItem('totalActivityCount');
+    const storedQuizList = sessionStorage.getItem('quizList');
 
-      setHealthStatusValue(formatHealthStatus(savedHealth));
-      setCompletedCount(count);
-      setIsCompleted(isDone === 'true');
-    } else {
-      const savedCount = sessionStorage.getItem('completedActivityCount');
-      const count = savedCount ? parseInt(savedCount, 10) : 0;
-      const isDone = sessionStorage.getItem('todayActivityCompleted');
-      const savedHealth = sessionStorage.getItem('conditionStatus');
-
-      setHealthStatusValue(formatHealthStatus(savedHealth));
-      setCompletedCount(count);
-      setIsCompleted(isDone === 'true');
+    if (customTotal) {
+      total = parseInt(customTotal, 10) || total;
+    } else if (storedQuizList) {
+      try {
+        const parsed = JSON.parse(storedQuizList);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          total = parsed.length;
+        }
+      } catch (e) {
+        console.error('quizList 파싱 실패:', e);
+      }
     }
-  }, []);
+   
+
+    
+    let count = 0;
+    const savedPatientCount = sessionStorage.getItem(`completedActivityCount_${prefix}${todayIso}`);
+    const fallbackCount = sessionStorage.getItem('completedActivityCount');
+
+    const savedCount = savedPatientCount !== null ? savedPatientCount : fallbackCount;
+
+    if (savedCount !== null) {
+      count = parseInt(savedCount, 10) || 0;
+    }
+
+    const savedHealth = sessionStorage.getItem(`todayHealthCondition_${prefix}${todayIso}`);
+
+    setHealthStatusValue(formatHealthStatus(savedHealth));
+    setCompletedCount(count);
+    setIsCompleted(isTodayDone);
+  }, [todayIso]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
       let internalCode: number | string | undefined = sessionStorage.getItem('internalCode') || undefined;
       let pCode: string | undefined = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode') || undefined;
 
-      
       try {
         const userData = await api.get<UserInfoResponse>('/auth/me');
         if (userData?.name) {
@@ -115,7 +127,6 @@ export default function S09_PatientHome() {
         console.warn('사용자 프로필 조회 실패:', err);
       }
 
-      
       try {
         const meRes: PatientMeResponse = await getPatientMe();
         if (meRes) {
@@ -132,23 +143,21 @@ export default function S09_PatientHome() {
         console.warn('getPatientMe() 조회 실패:', err);
       }
 
-      
-      syncStorageState();
+      syncStorageState(pCode);
 
-      
       const targetPatientId = internalCode || pCode;
       if (targetPatientId) {
         try {
-          const today = getTodayIsoString();
-          const dailyData: DailyStatusResponse = await getDailyStatus(targetPatientId, today);
+          const dailyData: DailyStatusResponse = await getDailyStatus(targetPatientId, todayIso);
 
           if (dailyData && dailyData.health_condition) {
             const formatted = formatHealthStatus(dailyData.health_condition);
             setHealthStatusValue(formatted);
             
-            if (pCode) {
-              sessionStorage.setItem(`todayHealthCondition_${pCode}`, dailyData.health_condition);
-            }
+            const prefix = pCode ? `${pCode}_` : '';
+            sessionStorage.setItem(`todayHealthCondition_${prefix}${todayIso}`, dailyData.health_condition);
+          } else {
+            setHealthStatusValue('-');
           }
         } catch (err) {
           setHealthStatusValue('-');
@@ -157,10 +166,27 @@ export default function S09_PatientHome() {
     };
 
     fetchInitialData();
-  }, [syncStorageState]);
+  }, [syncStorageState, todayIso]);
 
   
   const handleStartActivity = () => {
+    const currentPCode = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
+    const prefix = currentPCode ? `${currentPCode}_` : '';
+
+    const lastDate = sessionStorage.getItem(`${prefix}lastActivityDate`) || sessionStorage.getItem('lastActivityDate');
+    if (lastDate !== todayIso) {
+      const keysToRemove = [
+        'quizList', 
+        'currentQuizIndex', 
+        'completedActivityCount', 
+        `completedActivityCount_${prefix}${todayIso}`,
+        'totalHintCount'
+      ];
+      keysToRemove.forEach((k) => sessionStorage.removeItem(k));
+      sessionStorage.setItem(`${prefix}lastActivityDate`, todayIso);
+      sessionStorage.setItem('lastActivityDate', todayIso);
+    }
+
     const quizListStr = sessionStorage.getItem('quizList');
 
     if (quizListStr) {
@@ -177,7 +203,6 @@ export default function S09_PatientHome() {
 
           const currentQuiz = quizList[currentIndex];
 
-         
           const rawCategory = 
             currentQuiz?.quizCategory || 
             currentQuiz?.quiz_category || 
@@ -187,7 +212,6 @@ export default function S09_PatientHome() {
 
           const category = String(rawCategory).toLowerCase().trim();
 
-          
           let targetRoute = '/patient-voicechat'; 
 
           if (category.includes('photo') || category.includes('picture') || category.includes('image')) {
@@ -206,26 +230,41 @@ export default function S09_PatientHome() {
       }
     }
 
-    
-    const keysToRemove = [
+    const keysToReset = [
       'totalHintCount',
       'completedActivityCount',
+      `completedActivityCount_${prefix}${todayIso}`,
       'currentQuizIndex',
       'retryCount',
       'speakRetryCount',
-      'todayActivityCompleted',
       'todayActivityQuit',
       'correctQuizCount',
     ];
-    keysToRemove.forEach((key) => sessionStorage.removeItem(key));
+    keysToReset.forEach((key) => sessionStorage.removeItem(key));
 
     navigate('/patient-check');
   };
 
+  const handleViewResults = () => {
+    let targetDate = todayIso;
+
+    if (!isCompleted) {
+      const prevDate = new Date();
+      prevDate.setDate(prevDate.getDate() - 1);
+      const year = prevDate.getFullYear();
+      const month = String(prevDate.getMonth() + 1).padStart(2, '0');
+      const day = String(prevDate.getDate()).padStart(2, '0');
+      targetDate = `${year}-${month}-${day}`;
+    }
+
+    navigate(`/patient-result?date=${targetDate}`);
+  };
+
   const handleReset = () => {
     const currentPCode = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
+    const prefix = currentPCode ? `${currentPCode}_` : '';
 
-    const generalKeys = [
+    const keysToDelete = [
       'conditionStatus',
       'sleepStatus',
       'moodStatus',
@@ -240,16 +279,16 @@ export default function S09_PatientHome() {
       'currentQuizIndex',
       'correctQuizCount',
       'currentQuizElapsedTime',
-      'todayActivityCompleted',
       'todayActivityQuit',
+      'lastActivityDate',
+      'totalActivityCount',
+      'todayActivityCompleted',
+      `todayActivityCompleted_${prefix}${todayIso}`,
+      `activityCompleted_${prefix}${todayIso}`,
+      `completedActivityCount_${prefix}${todayIso}`,
+      `todayHealthCondition_${prefix}${todayIso}`
     ];
-    generalKeys.forEach((key) => sessionStorage.removeItem(key));
-
-    if (currentPCode) {
-      sessionStorage.removeItem(`todayActivityCompleted_${currentPCode}`);
-      sessionStorage.removeItem(`completedActivityCount_${currentPCode}`);
-      sessionStorage.removeItem(`todayHealthCondition_${currentPCode}`);
-    }
+    keysToDelete.forEach((key) => sessionStorage.removeItem(key));
 
     setIsCompleted(false);
     setCompletedCount(0);
@@ -258,9 +297,7 @@ export default function S09_PatientHome() {
     alert('오늘 활동 기록이 초기화되었습니다.');
   };
 
-  const successRate = completedCount > 0 
-    ? `${Math.round((completedCount / 7) * 100)}%` 
-    : '0%';
+  const successRate = `${Math.round((completedCount / 7) * 100)}%`;
 
   return (
     <div
@@ -554,7 +591,7 @@ export default function S09_PatientHome() {
         >
           <button
             type="button"
-            onClick={() => navigate('/patient-result')}
+            onClick={handleViewResults}
             style={{
               ...F,
               flex: 1,
