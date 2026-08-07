@@ -1,10 +1,14 @@
+// 삶의 DB 입력 화면. 보호자 흐름에 속합니다
+// (보호자: 회원가입 → 역할선택 → 코드연동(S08) → 보호자홈 → 삶의DB(S07)).
+// 대상 환자는 로그인한 보호자가 연동해 둔 환자이며, GET /api/guardian/patients 로 받아옵니다.
+//
 // 백엔드 LifeDbController/LifeDbRequestDto 기준으로 연동.
 // family는 문자열 하나라서 가족 구성원 리스트를 "이름(나이, 호칭)" 형태로
 // 이어붙여 저장합니다 (serializeFamilyMembers, 사용자 확인 완료).
 // 사진 업로드는 POST /api/patients/{pCode}/images (multipart)를 사용합니다
 // (api/patient.ts의 uploadPatientImage). LifeDbRequest에는 photo_url 필드가
 // 하나뿐이라, 가족/지인/장소 중 먼저 업로드된 사진 하나만 memories 저장 요청에
-// 함께 실립니다(family → acquaintance → place 순 우선).
+// 함께 실리고 나머지는 사건 추가(addLifeDbEvent)로 등록합니다.
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import imgUpload from '../assets/up-loading.png';
@@ -14,7 +18,7 @@ import MemoryDBSidebar, {
 } from '../components/MemoryDBSidebar';
 import { createLifeDb, addLifeDbEvent, serializeFamilyMembers } from '../api/memory';
 import { uploadPatientImage } from '../api/patient';
-import { getPCode } from '../utils/pcode';
+import { getLinkedPatients } from '../api/link';
 import { ApiError } from '../api/client';
 
 const CANVAS_H = 1660;
@@ -259,6 +263,33 @@ export default function S07_MemoryDB() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // 삶의 DB는 보호자가 입력하는 화면입니다. 대상 환자는 로그인한 보호자가
+  // S08에서 연동해 둔 환자이며, 그 내부 코드를 GET /api/guardian/patients 로 받아옵니다.
+  // (여기서 오는 p_code는 6자리 연동 코드가 아니라 /patients/{p_code}/... 경로에 쓰는 Integer입니다)
+  const [targetPCode, setTargetPCode] = useState<number | null>(null);
+  const [targetName, setTargetName] = useState('');
+  const [loadingPatient, setLoadingPatient] = useState(true);
+
+  useEffect(() => {
+    getLinkedPatients()
+      .then((patients) => {
+        if (patients.length === 0) {
+          setErrorMessage('* 연동된 환자가 없습니다. 환자 코드를 먼저 연동해 주세요.');
+          return;
+        }
+        setTargetPCode(patients[0].p_code);
+        setTargetName(patients[0].name);
+      })
+      .catch((err) => {
+        setErrorMessage(
+          err instanceof ApiError
+            ? `* ${err.message}`
+            : '* 연동된 환자 정보를 불러오지 못했습니다.',
+        );
+      })
+      .finally(() => setLoadingPatient(false));
+  }, []);
+
   type PhotoKey = 'family' | 'acquaintance' | 'place';
   const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
   const [photoUploads, setPhotoUploads] = useState<
@@ -270,11 +301,11 @@ export default function S07_MemoryDB() {
   });
 
   const handlePhotoSelect = async (key: PhotoKey, file: File) => {
-    const pCode = getPCode();
+    const pCode = targetPCode;
     if (!pCode) {
       setPhotoUploads((prev) => ({
         ...prev,
-        [key]: { ...prev[key], error: '* 환자 기본 정보를 먼저 등록해 주세요.' },
+        [key]: { ...prev[key], error: '* 연동된 환자가 없습니다.' },
       }));
       return;
     }
@@ -319,9 +350,9 @@ export default function S07_MemoryDB() {
   };
 
   const handleComplete = async () => {
-    const pCode = getPCode();
+    const pCode = targetPCode;
     if (!pCode) {
-      setErrorMessage('* 환자 기본 정보를 먼저 등록해 주세요.');
+      setErrorMessage('* 연동된 환자가 없습니다. 환자 코드를 먼저 연동해 주세요.');
       return;
     }
 
@@ -371,7 +402,7 @@ export default function S07_MemoryDB() {
         return;
       }
 
-      navigate('/patient-home');
+      navigate('/caregiver-home');
     } catch (err) {
       setErrorMessage(
         err instanceof ApiError
@@ -446,7 +477,7 @@ export default function S07_MemoryDB() {
             }}
           >
             <button
-              onClick={() => navigate('/patient-home')}
+              onClick={() => navigate('/caregiver-home')}
               style={{
                 ...F,
                 fontSize: 16,
@@ -491,6 +522,19 @@ export default function S07_MemoryDB() {
           }}
         >
           가족 정보
+          {targetName && (
+            <span
+              style={{
+                ...F,
+                fontSize: 22,
+                fontWeight: 400,
+                color: '#797980',
+                marginLeft: 12,
+              }}
+            >
+              {targetName} 님
+            </span>
+          )}
         </p>
 
         <ColLabel left={636} top={203}>
@@ -779,7 +823,7 @@ export default function S07_MemoryDB() {
         </div>
 
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/caregiver-home')}
           style={{
             ...F,
             position: 'absolute',
@@ -861,7 +905,7 @@ export default function S07_MemoryDB() {
         {/* 완료 → */}
         <button
           onClick={handleComplete}
-          disabled={loading}
+          disabled={loading || loadingPatient}
           style={{
             ...F,
             position: 'absolute',
@@ -870,11 +914,11 @@ export default function S07_MemoryDB() {
             height: 59,
             paddingLeft: 24,
             paddingRight: 24,
-            background: loading ? '#8e8e98' : '#4188ed',
+            background: loading || loadingPatient ? '#8e8e98' : '#4188ed',
             borderRadius: 50,
             border: 'none',
             filter: 'drop-shadow(0 0 2px #4188ed)',
-            cursor: loading ? 'not-allowed' : 'pointer',
+            cursor: loading || loadingPatient ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
           }}
@@ -887,7 +931,7 @@ export default function S07_MemoryDB() {
               whiteSpace: 'nowrap',
             }}
           >
-            {loading ? '저장 중...' : '완료 →'}
+            {loading ? '저장 중...' : loadingPatient ? '불러오는 중...' : '완료 →'}
           </span>
         </button>
       </div>
