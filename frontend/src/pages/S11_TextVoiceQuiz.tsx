@@ -27,7 +27,6 @@ export default function S11_TextVoiceQuiz() {
     return sessionPCode || 'HH5N7S';
   };
 
-  
   const getNumericPCode = (quizItem?: QuizItem): number => {
     const rawPCode = quizItem?.p_code ?? quizItem?.pCode;
     if (rawPCode !== undefined && rawPCode !== null && !isNaN(Number(rawPCode))) {
@@ -47,7 +46,7 @@ export default function S11_TextVoiceQuiz() {
     return 1;
   };
 
- 
+  
   useEffect(() => {
     try {
       const storedQuizzesRaw = sessionStorage.getItem('quizList');
@@ -59,7 +58,6 @@ export default function S11_TextVoiceQuiz() {
         storedIndex = 0;
       }
 
-     
       if (storedQuizzes.length > 0 && storedIndex >= storedQuizzes.length) {
         storedIndex = storedQuizzes.length - 1;
       }
@@ -86,14 +84,17 @@ export default function S11_TextVoiceQuiz() {
   const [maxHintStepThisQuiz, setMaxHintStepThisQuiz] = useState<number>(0);
   const [isHintCountReflected, setIsHintCountReflected] = useState<boolean>(false);
 
+  
   const [hintCount, setHintCount] = useState<number>(() => {
     return Number(sessionStorage.getItem('totalHintCount') || 0);
   });
 
+ 
   const [totalSolvedCount, setTotalSolvedCount] = useState<number>(() => {
     return Number(sessionStorage.getItem('completedActivityCount') || 0);
   });
 
+  
   const [correctCount, setCorrectCount] = useState<number>(() => {
     return Number(sessionStorage.getItem('correctQuizCount') || 0);
   });
@@ -111,7 +112,7 @@ export default function S11_TextVoiceQuiz() {
     };
   }, []);
 
-  
+  // 문항 전환 시 초기화
   useEffect(() => {
     setIsSubmitted(false);
     setIsListening(false);
@@ -143,6 +144,9 @@ export default function S11_TextVoiceQuiz() {
         <button 
           onClick={() => {
             sessionStorage.setItem('currentQuizIndex', '0');
+            sessionStorage.removeItem('completedActivityCount');
+            sessionStorage.removeItem('correctQuizCount');
+            sessionStorage.removeItem('totalHintCount');
             navigate('/patient-home');
           }} 
           style={{ padding: '10px 20px', borderRadius: '20px', backgroundColor: '#4188ED', color: '#FFF', border: 'none', cursor: 'pointer' }}
@@ -178,7 +182,7 @@ export default function S11_TextVoiceQuiz() {
     }
   };
 
- 
+  
   const handleSuccessSubmit = async (finalDuration: string, answerText?: string) => {
     const sessionSpent = (Date.now() - startTimeRef.current) / 1000;
     const totalSpentSeconds = (initialAccumulatedTimeRef.current + sessionSpent).toFixed(1);
@@ -219,22 +223,34 @@ export default function S11_TextVoiceQuiz() {
       
       setThisQuizIsCorrect(isCurrentCorrect);
 
-      if (!isSubmitted && isCurrentCorrect) {
-        const newCorrect = correctCount + 1;
-        setCorrectCount(newCorrect);
-        sessionStorage.setItem('correctQuizCount', String(newCorrect));
+      
+      if (!isSubmitted) {
+       
+        const nextSolvedCount = totalSolvedCount + 1;
+        setTotalSolvedCount(nextSolvedCount);
+        sessionStorage.setItem('completedActivityCount', String(nextSolvedCount));
+
+        
+        if (isCurrentCorrect) {
+          const nextCorrectCount = correctCount + 1;
+          setCorrectCount(nextCorrectCount);
+          sessionStorage.setItem('correctQuizCount', String(nextCorrectCount));
+        }
+
+        setIsSubmitted(true);
       }
 
     } catch (error) {
       console.error('답안 제출 API 오류:', error);
       setThisQuizIsCorrect(false);
-    }
 
-    if (!isSubmitted) {
-      const updatedCount = totalSolvedCount + 1;
-      setTotalSolvedCount(updatedCount);
-      sessionStorage.setItem('completedActivityCount', String(updatedCount)); 
-      setIsSubmitted(true);
+      
+      if (!isSubmitted) {
+        const nextSolvedCount = totalSolvedCount + 1;
+        setTotalSolvedCount(nextSolvedCount);
+        sessionStorage.setItem('completedActivityCount', String(nextSolvedCount));
+        setIsSubmitted(true);
+      }
     }
   };
 
@@ -242,6 +258,7 @@ export default function S11_TextVoiceQuiz() {
   const handleNextPage = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 
+   
     if (!isSubmitted) {
       setThisQuizIsCorrect(false);
 
@@ -249,22 +266,11 @@ export default function S11_TextVoiceQuiz() {
       const setId = Number(currentQuiz.set_id || currentQuiz.setId || 1);
       const quizNum = Number(currentQuiz.quiz_num || currentQuiz.quizNum || 1);
 
-      const payloadData = {
-        pCode,
-        setId,
-        quizNum,
-        userAnswer: '',
-      };
-
       try {
-        await submitQuizAnswer(payloadData);
+        await submitQuizAnswer({ pCode, setId, quizNum, userAnswer: '' });
       } catch (error) {
-        console.error('주관식 퀴즈 스킵 답안 제출 실패:', error);
+        console.error('주관식 퀴즈 스킵 알림 실패:', error);
       }
-
-      const updatedCount = totalSolvedCount + 1;
-      setTotalSolvedCount(updatedCount);
-      sessionStorage.setItem('completedActivityCount', String(updatedCount));
     }
 
     sessionStorage.removeItem('currentQuizElapsedTime');
@@ -278,18 +284,15 @@ export default function S11_TextVoiceQuiz() {
         const numericPCode = getNumericPCode(currentQuiz);
         const finalSetId = Number(currentQuiz.set_id || currentQuiz.setId || 1);
         
-        const validSolvedCount = parseInt(sessionStorage.getItem('completedActivityCount') || String(totalSolvedCount + (isSubmitted ? 0 : 1)), 10);
-        const finalCorrectCount = parseInt(sessionStorage.getItem('correctQuizCount') || String(correctCount), 10);
-        const totalHint = Number(sessionStorage.getItem('totalHintCount') || 0);
-
+        
         const finalPayload: QuizResultPayload = {
           setId: finalSetId,
           pCode: numericPCode,
-          totalCount: validSolvedCount,
-          correctCount: finalCorrectCount,
-          hint: totalHint,
+          totalCount: totalSolvedCount, 
+          correctCount: correctCount,   
+          hint: hintCount,
           caculate: "0", 
-          feedbackContent: `총 ${validSolvedCount}문제 중 ${finalCorrectCount}문제를 맞추셨습니다. 오늘도 수고하셨습니다!`
+          feedbackContent: `총 ${totalSolvedCount}문제 제출 중 ${correctCount}문제를 맞추셨습니다. 수고하셨습니다!`
         };
 
         await submitQuizResult(finalPayload);
@@ -312,21 +315,16 @@ export default function S11_TextVoiceQuiz() {
       navigate('/patient-voicechat');
     } else if (category === 'photo' || category === '2' || category === '사진') {
       navigate('/patient-photo');
-    } else if (category === 'text' || category === '3' || category === '단답형' || category === '주관식') {
-      setCurrentIndex(nextIndex);
-      window.scrollTo(0, 0);
     } else {
       setCurrentIndex(nextIndex);
       window.scrollTo(0, 0);
     }
   };
 
- 
   const handleQuit = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 
     if (!isSubmitted) {
-     
       const sessionSpent = (Date.now() - startTimeRef.current) / 1000;
       const totalAccumulated = initialAccumulatedTimeRef.current + sessionSpent;
       sessionStorage.setItem('currentQuizElapsedTime', String(totalAccumulated));
@@ -340,8 +338,6 @@ export default function S11_TextVoiceQuiz() {
     }
 
     sessionStorage.setItem('todayActivityQuit', 'true');
-    sessionStorage.setItem('completedActivityCount', String(totalSolvedCount));
-
     navigate('/patient-home');
   };
 

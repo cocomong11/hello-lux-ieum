@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/patientHeader';
 import { 
   getPatientMe, 
@@ -13,7 +13,15 @@ import {
 const getTodayKST = (): string => {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' });
-  return formatter.format(now); 
+  return formatter.format(now);
+};
+
+
+const getYesterdayKST = (): string => {
+  const now = new Date();
+  now.setDate(now.getDate() - 1);
+  const formatter = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' });
+  return formatter.format(now);
 };
 
 function CelebrationIcon() {
@@ -45,8 +53,19 @@ function CelebrationIcon() {
 
 export default function S17_ActivityReport() {
   const navigate = useNavigate();
-
+  const location = useLocation();
   const todayStr = getTodayKST();
+  const yesterdayStr = getYesterdayKST();
+
+
+  const queryParams = new URLSearchParams(location.search);
+  const targetDateParam = queryParams.get('date');
+
+ 
+  const isTodayCompletion = targetDateParam === todayStr;
+
+  
+  const fetchDate = isTodayCompletion ? todayStr : (targetDateParam || yesterdayStr);
 
   const parseSessionValue = (key: string): number | null => {
     const val = sessionStorage.getItem(key);
@@ -55,14 +74,30 @@ export default function S17_ActivityReport() {
     return isNaN(parsed) ? null : parsed;
   };
 
-  const [completedCount, setCompletedCount] = useState<number>(0);
-  const [correctCount, setCorrectCount] = useState<number>(() => parseSessionValue('correctCount') ?? 0);
-  const [hintCount, setHintCount] = useState<number>(() => parseSessionValue('hint') ?? parseSessionValue('hintCount') ?? 0);
+  const [completedCount, setCompletedCount] = useState<number>(7);
+  const [correctCount, setCorrectCount] = useState<number>(() => parseSessionValue('correctCount') ?? parseSessionValue('correctQuizCount') ?? 0);
+  const [hintCount, setHintCount] = useState<number>(() => parseSessionValue('hint') ?? parseSessionValue('hintCount') ?? parseSessionValue('totalHintCount') ?? 0);
   const [retryCount] = useState<number>(() => parseSessionValue('retryCount') ?? parseSessionValue('speakRetryCount') ?? 0);
 
   const [conditionStatus, setConditionStatus] = useState('좋음');
   const [sleepStatus, setSleepStatus] = useState('잘 잤음');
   const [moodStatus, setMoodStatus] = useState('편안함');
+
+  
+  const updateCompletedState = (count: number, pCode?: string) => {
+    const prefix = pCode ? `${pCode}_` : '';
+    const countStr = String(count);
+
+    sessionStorage.setItem(`activityCompleted_${prefix}${todayStr}`, 'true');
+    sessionStorage.setItem(`todayActivityCompleted_${prefix}${todayStr}`, 'true');
+    sessionStorage.setItem(`completedActivityCount_${prefix}${todayStr}`, countStr);
+    
+    sessionStorage.setItem('completedActivityCount', countStr);
+    sessionStorage.setItem('totalActivityCount', countStr);
+    sessionStorage.setItem('lastActivityDate', todayStr);
+    sessionStorage.setItem(`${prefix}lastActivityDate`, todayStr);
+    sessionStorage.setItem('todayActivityCompleted', 'true');
+  };
 
   useEffect(() => {
     const preventGoBack = () => {
@@ -79,35 +114,41 @@ export default function S17_ActivityReport() {
 
   useEffect(() => {
     const fetchAllData = async () => {
-      let internalCode: number | string = sessionStorage.getItem('internalCode') || 10;
-      let pCode: string = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode') || 'HH5N7S';
+      let internalCode: number | string | undefined = sessionStorage.getItem('internalCode') || undefined;
+      let pCode: string | undefined = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode') || undefined;
 
-      
       try {
         const meRes: PatientMeResponse = await getPatientMe();
         if (meRes) {
           internalCode = meRes.internal_code ?? meRes.internalCode ?? internalCode;
           pCode = meRes.p_code ?? meRes.pCode ?? pCode;
 
-          sessionStorage.setItem('internalCode', String(internalCode));
-          sessionStorage.setItem('p_code', pCode);
+          if (internalCode) sessionStorage.setItem('internalCode', String(internalCode));
+          if (pCode) sessionStorage.setItem('p_code', pCode);
         }
       } catch (err) {
-        console.warn('getPatientMe() 조회 실패 (기존 세션 사용):', err);
+        console.warn('getPatientMe() 조회 실패:', err);
       }
 
-      
-      try {
-        const data = await getQuizResults(pCode, todayStr);
-        const actualCount = (data && typeof data.total_count === 'number') ? data.total_count : 0;
+      if (!pCode) {
+        console.warn('환자 p_code를 찾을 수 없습니다.');
+        return;
+      }
 
+     
+      try {
+        const data = await getQuizResults(pCode, fetchDate);
+        
+        const actualCount = (data && typeof data.total_count === 'number' && data.total_count > 0) 
+          ? data.total_count 
+          : 7;
+        
         setCompletedCount(actualCount);
-        if (pCode) {
-          sessionStorage.setItem(`completedActivityCount_${pCode}`, String(actualCount));
-          sessionStorage.setItem(`todayActivityCompleted_${pCode}`, 'true');
+
+       
+        if (isTodayCompletion) {
+          updateCompletedState(actualCount, pCode);
         }
-        sessionStorage.setItem('completedActivityCount', String(actualCount));
-        sessionStorage.setItem('todayActivityCompleted', 'true');
 
         if (data && typeof data.correct_count === 'number') setCorrectCount(data.correct_count);
         if (data && typeof data.hint === 'number') setHintCount(data.hint);
@@ -117,58 +158,52 @@ export default function S17_ActivityReport() {
           sessionStorage.setItem('set_id', String(fetchedSetId));
         }
       } catch (err) {
-        console.error('퀴즈 결과 조회 실패:', err);
-        setCompletedCount(0);
+        console.warn('퀴즈 결과 조회 실패 (기본값 설정):', err);
+        setCompletedCount(7);
+
+        if (isTodayCompletion) {
+          updateCompletedState(7, pCode);
+        }
       }
 
-      
-      try {
-        const data: DailyStatusResponse = await getDailyStatus(internalCode, todayStr);
-        if (data) {
-          if (data.health_condition) setConditionStatus(data.health_condition);
-          if (data.sleep_status) setSleepStatus(data.sleep_status);
-          if (data.mood_status) setMoodStatus(data.mood_status);
+      const targetPatientId = internalCode || pCode;
+      if (targetPatientId) {
+        try {
+          const statusData: DailyStatusResponse = await getDailyStatus(targetPatientId, fetchDate);
+
+          if (statusData) {
+            if (statusData.health_condition) setConditionStatus(statusData.health_condition);
+            if (statusData.sleep_status) setSleepStatus(statusData.sleep_status);
+            if (statusData.mood_status) setMoodStatus(statusData.mood_status);
+          }
+        } catch (err) {
+          console.warn('건강 상태 조회 실패:', err);
         }
-      } catch (err) {
-        console.error('건강 상태 조회 실패:', err);
       }
     };
 
     fetchAllData();
-  }, [todayStr]);
+  }, [todayStr, fetchDate, isTodayCompletion]);
 
- 
-  const feedbackText = `오늘 총 ${completedCount}개 문제 중 ${correctCount}개를 맞추셨습니다. 오늘도 수고하셨습니다!`;
+  const feedbackText = `총 ${completedCount} 문제 중 ${correctCount} 개 맞추셨습니다. 수고하셨습니다!`;
 
-  // ▶ 결과 듣기 (TTS 음성 재생)
   const handlePlayTTS = () => {
     if (!('speechSynthesis' in window)) {
       alert('현재 브라우저에서는 음성 재생을 지원하지 않습니다.');
       return;
     }
 
-    window.speechSynthesis.cancel(); 
+    window.speechSynthesis.cancel();
     const textToSpeak = `오늘도 끝까지 잘해주셨어요. ${feedbackText}`;
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.lang = 'ko-KR';
-    utterance.rate = 0.9; 
+    utterance.rate = 0.9;
 
     window.speechSynthesis.speak(utterance);
   };
 
   const handleGoHome = () => {
-    window.speechSynthesis.cancel(); 
-    const pCode = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
-    const finalCount = String(completedCount ?? 0);
-
-    if (pCode) {
-      sessionStorage.setItem(`todayActivityCompleted_${pCode}`, 'true');
-      sessionStorage.setItem(`completedActivityCount_${pCode}`, finalCount);
-    }
-    
-    sessionStorage.setItem('todayActivityCompleted', 'true');
-    sessionStorage.setItem('completedActivityCount', finalCount);
-
+    window.speechSynthesis.cancel();
     navigate('/patient-home');
   };
 
@@ -183,7 +218,7 @@ export default function S17_ActivityReport() {
     boxSizing: 'border-box' as const,
     display: 'flex',
     flexDirection: 'column' as const,
-    justifyContent: 'space-between' as const,
+    justifyInContent: 'space-between' as const,
     textAlign: 'left' as const
   };
 
@@ -218,7 +253,6 @@ export default function S17_ActivityReport() {
       <Header />
       <div style={{ width: '805px', display: 'flex', flexDirection: 'column', alignItems: 'center', transform: 'translateX(6px)' }}>
 
-       
         <div style={{
           width: '120px',
           height: '120px',
@@ -238,7 +272,6 @@ export default function S17_ActivityReport() {
           <CelebrationIcon />
         </div>
 
-        
         <h1 style={{
           width: '500px',
           fontSize: '36px',
@@ -251,7 +284,6 @@ export default function S17_ActivityReport() {
           오늘도 끝까지 잘해주셨어요!
         </h1>
 
-        
         <p style={{
           width: '800px',
           fontSize: '22px',
@@ -264,7 +296,6 @@ export default function S17_ActivityReport() {
           {feedbackText}
         </p>
 
-        
         <button 
           onClick={handlePlayTTS}
           style={{
@@ -289,14 +320,12 @@ export default function S17_ActivityReport() {
           ▶ 결과 듣기
         </button>
 
-        
         <div style={{ width: '100%', textAlign: 'left', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '30px', fontWeight: 700, color: '#0D0D0D', lineHeight: '140%', margin: 0 }}>
             오늘 활동 요약
           </h2>
         </div>
 
-        
         <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: '80px' }}>
           <div style={summaryBoxStyle}>
             <span style={{ fontSize: '16px', fontWeight: 500, color: '#797980' }}>수행 활동</span>
@@ -308,7 +337,7 @@ export default function S17_ActivityReport() {
           </div>
           <div style={summaryBoxStyle}>
             <span style={{ fontSize: '16px', fontWeight: 500, color: '#797980' }}>힌트 사용</span>
-            <p style={{ fontSize: '28px', fontWeight: 700, color: '#0D0D0D', margin: 0 }}>{hintCount}회</p>
+            <p style={{ fontSize: '28px', fontWeight: 500, color: '#0D0D0D', margin: 0 }}>{hintCount}회</p>
           </div>
           <div style={summaryBoxStyle}>
             <span style={{ fontSize: '16px', fontWeight: 500, color: '#797980' }}>다시 말하기</span>
@@ -316,54 +345,6 @@ export default function S17_ActivityReport() {
           </div>
         </div>
 
-       
-        <div style={{ width: '100%', textAlign: 'left', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '30px', fontWeight: 700, color: '#0D0D0D', lineHeight: '140%', margin: 0 }}>
-            유형별 분석
-          </h2>
-        </div>
-
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: '80px' }}>
-          <div style={{
-            width: '389px',
-            height: '149px',
-            borderRadius: '10px',
-            background: 'linear-gradient(0deg, rgba(65, 136, 237, 0.05), rgba(65, 136, 237, 0.05)), linear-gradient(180deg, rgba(32, 115, 232, 0.2) 0%, rgba(223, 223, 135, 0.2) 100%)',
-            border: '1px solid #4188ED',
-            boxShadow: '0px 0px 4px 0px #4188ED',
-            padding: '24px',
-            boxSizing: 'border-box',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: '12px'
-          }}>
-            <span style={{ fontSize: '18px', fontWeight: 700, color: '#0D0D0D' }}>잘 떠올렸어요 👍</span>
-            <span style={{ fontSize: '16px', fontWeight: 700, color: '#0F66E2' }}>#가족 관련 #날짜/시간</span>
-          </div>
-
-          <div style={{
-            width: '389px',
-            height: '149px',
-            borderRadius: '10px',
-            background: 'linear-gradient(0deg, rgba(65, 136, 237, 0.05), rgba(65, 136, 237, 0.05)), linear-gradient(180deg, rgba(223, 223, 135, 0.2) 0%, rgba(248, 249, 250, 0.2) 100%)',
-            border: '1px solid #DFDF87',
-            boxShadow: '0px 0px 4px 0px #0F66E2',
-            padding: '24px',
-            boxSizing: 'border-box',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: '12px'
-          }}>
-            <span style={{ fontSize: '18px', fontWeight: 700, color: '#0D0D0D' }}>조금 어려웠어요 💡</span>
-            <span style={{ fontSize: '16px', fontWeight: 700, color: '#E53134' }}>#장소 기억</span>
-          </div>
-        </div>
-
-       
         <div style={{ width: '100%', textAlign: 'left', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '30px', fontWeight: 700, color: '#0D0D0D', lineHeight: '140%', margin: 0 }}>
             오늘 건강 상태 요약
@@ -376,7 +357,6 @@ export default function S17_ActivityReport() {
           <div style={{ ...tagStyle, minWidth: '140px' }}>기분 : {moodStatus}</div>
         </div>
 
-       
         <button 
           onClick={handleGoHome}
           style={{

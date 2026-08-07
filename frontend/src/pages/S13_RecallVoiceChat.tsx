@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import type React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/patientHeader';
 import QuizResultCard from '../components/quizResultCard';
@@ -11,7 +12,6 @@ export default function S13_RecallVoiceChat() {
   const [quizList, setQuizList] = useState<QuizItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
 
- 
   const getSafePCode = (quizItem?: QuizItem) => {
     const sessionPCode = sessionStorage.getItem('p_code');
     if (sessionPCode && isNaN(Number(sessionPCode))) {
@@ -23,7 +23,6 @@ export default function S13_RecallVoiceChat() {
     return sessionPCode || 'HH5N7S';
   };
 
-  
   const getNumericPCode = (quizItem?: QuizItem): number => {
     if (quizItem?.p_code !== undefined && !isNaN(Number(quizItem.p_code))) {
       return Number(quizItem.p_code);
@@ -45,6 +44,7 @@ export default function S13_RecallVoiceChat() {
     return 1;
   };
 
+ 
   useEffect(() => {
     try {
       const storedQuizzes: QuizItem[] = JSON.parse(sessionStorage.getItem('quizList') || '[]');
@@ -83,11 +83,16 @@ export default function S13_RecallVoiceChat() {
   const [elapsedTime, setElapsedTime] = useState<string>('0.0');
   const [feedbackMessage, setFeedbackMessage] = useState<string>('잘 하셨어요!');
   
- 
   const [thisQuizIsCorrect, setThisQuizIsCorrect] = useState<boolean | undefined>(undefined);
 
+ 
   const [totalSolvedCount, setTotalSolvedCount] = useState<number>(() => {
     const saved = sessionStorage.getItem('completedActivityCount');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  const [correctCount, setCorrectCount] = useState<number>(() => {
+    const saved = sessionStorage.getItem('correctQuizCount');
     return saved ? parseInt(saved, 10) : 0;
   });
 
@@ -98,6 +103,7 @@ export default function S13_RecallVoiceChat() {
 
   const startTimeRef = useRef<number>(Date.now());
   const initialAccumulatedTimeRef = useRef<number>(0);
+
 
   useEffect(() => {
     const preventGoBack = () => {
@@ -125,6 +131,7 @@ export default function S13_RecallVoiceChat() {
   }, [currentIndex]);
 
   const optionsList: string[] = currentQuiz.options || ['1번 옵션', '2번 옵션', '3번 옵션', '4번 옵션'];
+
 
   const handleSubmit = async () => {
     if (selectedOption === null) {
@@ -156,33 +163,50 @@ export default function S13_RecallVoiceChat() {
       userAnswer: selectedAnswerText,
     };
 
+    let isCorrect = false;
+
     try {
       const res = await submitQuizAnswer(payloadData);
-      console.log('[S13 제출 응답 수신]', res);
 
       if (res?.feedback) {
         setFeedbackMessage(res.feedback);
       }
 
-      const isCorrect = res?.correct ?? res?.isCorrect ?? res?.is_correct ?? false;
-      setThisQuizIsCorrect(isCorrect);
+      const rawCorrect = res?.correct ?? res?.isCorrect ?? res?.is_correct;
+      isCorrect = rawCorrect === true || String(rawCorrect).toLowerCase() === 'true';
 
-      if (isCorrect) {
-        const currentCorrect = parseInt(sessionStorage.getItem('correctQuizCount') || '0', 10);
-        sessionStorage.setItem('correctQuizCount', String(currentCorrect + 1));
-      }
+      setThisQuizIsCorrect(isCorrect);
     } catch (error) {
       console.error('객관식 답안 제출 API 오류:', error);
+      setThisQuizIsCorrect(false);
     }
 
     const nextSolvedCount = totalSolvedCount + 1;
     setTotalSolvedCount(nextSolvedCount);
     sessionStorage.setItem('completedActivityCount', String(nextSolvedCount));
+
+    
+    let nextCorrectCount = correctCount;
+    if (isCorrect) {
+      nextCorrectCount = correctCount + 1;
+      setCorrectCount(nextCorrectCount);
+      sessionStorage.setItem('correctQuizCount', String(nextCorrectCount));
+    }
+
+    
+    console.log('[S13 제출 완료]', {
+      totalSolvedCount: nextSolvedCount,
+      correctCount: nextCorrectCount,
+      isCorrect,
+      userAnswer: selectedAnswerText,
+    });
   };
 
+ 
   const handleNextPage = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 
+    
     if (!isSubmittedRef.current) {
       const pCode = getSafePCode(currentQuiz);
       const setId = Number(currentQuiz.set_id || currentQuiz.setId || 1);
@@ -196,40 +220,49 @@ export default function S13_RecallVoiceChat() {
       };
 
       try {
-        const res = await submitQuizAnswer(payloadData);
-        const isCorrect = res?.correct ?? res?.isCorrect ?? res?.is_correct ?? false;
-        if (isCorrect) {
-          const currentCorrect = parseInt(sessionStorage.getItem('correctQuizCount') || '0', 10);
-          sessionStorage.setItem('correctQuizCount', String(currentCorrect + 1));
-        }
+        await submitQuizAnswer(payloadData);
       } catch (error) {
         console.error('스킵 답안 제출 API 오류:', error);
       }
+
+     
+      console.log('[S13 스킵 - 카운트 미증가]', {
+        totalSolvedCount,
+        correctCount,
+      });
     }
 
     sessionStorage.removeItem('currentQuizElapsedTime');
 
     const nextIndex = currentIndex + 1;
 
-    
+   
     if (nextIndex >= quizList.length) {
       try {
         const numericPCode = getNumericPCode(currentQuiz);
         const finalSetId = Number(currentQuiz.set_id || currentQuiz.setId || 1);
         
-        const validSolvedCount = parseInt(sessionStorage.getItem('completedActivityCount') || '0', 10);
-        const correctCount = parseInt(sessionStorage.getItem('correctQuizCount') || '0', 10);
+        const validSolvedCount = Number(sessionStorage.getItem('completedActivityCount') || totalSolvedCount);
+        const validCorrectCount = Number(sessionStorage.getItem('correctQuizCount') || correctCount);
         const totalHint = parseInt(sessionStorage.getItem('totalHintId') || sessionStorage.getItem('totalHintCount') || '0', 10);
 
         const finalPayload: QuizResultPayload = {
           setId: finalSetId,
           pCode: numericPCode,
           totalCount: validSolvedCount,
-          correctCount: correctCount,
+          correctCount: validCorrectCount,
           hint: totalHint,
           caculate: "0",
           feedbackContent: "오늘도 퀴즈를 잘 마쳤습니다!"
         };
+
+        // 🔍 [Console Log] 최종 API 제출 전 전체 통계 로그
+        console.log('[S13 전체 퀴즈 최종 결과 제출]', {
+          totalCount: validSolvedCount,
+          correctCount: validCorrectCount,
+          hint: totalHint,
+          payload: finalPayload,
+        });
 
         await submitQuizResult(finalPayload);
       } catch (err) {
@@ -241,11 +274,9 @@ export default function S13_RecallVoiceChat() {
       return;
     }
 
-    
     sessionStorage.setItem('currentQuizIndex', String(nextIndex));
 
     const nextQuiz = quizList[nextIndex];
-    
     const rawCategory = nextQuiz?.quizCategory ?? nextQuiz?.quiz_category ?? nextQuiz?.category ?? 'choice';
     const category = String(rawCategory).toLowerCase().trim();
 
@@ -257,7 +288,6 @@ export default function S13_RecallVoiceChat() {
     } else if (category === 'text' || category === '3' || category === '단답형' || category === '주관식') {
       navigate('/patient-voicequiz');
     } else {
-      
       setCurrentIndex(nextIndex);
       window.scrollTo(0, 0);
     }
