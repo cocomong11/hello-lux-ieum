@@ -4,7 +4,7 @@ import Sidebar from '../components/DoctorSidebar';
 import polygon from '../assets/Polygon 2.svg';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getDoctorReport, updateDoctorReport } from '../api/doctor';
-import { getQuizResults } from '../api/patient';
+import { getQuizResults, getPatient, getDailyStatus } from '../api/patient';
 import { ApiError } from '../api/client';
 
 const DESIGN_W = 1920;
@@ -15,20 +15,7 @@ const F: React.CSSProperties = {
   fontFamily: "'Pretendard Variable', Pretendard, sans-serif",
 };
 
-// 환자별 데이터
-const PATIENTS_DB: Record<number, {
-  name: string;
-  birth_date: string;
-  dignosis: string;
-  support_level: string;
-  recentKMMSE: string;
-  kmmseScores: number[];       // 6개월 점수
-  monthlyRates: number[][];    // 6개월 문항별 정답률
-  latestRates: { label: string; value: number }[];
-  dailyScores: Record<number, number>; // 일별 점수 (1~31)
-  stats: { label: string; value: string }[];
-  memo: string;
-}> = {};
+// 환자별 데이터 (API에서 가져옴)
 
 const EMPTY_PATIENT = {
   name: '-',
@@ -63,6 +50,8 @@ export default function S24_DoctorDashboard() {
   const [selectedDay, setSelectedDay] = useState(26);
   const [calYear, setCalYear] = useState(2026);
   const [calMonth, setCalMonth] = useState(7);
+  const [patientInfo, setPatientInfo] = useState(EMPTY_PATIENT);
+  const [dayStatus, setDayStatus] = useState<{ health: string; sleep: string; mood: string; cognitive: string[] } | null>(null);
 
   useEffect(() => {
     const update = () => setScale(window.innerWidth / DESIGN_W);
@@ -71,7 +60,35 @@ export default function S24_DoctorDashboard() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  const patientData = PATIENTS_DB[pCode] || EMPTY_PATIENT;
+  const patientData = patientInfo;
+
+  // API: 환자 정보 로드
+  useEffect(() => {
+    getPatient(pCode)
+      .then(data => {
+        setPatientInfo(prev => ({
+          ...prev,
+          name: data.name,
+          dignosis: data.diagnosis,
+        }));
+      })
+      .catch(err => console.log('환자 정보 API 미연결:', err instanceof ApiError ? err.message : err));
+  }, [pCode]);
+
+  // API: 선택 날짜의 일일 상태 로드
+  useEffect(() => {
+    const dateStr = `${calYear}-${String(calMonth).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+    getDailyStatus(pCode, dateStr)
+      .then(data => {
+        setDayStatus({
+          health: data.health_condition || '-',
+          sleep: data.sleep_status || '-',
+          mood: data.mood_status || '-',
+          cognitive: data.cognitive_changes || [],
+        });
+      })
+      .catch(() => setDayStatus(null));
+  }, [pCode, calYear, calMonth, selectedDay]);
 
   // 초기 dailyScores 설정 (더미)
   useEffect(() => {
@@ -114,8 +131,8 @@ export default function S24_DoctorDashboard() {
     dignosis: patientData.dignosis,
     support_level: patientData.support_level,
     recentKMMSE: patientData.recentKMMSE || undefined,
-    kmmseScore: pCode === 1001 ? '22/30' : pCode === 1002 ? '17/30' : '23/30',
-    kmmseRange: pCode === 1002 ? '초기 치매 범위' : '경도인지장애 범위',
+    kmmseScore: '-',
+    kmmseRange: patientData.dignosis || '-',
     stats: {
       activity: `완료 (${patientData.stats.find(s => s.label === '진행한 활동')?.value || '0/0'})`,
       rate: patientData.stats.find(s => s.label === '성공률')?.value || '0%',
@@ -312,12 +329,12 @@ export default function S24_DoctorDashboard() {
               if (dailyPeriod === '7일') start.setDate(end.getDate() - 7);
               else if (dailyPeriod === '30일') start.setDate(end.getDate() - 30);
               else if (dailyPeriod === '3개월') start.setMonth(end.getMonth() - 3);
-              else start.setMonth(end.getMonth() - 1); // 직접입력 기본 30일
+              else start.setMonth(end.getMonth() - 1);
               const fmt = (d: Date) => `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getDate()).padStart(2, '0')}`;
               return (
             <div style={{ display: 'flex', gap: 50, margin: '28px 0 20px' }}>
               <div style={{
-                flex: 1, padding: '19px 122px', borderRadius: 10,
+                flex: 1, padding: '19px 24px', borderRadius: 10,
                 border: '1px solid var(--color-neutral-60)', background: 'var(--color-neutral-100)',
                 boxShadow: '0 0 4px 0 #797980',
                 display: 'flex', justifyContent: 'center', alignItems: 'center',
@@ -326,7 +343,7 @@ export default function S24_DoctorDashboard() {
                 <span style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-gray)' }}>{fmt(start)}</span>
               </div>
               <div style={{
-                flex: 1, padding: '19px 123px', borderRadius: 10,
+                flex: 1, padding: '19px 24px', borderRadius: 10,
                 border: '1px solid var(--color-neutral-60)', background: 'var(--color-neutral-100)',
                 boxShadow: '0 0 4px 0 #797980',
                 display: 'flex', justifyContent: 'center', alignItems: 'center',
@@ -340,11 +357,24 @@ export default function S24_DoctorDashboard() {
 
             {/* 기간 통계 카드 */}
             {(() => {
-              const today = new Date();
-              const todayDate = (calYear === today.getFullYear() && calMonth === today.getMonth() + 1)
-                ? today.getDate() : daysInMonth;
+              const end = new Date();
+              const start = new Date();
+              if (dailyPeriod === '7일') start.setDate(end.getDate() - 7);
+              else if (dailyPeriod === '30일') start.setDate(end.getDate() - 30);
+              else if (dailyPeriod === '3개월') start.setMonth(end.getMonth() - 3);
+              else start.setMonth(end.getMonth() - 1);
+
+              const endDay = end.getDate();
+              const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+              // 선택된 기간 내 점수만 필터 (같은 월 기준 간단 필터)
               const scores = Object.entries(dailyScores)
-                .filter(([d]) => Number(d) <= todayDate)
+                .filter(([d]) => {
+                  const day = Number(d);
+                  if (dailyPeriod === '7일') return day > endDay - 7 && day <= endDay;
+                  if (dailyPeriod === '30일') return day > endDay - 30 && day <= endDay;
+                  return true; // 3개월, 직접입력은 전체
+                })
                 .map(([, v]) => v as number);
               const recordDays = scores.length;
               const cautionDays = scores.filter(s => s <= 40).length;
@@ -354,7 +384,7 @@ export default function S24_DoctorDashboard() {
             <div style={{ display: 'flex', gap: 24, marginBottom: 60 }}>
               {[
                 { label: '기간 평균 점수', value: `${avgScore}%`, color: 'var(--color-neutral-10)' },
-                { label: '기록 일수', value: `${recordDays} / ${todayDate}일`, color: 'var(--color-neutral-10)' },
+                { label: '기록 일수', value: `${recordDays} / ${totalDays}일`, color: 'var(--color-neutral-10)' },
                 { label: '주의 일수', value: `${cautionDays}일`, color: '#E53134' },
               ].map(stat => (
                 <div key={stat.label} style={{
@@ -553,11 +583,11 @@ export default function S24_DoctorDashboard() {
                   인지점수 {dailyScores[selectedDay]}%
                 </p>
                 <p style={{ ...F, fontSize: 22, fontWeight: 700, color: 'var(--color-neutral-100)' }}>
-                  활동 5/5 수행 · 힌트 2회 사용
+                  {dayStatus ? `건강: ${dayStatus.health} · 수면: ${dayStatus.sleep} · 기분: ${dayStatus.mood}` : '상세 정보 없음'}
                 </p>
                 <div style={{ display: 'inline-flex', gap: 10, marginTop: 12 }}>
-                  {['건강 : 좋음', '수면 : 보통', '기분 : 안정', '반복 발화'].map(tag => {
-                    const isGood = tag.includes('좋음') || tag.includes('안정');
+                  {(dayStatus ? [`건강 : ${dayStatus.health}`, `수면 : ${dayStatus.sleep}`, `기분 : ${dayStatus.mood}`, ...dayStatus.cognitive] : []).map(tag => {
+                    const isGood = tag.includes('좋음') || tag.includes('안정') || tag.includes('잘');
                     return (
                     <div key={tag} style={{
                       padding: '6px 19px', borderRadius: 10,
