@@ -28,9 +28,9 @@ const SECTION_TITLE: React.CSSProperties = {
 };
 
 const DUMMY_PATIENT = {
-  name: '홍길동',
-  birth_date: '1950-01-01',
-  dignosis: '경도인지장애',
+  name: '-',
+  birth_date: '',
+  dignosis: '-',
 };
 
 const INDICATORS = [
@@ -39,45 +39,23 @@ const INDICATORS = [
   { key: '응답 시간', checkImg: checkboxY, color: '#DFDF87' },
 ];
 
-const DATES_DEFAULT = ['5/20', '5/21', '5/22', '5/23', '5/24', '5/25', '오늘'];
+const DATES_DEFAULT: string[] = [];
 
 const LINE_DATA_DEFAULT: Record<string, number[]> = {
-  '답변 성공률': [40, 55, 48, 62, 70, 65, 72],
-  '힌트 사용': [20, 30, 25, 35, 28, 32, 20],
-  '응답 시간': [60, 55, 58, 50, 52, 48, 45],
+  '답변 성공률': [],
+  '힌트 사용': [],
+  '응답 시간': [],
 };
 
 const PERIOD_OPTIONS = ['최근 7일', '최근 30일', '직접 선택'];
 
 const STATS_DEFAULT = [
-  { label: '7일 평균 성공률', value: '62%'  },
-  { label: '평균 응답 시간',  value: '3.2초' },
-  { label: '일평균 힌트 사용', value: '2.4회' },
+  { label: '7일 평균 성공률', value: '-'  },
+  { label: '평균 응답 시간',  value: '-' },
+  { label: '일평균 힌트 사용', value: '-' },
 ];
 
-// 날짜 포맷 헬퍼
-function formatDate(daysAgo: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-  const suffix = daysAgo === 0 ? ' (오늘)' : ` (${weekdays[d.getDay()]})`;
-  return `${d.getMonth() + 1}월 ${d.getDate()}일${suffix}`;
-}
-
-const DAILY_SUMMARY_DEFAULT = [
-  {
-    date: formatDate(0),
-    desc: '수면 보통 · 답변 성공률 60%',
-    isToday: true,
-    tags: [] as string[],
-  },
-  {
-    date: formatDate(1),
-    desc: '수면 부족 · 답변 성공률 45%',
-    isToday: false,
-    tags: ['수면 부족', '반복 발화'],
-  },
-];
+const DAILY_SUMMARY_DEFAULT: { date: string; desc: string; isToday: boolean; tags: string[] }[] = [];
 
 // SVG 차트 상수
 // rect(그래프 영역) 612x360, 그 바깥에 Y라벨/X날짜
@@ -397,6 +375,7 @@ export default function S19_CargiverReport() {
                 {/* 데이터 라인들 */}
                 {INDICATORS.filter(ind => activeLines.has(ind.key)).map(({ key, color }) => {
                   const maxVal = key === '답변 성공률' ? 100 : key === '힌트 사용' ? 10 : 120;
+                  if (!lineData[key] || lineData[key].length < 2) return null;
                   return (
                   <polyline
                     key={key}

@@ -14,9 +14,9 @@ const F: React.CSSProperties = {
 };
 
 const DUMMY_PATIENT = {
-  name: '홍길동',
-  birth_date: '1950-01-01',
-  dignosis: '경도인지장애',
+  name: '-',
+  birth_date: '',
+  dignosis: '-',
 };
 
 type MemberEntry = {
@@ -29,15 +29,11 @@ type MemberEntry = {
 };
 
 const INITIAL_MEMBERS: Record<string, MemberEntry[]> = {
-  '가족': [
-    { name: '김순자', age: '78세', alias: '아내, 여보', keyword: '김순자, 순자, 아내, 여보, 우리 마누라, 집사람', isEditing: true },
-    { name: '홍민수', age: '41세', alias: '아들, 장남', keyword: '홍민수, 민수, 아들, 큰아들, 장남', isEditing: false },
-  ],
-  '지인': [{ name: '', age: '', alias: '', keyword: '', isEditing: true }],
-  '장소': [{ name: '', age: '', alias: '', keyword: '', isEditing: true }],
-  '음식': [{ name: '', age: '', alias: '', keyword: '', isEditing: true }],
-  '노래': [{ name: '', age: '', alias: '', keyword: '', isEditing: true }],
-  '인생 사건': [{ name: '', age: '', alias: '', keyword: '', isEditing: true }],
+  '가족': [],
+  '지인': [],
+  '장소': [],
+  '음식': [],
+  '인생 사건': [],
 };
 
 const LEVELS: Record<string, { field1: string; field2: string; field3: string }> = {
@@ -45,7 +41,6 @@ const LEVELS: Record<string, { field1: string; field2: string; field3: string }>
   '지인':     { field1: '이름', field2: '나이', field3: '호칭 / 유사표현' },
   '장소':     { field1: '이름', field2: '위치', field3: '호칭 / 유사표현' },
   '음식':     { field1: '이름', field2: '',     field3: '호칭 / 유사표현' },
-  '노래':     { field1: '이름', field2: '',     field3: '호칭 / 유사표현' },
   '인생 사건': { field1: '이름', field2: '당시 나이', field3: '호칭 / 유사표현' },
 };
 
@@ -181,11 +176,10 @@ export default function S21_CargiverUpdate() {
       // 카테고리별로 어떤 필드에 저장할지 매핑
       const fieldMap: Record<string, string> = {
         '가족': 'family',
-        '지인': 'family', // 지인도 family 필드에 저장 (구분자로 구분)
+        '지인': 'family',
         '장소': 'place',
         '음식': 'like',
-        '노래': 'like',
-        '인생 사건': 'hometown', // 임시 매핑 - 백엔드와 협의 필요
+        '인생 사건': 'hometown',
       };
 
       const field = fieldMap[category];
@@ -238,6 +232,11 @@ export default function S21_CargiverUpdate() {
             </p>
 
             {/* 멤버 수정 카드들 */}
+            {currentMembers.length === 0 && (
+              <p style={{ ...F, marginTop: 30, fontSize: 20, color: '#797980' }}>
+                등록된 정보가 없습니다. 아래 "항목 추가" 버튼으로 추가해주세요.
+              </p>
+            )}
             {currentMembers.map((member, idx) => {
               const isEdit = member.isEditing;
 
