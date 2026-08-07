@@ -25,3 +25,18 @@ export const linkGuardian = (code: string) =>
 
 export const linkDoctor = (code: string) =>
   api.post<LinkResponse>('/doctor/link', { p_code: code });
+
+/* ── 연동된 환자 목록 ─────────────────────────────────────
+   명세: GET /api/guardian/patients
+   여기서 내려오는 p_code는 연동 입력용 6자리 코드가 아니라
+   내부 식별자(Integer)입니다. 삶의 DB(S07) 등 /patients/{p_code}/... 경로에
+   그대로 넣어 쓰는 값입니다.                                 */
+
+export interface LinkedPatient {
+  p_code: number;
+  name: string;
+  last_score: number | null;
+}
+
+export const getLinkedPatients = () =>
+  api.get<LinkedPatient[]>('/guardian/patients');
