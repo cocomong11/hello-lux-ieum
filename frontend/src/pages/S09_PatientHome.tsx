@@ -22,6 +22,15 @@ interface UserInfoResponse {
   role?: string;
 }
 
+interface ExtendedDailyStatusResponse extends DailyStatusResponse {
+  is_completed?: boolean;
+  isCompleted?: boolean;
+  completed_count?: number;
+  completedCount?: number;
+  total_count?: number;
+  totalCount?: number;
+}
+
 function todayStr() {
   return new Date().toLocaleDateString('ko-KR', {
     year: 'numeric',
@@ -30,7 +39,6 @@ function todayStr() {
     weekday: 'short',
   });
 }
-
 
 function getTodayIsoString() {
   const now = new Date();
@@ -47,6 +55,27 @@ const formatHealthStatus = (status: string | null | undefined) => {
   return trimmed;
 };
 
+
+const clearSessionQuizData = () => {
+  const quizKeys = [
+    'quizList',
+    'currentQuizIndex',
+    'totalHintCount',
+    'retryCount',
+    'speakRetryCount',
+    'todayActivityQuit',
+    'correctQuizCount',
+    'currentQuizElapsedTime',
+    'conditionStatus',
+    'sleepStatus',
+    'moodStatus',
+    'recallScore',
+    'musicScore',
+    'drawingScore',
+  ];
+  quizKeys.forEach((key) => sessionStorage.removeItem(key));
+};
+
 export default function S09_PatientHome() {
   const navigate = useNavigate();
   const todayIso = getTodayIsoString();
@@ -56,6 +85,11 @@ export default function S09_PatientHome() {
   const [isCodeClicked, setIsCodeClicked] = useState(false);
   const [healthStatusValue, setHealthStatusValue] = useState<string>('-');
 
+  
+  const [hasOngoingQuiz, setHasOngoingQuiz] = useState<boolean>(() => {
+    return !!sessionStorage.getItem('quizList');
+  });
+
   const [patientName, setPatientName] = useState<string>(() => {
     return sessionStorage.getItem('name') || sessionStorage.getItem('patientName') || '환자';
   });
@@ -64,59 +98,62 @@ export default function S09_PatientHome() {
     return sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode') || '-------';
   });
 
-  
+  // 로컬 스토리지 데이터 동기화
   const syncStorageState = useCallback((currentPCode?: string) => {
-    const pCodeToUse = currentPCode || sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
-    const prefix = pCodeToUse ? `${pCodeToUse}_` : '';
+    if (!currentPCode) {
+      setIsCompleted(false);
+      setCompletedCount(0);
+      setHealthStatusValue('-');
+      return;
+    }
 
+    const prefix = `${currentPCode}_`;
+
+    // 1. 오늘 완료 여부 확인
     const todayDoneKey = `activityCompleted_${prefix}${todayIso}`;
+    const todayDoneKeyAlt = `todayActivityCompleted_${prefix}${todayIso}`;
+    
     const isTodayDone = 
       sessionStorage.getItem(todayDoneKey) === 'true' ||
-      sessionStorage.getItem(`todayActivityCompleted_${prefix}${todayIso}`) === 'true' ||
-      sessionStorage.getItem('todayActivityCompleted') === 'true';
+      sessionStorage.getItem(todayDoneKeyAlt) === 'true';
 
-    
-    let total = 7;
-    const customTotal = sessionStorage.getItem('totalActivityCount');
-    const storedQuizList = sessionStorage.getItem('quizList');
-
-    if (customTotal) {
-      total = parseInt(customTotal, 10) || total;
-    } else if (storedQuizList) {
-      try {
-        const parsed = JSON.parse(storedQuizList);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          total = parsed.length;
-        }
-      } catch (e) {
-        console.error('quizList 파싱 실패:', e);
-      }
-    }
-   
-
-    
+    // 2. 진행한 활동 수 확인 (전역 키와 Prefix 키 모두 확인)
     let count = 0;
-    const savedPatientCount = sessionStorage.getItem(`completedActivityCount_${prefix}${todayIso}`);
-    const fallbackCount = sessionStorage.getItem('completedActivityCount');
+    const savedPatientCount = 
+      sessionStorage.getItem(`completedActivityCount_${prefix}${todayIso}`) ||
+      sessionStorage.getItem('completedActivityCount') ||
+      sessionStorage.getItem('currentQuizIndex'); // 중간에 푼 퀴즈 개수 활용
 
-    const savedCount = savedPatientCount !== null ? savedPatientCount : fallbackCount;
-
-    if (savedCount !== null) {
-      count = parseInt(savedCount, 10) || 0;
+    if (savedPatientCount !== null) {
+      count = parseInt(savedPatientCount, 10) || 0;
     }
 
-    const savedHealth = sessionStorage.getItem(`todayHealthCondition_${prefix}${todayIso}`);
+    // 3. 건강 상태 확인
+    const savedHealth = 
+      sessionStorage.getItem(`todayHealthCondition_${prefix}${todayIso}`) ||
+      sessionStorage.getItem('conditionStatus');
 
     setHealthStatusValue(formatHealthStatus(savedHealth));
     setCompletedCount(count);
     setIsCompleted(isTodayDone);
+    
+    // 진행 중 퀴즈 여부 재갱신
+    setHasOngoingQuiz(!!sessionStorage.getItem('quizList'));
   }, [todayIso]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
       let internalCode: number | string | undefined = sessionStorage.getItem('internalCode') || undefined;
       let pCode: string | undefined = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode') || undefined;
+      const lastSavedDate = sessionStorage.getItem('lastActivityDate');
 
+      
+      if (lastSavedDate !== todayIso) {
+        clearSessionQuizData();
+        sessionStorage.setItem('lastActivityDate', todayIso);
+      }
+
+    
       try {
         const userData = await api.get<UserInfoResponse>('/auth/me');
         if (userData?.name) {
@@ -127,11 +164,21 @@ export default function S09_PatientHome() {
         console.warn('사용자 프로필 조회 실패:', err);
       }
 
+      
       try {
         const meRes: PatientMeResponse = await getPatientMe();
         if (meRes) {
-          internalCode = meRes.internal_code ?? meRes.internalCode ?? internalCode;
-          pCode = meRes.p_code ?? meRes.pCode ?? pCode;
+          const fetchedInternalCode = meRes.internal_code ?? meRes.internalCode;
+          const fetchedPCode = meRes.p_code ?? meRes.pCode;
+
+          if (fetchedPCode && pCode && fetchedPCode !== pCode) {
+            clearSessionQuizData();
+            sessionStorage.removeItem('todayActivityCompleted');
+            sessionStorage.removeItem('completedActivityCount');
+          }
+
+          internalCode = fetchedInternalCode ?? internalCode;
+          pCode = fetchedPCode ?? pCode;
 
           if (internalCode) sessionStorage.setItem('internalCode', String(internalCode));
           if (pCode) {
@@ -143,24 +190,40 @@ export default function S09_PatientHome() {
         console.warn('getPatientMe() 조회 실패:', err);
       }
 
-      syncStorageState(pCode);
+      
+      if (pCode) {
+        syncStorageState(pCode);
+      }
 
+      
       const targetPatientId = internalCode || pCode;
-      if (targetPatientId) {
+      if (targetPatientId && pCode) {
+        const prefix = `${pCode}_`;
         try {
-          const dailyData: DailyStatusResponse = await getDailyStatus(targetPatientId, todayIso);
+          const dailyData: ExtendedDailyStatusResponse = await getDailyStatus(targetPatientId, todayIso);
 
-          if (dailyData && dailyData.health_condition) {
-            const formatted = formatHealthStatus(dailyData.health_condition);
-            setHealthStatusValue(formatted);
-            
-            const prefix = pCode ? `${pCode}_` : '';
-            sessionStorage.setItem(`todayHealthCondition_${prefix}${todayIso}`, dailyData.health_condition);
-          } else {
-            setHealthStatusValue('-');
+          if (dailyData) {
+            if (dailyData.health_condition) {
+              const formatted = formatHealthStatus(dailyData.health_condition);
+              setHealthStatusValue(formatted);
+              sessionStorage.setItem(`todayHealthCondition_${prefix}${todayIso}`, dailyData.health_condition);
+            }
+
+            const serverCompleted = dailyData.is_completed ?? dailyData.isCompleted;
+            if (typeof serverCompleted === 'boolean') {
+              setIsCompleted(serverCompleted);
+              sessionStorage.setItem(`activityCompleted_${prefix}${todayIso}`, String(serverCompleted));
+            }
+
+            const serverCompletedCount = dailyData.completed_count ?? dailyData.completedCount;
+           
+            if (typeof serverCompletedCount === 'number' && !sessionStorage.getItem('quizList')) {
+              setCompletedCount(serverCompletedCount);
+              sessionStorage.setItem(`completedActivityCount_${prefix}${todayIso}`, String(serverCompletedCount));
+            }
           }
         } catch (err) {
-          setHealthStatusValue('-');
+          console.warn('Daily status 조회 실패:', err);
         }
       }
     };
@@ -173,15 +236,9 @@ export default function S09_PatientHome() {
     const prefix = currentPCode ? `${currentPCode}_` : '';
 
     const lastDate = sessionStorage.getItem(`${prefix}lastActivityDate`) || sessionStorage.getItem('lastActivityDate');
+
     if (lastDate !== todayIso) {
-      const keysToRemove = [
-        'quizList', 
-        'currentQuizIndex', 
-        'completedActivityCount', 
-        `completedActivityCount_${prefix}${todayIso}`,
-        'totalHintCount'
-      ];
-      keysToRemove.forEach((k) => sessionStorage.removeItem(k));
+      clearSessionQuizData();
       sessionStorage.setItem(`${prefix}lastActivityDate`, todayIso);
       sessionStorage.setItem('lastActivityDate', todayIso);
     }
@@ -226,25 +283,21 @@ export default function S09_PatientHome() {
         }
       } catch (e) {
         console.error('퀴즈 데이터 파싱 실패:', e);
+        clearSessionQuizData();
       }
     }
 
-    const keysToReset = [
-      'totalHintCount',
-      'completedActivityCount',
-      `completedActivityCount_${prefix}${todayIso}`,
-      'currentQuizIndex',
-      'retryCount',
-      'speakRetryCount',
-      'todayActivityQuit',
-      'correctQuizCount',
-    ];
-    keysToReset.forEach((key) => sessionStorage.removeItem(key));
-
+    clearSessionQuizData();
     navigate('/patient-check');
   };
 
   const handleViewResults = () => {
+    
+    if (hasOngoingQuiz) {
+      alert('현재 진행 중인 활동이 있습니다. 활동을 먼저 마치거나 초기화 후 이용해 주세요.');
+      return;
+    }
+
     let targetDate = todayIso;
 
     if (!isCompleted) {
@@ -292,6 +345,7 @@ export default function S09_PatientHome() {
     setIsCompleted(false);
     setCompletedCount(0);
     setHealthStatusValue('-');
+    setHasOngoingQuiz(false);
 
     alert('오늘 활동 기록이 초기화되었습니다.');
   };
@@ -417,7 +471,7 @@ export default function S09_PatientHome() {
               color: '#0d0d0d',
             }}
           >
-            오늘의 인지 자극 활동 시작하기
+            {hasOngoingQuiz ? '이어서 두뇌 활동 진행하기' : '오늘의 인지 자극 활동 시작하기'}
           </p>
           <p
             style={{
@@ -489,7 +543,7 @@ export default function S09_PatientHome() {
                 color: '#f8f9fa',
               }}
             >
-              {isCompleted ? '오늘 활동 완료' : '활동 시작하기'}
+              {isCompleted ? '오늘 활동 완료' : hasOngoingQuiz ? '이어서 하기' : '활동 시작하기'}
             </span>
           </button>
         </div>
@@ -588,18 +642,20 @@ export default function S09_PatientHome() {
             marginBottom: '40px',
           }}
         >
+         
           <button
             type="button"
             onClick={handleViewResults}
+            disabled={hasOngoingQuiz}
             style={{
               ...F,
               flex: 1,
               height: '50px',
-              background: '#ffffff',
-              border: '1px solid #797980',
-              boxShadow: '0px 0px 4px 0px #797980',
+              background: hasOngoingQuiz ? '#E5E5E5' : '#ffffff',
+              border: hasOngoingQuiz ? '1px solid #C4C4C4' : '1px solid #797980',
+              boxShadow: hasOngoingQuiz ? 'none' : '0px 0px 4px 0px #797980',
               borderRadius: '50px',
-              cursor: 'pointer',
+              cursor: hasOngoingQuiz ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -611,7 +667,7 @@ export default function S09_PatientHome() {
                 fontSize: '17px',
                 fontWeight: 700,
                 lineHeight: '1.3',
-                color: '#0d0d0d',
+                color: hasOngoingQuiz ? '#A0A0A0' : '#0d0d0d',
               }}
             >
               이전 결과 보기
