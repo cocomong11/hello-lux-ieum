@@ -15,13 +15,6 @@ const getTodayKST = (): string => {
   return formatter.format(now);
 };
 
-const getYesterdayKST = (): string => {
-  const now = new Date();
-  now.setDate(now.getDate() - 1);
-  const formatter = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' });
-  return formatter.format(now);
-};
-
 function CelebrationIcon() {
   return (
     <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -53,13 +46,11 @@ export default function S17_ActivityReport() {
   const navigate = useNavigate();
   const location = useLocation();
   const todayStr = getTodayKST();
-  const yesterdayStr = getYesterdayKST();
 
   const queryParams = new URLSearchParams(location.search);
   const targetDateParam = queryParams.get('date');
 
-  
-  const [completedCount, setCompletedCount] = useState<number>(7);
+  const [completedCount, setCompletedCount] = useState<number>(0);
   const [correctCount, setCorrectCount] = useState<number>(0);
   const [hintCount, setHintCount] = useState<number>(0);
   const [retryCount, setRetryCount] = useState<number>(0);
@@ -101,6 +92,12 @@ export default function S17_ActivityReport() {
       let internalCode: number | string | undefined = sessionStorage.getItem('internalCode') || undefined;
       let pCode: string | undefined = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode') || undefined;
 
+      // retry 횟수는 sessionStorage에서 직접 조회
+      const savedRetry = sessionStorage.getItem('retryCount');
+      if (savedRetry !== null) {
+        setRetryCount(Number(savedRetry));
+      }
+
       try {
         const meRes: PatientMeResponse = await getPatientMe();
         if (meRes) {
@@ -119,40 +116,17 @@ export default function S17_ActivityReport() {
         return;
       }
 
-  
-      let currentFetchDate = targetDateParam || todayStr;
+      const currentFetchDate = targetDateParam || todayStr;
       let quizData: any = null;
 
       try {
-     
         quizData = await getQuizResults(pCode, currentFetchDate);
-
- 
-        if (!targetDateParam && (!quizData || quizData.total_count === 0)) {
-          console.log('오늘 퀴즈 데이터가 없어 어제 날짜로 재조회합니다.');
-          currentFetchDate = yesterdayStr;
-          quizData = await getQuizResults(pCode, currentFetchDate);
-        }
       } catch (err) {
-        console.warn(`${currentFetchDate} 퀴즈 결과 조회 실패, 어제 날짜로 재시도:`, err);
-        if (!targetDateParam && currentFetchDate === todayStr) {
-          try {
-            currentFetchDate = yesterdayStr;
-            quizData = await getQuizResults(pCode, currentFetchDate);
-          } catch (fallbackErr) {
-            console.warn('어제 퀴즈 결과 조회도 실패:', fallbackErr);
-          }
-        }
+        console.warn(`${currentFetchDate} 퀴즈 결과 조회 실패:`, err);
       }
 
-    
-      const isActualTodayData = currentFetchDate === todayStr;
-
-  
       if (quizData) {
-        const actualCount = (typeof quizData.total_count === 'number' && quizData.total_count > 0)
-          ? quizData.total_count
-          : 7;
+        const actualCount = typeof quizData.total_count === 'number' ? quizData.total_count : 0;
         
         setCompletedCount(actualCount);
 
@@ -162,21 +136,18 @@ export default function S17_ActivityReport() {
         if (typeof quizData.hint === 'number') {
           setHintCount(quizData.hint);
         }
-        if (typeof quizData.retry_count === 'number') {
-          setRetryCount(quizData.retry_count);
-        }
 
         const fetchedSetId = quizData?.set_id ?? quizData?.setId;
         if (fetchedSetId !== undefined && fetchedSetId !== null) {
           sessionStorage.setItem('set_id', String(fetchedSetId));
         }
 
-        if (isActualTodayData && quizData.total_count > 0) {
+        if (currentFetchDate === todayStr) {
           updateCompletedState(actualCount, pCode);
         }
       }
 
-      // 5. 건강 상태 데이터 조회
+      // 건강 상태 데이터 조회
       const targetPatientId = internalCode || pCode;
       if (targetPatientId) {
         try {
@@ -194,7 +165,7 @@ export default function S17_ActivityReport() {
     };
 
     fetchAllData();
-  }, [todayStr, yesterdayStr, targetDateParam]);
+  }, [todayStr, targetDateParam]);
 
   const feedbackText = `총 ${completedCount} 문제 중 ${correctCount} 개 맞추셨습니다. 수고하셨습니다!`;
 
