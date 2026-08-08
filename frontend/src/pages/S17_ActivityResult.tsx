@@ -9,13 +9,11 @@ import {
   type DailyStatusResponse 
 } from '../api/patientApi';
 
-
 const getTodayKST = (): string => {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' });
   return formatter.format(now);
 };
-
 
 const getYesterdayKST = (): string => {
   const now = new Date();
@@ -57,33 +55,19 @@ export default function S17_ActivityReport() {
   const todayStr = getTodayKST();
   const yesterdayStr = getYesterdayKST();
 
-
   const queryParams = new URLSearchParams(location.search);
   const targetDateParam = queryParams.get('date');
 
- 
-  const isTodayCompletion = targetDateParam === todayStr;
-
   
-  const fetchDate = isTodayCompletion ? todayStr : (targetDateParam || yesterdayStr);
-
-  const parseSessionValue = (key: string): number | null => {
-    const val = sessionStorage.getItem(key);
-    if (val === null || val === undefined) return null;
-    const parsed = parseInt(val, 10);
-    return isNaN(parsed) ? null : parsed;
-  };
-
   const [completedCount, setCompletedCount] = useState<number>(7);
-  const [correctCount, setCorrectCount] = useState<number>(() => parseSessionValue('correctCount') ?? parseSessionValue('correctQuizCount') ?? 0);
-  const [hintCount, setHintCount] = useState<number>(() => parseSessionValue('hint') ?? parseSessionValue('hintCount') ?? parseSessionValue('totalHintCount') ?? 0);
-  const [retryCount] = useState<number>(() => parseSessionValue('retryCount') ?? parseSessionValue('speakRetryCount') ?? 0);
+  const [correctCount, setCorrectCount] = useState<number>(0);
+  const [hintCount, setHintCount] = useState<number>(0);
+  const [retryCount, setRetryCount] = useState<number>(0);
 
   const [conditionStatus, setConditionStatus] = useState('좋음');
   const [sleepStatus, setSleepStatus] = useState('잘 잤음');
   const [moodStatus, setMoodStatus] = useState('편안함');
 
-  
   const updateCompletedState = (count: number, pCode?: string) => {
     const prefix = pCode ? `${pCode}_` : '';
     const countStr = String(count);
@@ -135,41 +119,68 @@ export default function S17_ActivityReport() {
         return;
       }
 
-     
+  
+      let currentFetchDate = targetDateParam || todayStr;
+      let quizData: any = null;
+
       try {
-        const data = await getQuizResults(pCode, fetchDate);
-        
-        const actualCount = (data && typeof data.total_count === 'number' && data.total_count > 0) 
-          ? data.total_count 
+     
+        quizData = await getQuizResults(pCode, currentFetchDate);
+
+ 
+        if (!targetDateParam && (!quizData || quizData.total_count === 0)) {
+          console.log('오늘 퀴즈 데이터가 없어 어제 날짜로 재조회합니다.');
+          currentFetchDate = yesterdayStr;
+          quizData = await getQuizResults(pCode, currentFetchDate);
+        }
+      } catch (err) {
+        console.warn(`${currentFetchDate} 퀴즈 결과 조회 실패, 어제 날짜로 재시도:`, err);
+        if (!targetDateParam && currentFetchDate === todayStr) {
+          try {
+            currentFetchDate = yesterdayStr;
+            quizData = await getQuizResults(pCode, currentFetchDate);
+          } catch (fallbackErr) {
+            console.warn('어제 퀴즈 결과 조회도 실패:', fallbackErr);
+          }
+        }
+      }
+
+    
+      const isActualTodayData = currentFetchDate === todayStr;
+
+  
+      if (quizData) {
+        const actualCount = (typeof quizData.total_count === 'number' && quizData.total_count > 0)
+          ? quizData.total_count
           : 7;
         
         setCompletedCount(actualCount);
 
-       
-        if (isTodayCompletion) {
-          updateCompletedState(actualCount, pCode);
+        if (typeof quizData.correct_count === 'number') {
+          setCorrectCount(quizData.correct_count);
+        }
+        if (typeof quizData.hint === 'number') {
+          setHintCount(quizData.hint);
+        }
+        if (typeof quizData.retry_count === 'number') {
+          setRetryCount(quizData.retry_count);
         }
 
-        if (data && typeof data.correct_count === 'number') setCorrectCount(data.correct_count);
-        if (data && typeof data.hint === 'number') setHintCount(data.hint);
-        
-        const fetchedSetId = data?.set_id ?? data?.setId;
+        const fetchedSetId = quizData?.set_id ?? quizData?.setId;
         if (fetchedSetId !== undefined && fetchedSetId !== null) {
           sessionStorage.setItem('set_id', String(fetchedSetId));
         }
-      } catch (err) {
-        console.warn('퀴즈 결과 조회 실패 (기본값 설정):', err);
-        setCompletedCount(7);
 
-        if (isTodayCompletion) {
-          updateCompletedState(7, pCode);
+        if (isActualTodayData && quizData.total_count > 0) {
+          updateCompletedState(actualCount, pCode);
         }
       }
 
+      // 5. 건강 상태 데이터 조회
       const targetPatientId = internalCode || pCode;
       if (targetPatientId) {
         try {
-          const statusData: DailyStatusResponse = await getDailyStatus(targetPatientId, fetchDate);
+          const statusData: DailyStatusResponse = await getDailyStatus(targetPatientId, currentFetchDate);
 
           if (statusData) {
             if (statusData.health_condition) setConditionStatus(statusData.health_condition);
@@ -183,7 +194,7 @@ export default function S17_ActivityReport() {
     };
 
     fetchAllData();
-  }, [todayStr, fetchDate, isTodayCompletion]);
+  }, [todayStr, yesterdayStr, targetDateParam]);
 
   const feedbackText = `총 ${completedCount} 문제 중 ${correctCount} 개 맞추셨습니다. 수고하셨습니다!`;
 
