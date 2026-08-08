@@ -55,7 +55,6 @@ const formatHealthStatus = (status: string | null | undefined) => {
   return trimmed;
 };
 
-
 const clearSessionQuizData = () => {
   const quizKeys = [
     'quizList',
@@ -85,7 +84,6 @@ export default function S09_PatientHome() {
   const [isCodeClicked, setIsCodeClicked] = useState(false);
   const [healthStatusValue, setHealthStatusValue] = useState<string>('-');
 
-  
   const [hasOngoingQuiz, setHasOngoingQuiz] = useState<boolean>(() => {
     return !!sessionStorage.getItem('quizList');
   });
@@ -98,7 +96,6 @@ export default function S09_PatientHome() {
     return sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode') || '-------';
   });
 
-  // 로컬 스토리지 데이터 동기화
   const syncStorageState = useCallback((currentPCode?: string) => {
     if (!currentPCode) {
       setIsCompleted(false);
@@ -109,7 +106,7 @@ export default function S09_PatientHome() {
 
     const prefix = `${currentPCode}_`;
 
-    // 1. 오늘 완료 여부 확인
+   
     const todayDoneKey = `activityCompleted_${prefix}${todayIso}`;
     const todayDoneKeyAlt = `todayActivityCompleted_${prefix}${todayIso}`;
     
@@ -117,18 +114,18 @@ export default function S09_PatientHome() {
       sessionStorage.getItem(todayDoneKey) === 'true' ||
       sessionStorage.getItem(todayDoneKeyAlt) === 'true';
 
-    // 2. 진행한 활동 수 확인 (전역 키와 Prefix 키 모두 확인)
+   
     let count = 0;
     const savedPatientCount = 
       sessionStorage.getItem(`completedActivityCount_${prefix}${todayIso}`) ||
       sessionStorage.getItem('completedActivityCount') ||
-      sessionStorage.getItem('currentQuizIndex'); // 중간에 푼 퀴즈 개수 활용
+      sessionStorage.getItem('currentQuizIndex'); 
 
     if (savedPatientCount !== null) {
       count = parseInt(savedPatientCount, 10) || 0;
     }
 
-    // 3. 건강 상태 확인
+    
     const savedHealth = 
       sessionStorage.getItem(`todayHealthCondition_${prefix}${todayIso}`) ||
       sessionStorage.getItem('conditionStatus');
@@ -137,7 +134,7 @@ export default function S09_PatientHome() {
     setCompletedCount(count);
     setIsCompleted(isTodayDone);
     
-    // 진행 중 퀴즈 여부 재갱신
+    
     setHasOngoingQuiz(!!sessionStorage.getItem('quizList'));
   }, [todayIso]);
 
@@ -147,13 +144,11 @@ export default function S09_PatientHome() {
       let pCode: string | undefined = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode') || undefined;
       const lastSavedDate = sessionStorage.getItem('lastActivityDate');
 
-      
       if (lastSavedDate !== todayIso) {
         clearSessionQuizData();
         sessionStorage.setItem('lastActivityDate', todayIso);
       }
 
-    
       try {
         const userData = await api.get<UserInfoResponse>('/auth/me');
         if (userData?.name) {
@@ -164,7 +159,6 @@ export default function S09_PatientHome() {
         console.warn('사용자 프로필 조회 실패:', err);
       }
 
-      
       try {
         const meRes: PatientMeResponse = await getPatientMe();
         if (meRes) {
@@ -190,12 +184,10 @@ export default function S09_PatientHome() {
         console.warn('getPatientMe() 조회 실패:', err);
       }
 
-      
       if (pCode) {
         syncStorageState(pCode);
       }
 
-      
       const targetPatientId = internalCode || pCode;
       if (targetPatientId && pCode) {
         const prefix = `${pCode}_`;
@@ -292,7 +284,6 @@ export default function S09_PatientHome() {
   };
 
   const handleViewResults = () => {
-    
     if (hasOngoingQuiz) {
       alert('현재 진행 중인 활동이 있습니다. 활동을 먼저 마치거나 초기화 후 이용해 주세요.');
       return;
@@ -310,44 +301,6 @@ export default function S09_PatientHome() {
     }
 
     navigate(`/patient-result?date=${targetDate}`);
-  };
-
-  const handleReset = () => {
-    const currentPCode = sessionStorage.getItem('p_code') || sessionStorage.getItem('pCode');
-    const prefix = currentPCode ? `${currentPCode}_` : '';
-
-    const keysToDelete = [
-      'conditionStatus',
-      'sleepStatus',
-      'moodStatus',
-      'quizList',
-      'recallScore',
-      'musicScore',
-      'drawingScore',
-      'totalHintCount',
-      'completedActivityCount',
-      'retryCount',
-      'speakRetryCount',
-      'currentQuizIndex',
-      'correctQuizCount',
-      'currentQuizElapsedTime',
-      'todayActivityQuit',
-      'lastActivityDate',
-      'totalActivityCount',
-      'todayActivityCompleted',
-      `todayActivityCompleted_${prefix}${todayIso}`,
-      `activityCompleted_${prefix}${todayIso}`,
-      `completedActivityCount_${prefix}${todayIso}`,
-      `todayHealthCondition_${prefix}${todayIso}`
-    ];
-    keysToDelete.forEach((key) => sessionStorage.removeItem(key));
-
-    setIsCompleted(false);
-    setCompletedCount(0);
-    setHealthStatusValue('-');
-    setHasOngoingQuiz(false);
-
-    alert('오늘 활동 기록이 초기화되었습니다.');
   };
 
   const successRate = `${Math.round((completedCount / 7) * 100)}%`;
@@ -579,7 +532,7 @@ export default function S09_PatientHome() {
               value: `${completedCount} / 7`,
             },
             {
-              label: '성공률',
+              label: '달성률',
               value: successRate,
             },
           ].map((stat, idx) => (
@@ -642,7 +595,7 @@ export default function S09_PatientHome() {
             marginBottom: '40px',
           }}
         >
-         
+          {/* 퀴즈 진행 중일 때는 비활성화 색상 및 클릭 제어 적용 */}
           <button
             type="button"
             onClick={handleViewResults}
@@ -704,26 +657,6 @@ export default function S09_PatientHome() {
             >
               {isCodeClicked ? pairCode : '내 연동 코드 보기'}
             </span>
-          </button>
-        </div>
-
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-          <button
-            type="button"
-            onClick={handleReset}
-            style={{
-              ...F,
-              padding: '10px 20px',
-              backgroundColor: '#DC3545',
-              color: '#FFFFFF',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            오늘 기록 초기화 (테스트용)
           </button>
         </div>
       </main>
