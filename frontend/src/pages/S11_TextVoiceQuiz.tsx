@@ -295,7 +295,7 @@ export default function S11_TextVoiceQuiz() {
 
     const nextIndex = currentIndex + 1;
 
-   
+    // 마지막 문제일 경우 결과 제출
     if (nextIndex >= quizList.length) {
       try {
         const numericPCode = getNumericPCode(currentQuiz);
