@@ -80,7 +80,7 @@ export default function S09_PatientHome() {
   const todayIso = getTodayIsoString();
 
   const [isCompleted, setIsCompleted] = useState(false);
-  const [completedCount, setCompletedCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState<number | null>(null); // 초기값을 null로 설정하여 결과 존재 여부 판별
   const [isCodeClicked, setIsCodeClicked] = useState(false);
   const [healthStatusValue, setHealthStatusValue] = useState<string>('-');
 
@@ -99,14 +99,13 @@ export default function S09_PatientHome() {
   const syncStorageState = useCallback((currentPCode?: string) => {
     if (!currentPCode) {
       setIsCompleted(false);
-      setCompletedCount(0);
+      setCompletedCount(null);
       setHealthStatusValue('-');
       return;
     }
 
     const prefix = `${currentPCode}_`;
 
-   
     const todayDoneKey = `activityCompleted_${prefix}${todayIso}`;
     const todayDoneKeyAlt = `todayActivityCompleted_${prefix}${todayIso}`;
     
@@ -114,18 +113,17 @@ export default function S09_PatientHome() {
       sessionStorage.getItem(todayDoneKey) === 'true' ||
       sessionStorage.getItem(todayDoneKeyAlt) === 'true';
 
-   
-    let count = 0;
+    let count: number | null = null;
     const savedPatientCount = 
       sessionStorage.getItem(`completedActivityCount_${prefix}${todayIso}`) ||
       sessionStorage.getItem('completedActivityCount') ||
       sessionStorage.getItem('currentQuizIndex'); 
 
     if (savedPatientCount !== null) {
-      count = parseInt(savedPatientCount, 10) || 0;
+      count = parseInt(savedPatientCount, 10);
+      if (isNaN(count)) count = null;
     }
 
-    
     const savedHealth = 
       sessionStorage.getItem(`todayHealthCondition_${prefix}${todayIso}`) ||
       sessionStorage.getItem('conditionStatus');
@@ -133,7 +131,6 @@ export default function S09_PatientHome() {
     setHealthStatusValue(formatHealthStatus(savedHealth));
     setCompletedCount(count);
     setIsCompleted(isTodayDone);
-    
     
     setHasOngoingQuiz(!!sessionStorage.getItem('quizList'));
   }, [todayIso]);
@@ -303,7 +300,11 @@ export default function S09_PatientHome() {
     navigate(`/patient-result?date=${targetDate}`);
   };
 
-  const successRate = `${Math.round((completedCount / 7) * 100)}%`;
+  const currentCount = completedCount ?? 0;
+  const successRate = `${Math.round((currentCount / 7) * 100)}%`;
+
+  // 결과 수치가 존재하는지 체크 (completedCount가 null이 아니거나 활동 완료 상태)
+  const hasResult = completedCount !== null || isCompleted;
 
   return (
     <div
@@ -524,66 +525,73 @@ export default function S09_PatientHome() {
         >
           {[
             {
-              label: completedCount > 0 ? '오늘의 건강 상태' : '건강 상태',
+              label: healthStatusValue !== '-' ? '오늘의 건강 상태' : '건강 상태',
               value: healthStatusValue,
+              isActive: healthStatusValue !== '-',
             },
             {
               label: '진행한 활동',
-              value: `${completedCount} / 7`,
+              value: `${currentCount} / 7`,
+              isActive: hasResult,
             },
             {
               label: '달성률',
               value: successRate,
+              isActive: hasResult,
             },
-          ].map((stat, idx) => (
-            <div
-              key={idx}
-              style={{
-                flex: 1,
-                height: '108px',
-                background: completedCount > 0 || isCompleted
-                  ? '#4188ED0D'
-                  : 'rgba(217, 217, 217, 0.2)',
-                border: completedCount > 0 || isCompleted ? '1px solid #4188ED' : '1px solid #8E8E98',
-                boxShadow: completedCount > 0 || isCompleted
-                  ? '0px 0px 4px 0px #4188ED'
-                  : '0px 0px 4px 0px #797980',
-                borderRadius: '12px',
-                boxSizing: 'border-box',
-                padding: '16px 18px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'flex-start',
-                gap: '6px',
-              }}
-            >
-              <p
+          ].map((stat, idx) => {
+            const isBlue = stat.isActive;
+
+            return (
+              <div
+                key={idx}
                 style={{
-                  ...F,
-                  margin: 0,
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  lineHeight: '1.2',
-                  color: completedCount > 0 || isCompleted ? '#0D0D0D' : '#797980',
+                  flex: 1,
+                  height: '108px',
+                  background: isBlue
+                    ? '#4188ED0D'
+                    : 'rgba(217, 217, 217, 0.2)',
+                  border: isBlue ? '1px solid #4188ED' : '1px solid #8E8E98',
+                  boxShadow: isBlue
+                    ? '0px 0px 4px 0px #4188ED'
+                    : '0px 0px 4px 0px #797980',
+                  borderRadius: '12px',
+                  boxSizing: 'border-box',
+                  padding: '16px 18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  gap: '6px',
                 }}
               >
-                {stat.label}
-              </p>
-              <p
-                style={{
-                  ...F,
-                  margin: 0,
-                  fontSize: '24px',
-                  fontWeight: 700,
-                  lineHeight: '1.2',
-                  color: completedCount > 0 || isCompleted ? '#0D0D0D' : '#797980',
-                }}
-              >
-                {stat.value}
-              </p>
-            </div>
-          ))}
+                <p
+                  style={{
+                    ...F,
+                    margin: 0,
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    lineHeight: '1.2',
+                    color: isBlue ? '#0D0D0D' : '#797980',
+                  }}
+                >
+                  {stat.label}
+                </p>
+                <p
+                  style={{
+                    ...F,
+                    margin: 0,
+                    fontSize: '24px',
+                    fontWeight: 700,
+                    lineHeight: '1.2',
+                    color: isBlue ? '#0D0D0D' : '#797980',
+                  }}
+                >
+                  {stat.value}
+                </p>
+              </div>
+            );
+          })}
         </div>
 
         <div
